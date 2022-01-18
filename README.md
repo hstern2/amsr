@@ -1,2 +1,2 @@
-# amsr
+# AMSR
 Another Molecular String Representation
