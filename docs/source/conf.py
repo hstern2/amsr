@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.abspath("../.."))
 
 project = "amsr"
 copyright = "2022 Harry Stern"
-author = "Harry Stern, Andrew D White"
+author = "Harry Stern"
 
 
 # -- General configuration ---------------------------------------------------
