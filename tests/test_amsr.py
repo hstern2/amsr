@@ -1,5 +1,5 @@
 import amsr
 
 
-def check_sane():
+def test_sane():
     assert amsr.__version__
