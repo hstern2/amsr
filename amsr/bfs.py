@@ -1,6 +1,7 @@
 import anytree
 import rdkit.Chem as rd
 
+
 def BFSTree(a, n):
     ai = a.GetIdx()
     if n == 0:
@@ -24,6 +25,7 @@ def BFSTree(a, n):
                     tree.append(ci)
     return sorted(tree, reverse=True)
 
+
 def BFSFind(a, targetIdx, seenBonds):
     ai = a.GetIdx()
     root = anytree.Node(a)
@@ -37,7 +39,7 @@ def BFSFind(a, targetIdx, seenBonds):
         for b in a.GetBonds():
             c = b.GetOtherAtom(a)
             ci = c.GetIdx()
-            if frozenset([ai,ci]) in seenBonds and ci not in seen:
+            if frozenset([ai, ci]) in seenBonds and ci not in seen:
                 seen.add(ci)
                 child = anytree.Node(c, parent=node)
                 if ci == targetIdx:

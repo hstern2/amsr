@@ -6,13 +6,15 @@ from .pibonds import PiBonds
 from .bfs import BFSTree
 from .parity import IsEvenParity
 
+
 def AddBond(mol, atom, i, j, bond):
     atom[i].nNeighbors += 1
     atom[j].nNeighbors += 1
     n = mol.AddBond(i, j, Chem.BondType.SINGLE)
     s = bond.rdStereo()
     if s is not None:
-        mol.GetBondWithIdx(n-1).SetStereo(s)
+        mol.GetBondWithIdx(n - 1).SetStereo(s)
+
 
 def AddAtom(mol, atom, a, bond):
     atom.append(a)
@@ -24,22 +26,25 @@ def AddAtom(mol, atom, a, bond):
                 AddBond(mol, atom, i, j, bond)
                 return
 
+
 def Saturate(atom):
     for i in reversed(range(len(atom))):
         if atom[i].canBond():
             atom[i].isSaturated = True
             return
 
+
 def Unsaturate(atom):
     for a in atom:
         a.isSaturated = False
+
 
 def Ring(mol, atom, ring, skip, bond):
     n = sum(map(int, ring))
     nSkip = len(skip) if skip else 0
     for i in reversed(range(len(atom))):
         if atom[i].canBond():
-            for j in BFSTree(mol.GetAtomWithIdx(i), n-1):
+            for j in BFSTree(mol.GetAtomWithIdx(i), n - 1):
                 if atom[j].canBond():
                     if nSkip == 0:
                         AddBond(mol, atom, i, j, bond)
@@ -47,23 +52,24 @@ def Ring(mol, atom, ring, skip, bond):
                     else:
                         nSkip -= 1
 
+
 def ToMol(s, activeAtom=None):
-    pbond = r'(?P<bond>[\^\_])'
-    patom = r'(?P<atom>\[\d*[A-Za-z][a-z]?([\+\-]\d?)?[\:\!\*\(\)]*\]|[A-Za-z][\:\!\*\(\)]*)'
-    pring = r'(?P<ring>[3-6]+)'
-    pskip = r'(?P<skip>\.*)'
-    pdot = r'(?P<dot>\.)'
-    pampersand = r'(?P<ampersand>\&)'
+    pbond = r"(?P<bond>[\^\_])"
+    patom = r"(?P<atom>\[\d*[A-Za-z][a-z]?([\+\-]\d?)?[\:\!\*\(\)]*\]|[A-Za-z][\:\!\*\(\)]*)"
+    pring = r"(?P<ring>[3-6]+)"
+    pskip = r"(?P<skip>\.*)"
+    pdot = r"(?P<dot>\.)"
+    pampersand = r"(?P<ampersand>\&)"
     mol = Chem.RWMol()
     atom = []
-    for m in finditer(f'({pbond}?({patom}|({pring}{pskip})))|{pdot}|{pampersand}', s):
-        if m.group('ring'):
-            Ring(mol, atom, m.group('ring'), m.group('skip'), Bond(m.group('bond')))
-        elif m.group('atom'):
-            AddAtom(mol, atom, Atom(m.group('atom')), Bond(m.group('bond')))
-        elif m.group('dot'):
+    for m in finditer(f"({pbond}?({patom}|({pring}{pskip})))|{pdot}|{pampersand}", s):
+        if m.group("ring"):
+            Ring(mol, atom, m.group("ring"), m.group("skip"), Bond(m.group("bond")))
+        elif m.group("atom"):
+            AddAtom(mol, atom, Atom(m.group("atom")), Bond(m.group("bond")))
+        elif m.group("dot"):
             Saturate(atom)
-        elif m.group('ampersand'):
+        elif m.group("ampersand"):
             Unsaturate(atom)
     for a in mol.GetAtoms():
         if a.GetChiralTag() != Chem.ChiralType.CHI_UNSPECIFIED:
@@ -83,7 +89,7 @@ def ToMol(s, activeAtom=None):
             else:
                 b.SetStereoAtoms(min(ni), min(nj))
     PiBonds(mol, atom)
-    for i,a in enumerate(atom):
+    for i, a in enumerate(atom):
         if a.bangs > 0 and a.canBond():
             mol.GetAtomWithIdx(i).SetNumExplicitHs(a.maxNeighbors - a.nNeighbors)
     mol = mol.GetMol()

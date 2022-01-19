@@ -15,11 +15,7 @@ setup(
     url="https://hstern2.github.io/amsr/",
     license="MIT",
     packages=["amsr"],
-    install_requires=[
-    "rdkit-pypi",
-    "networkx",
-    "anytree"
-    ],
+    install_requires=["rdkit-pypi", "networkx", "anytree"],
     test_suite="tests",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -27,6 +23,6 @@ setup(
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
-        "Topic :: Scientific/Engineering :: Chemistry"
+        "Topic :: Scientific/Engineering :: Chemistry",
     ],
 )
