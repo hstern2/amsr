@@ -1,16 +1,19 @@
 from rdkit import Chem
 from .atom import visitedIndex
 
-class Bond():
+
+class Bond:
     def __init__(self, sym=None):
         self.sym = sym
+
     def rdStereo(self):
-        if self.sym == '_':
+        if self.sym == "_":
             return Chem.BondStereo.STEREOE
-        elif self.sym == '^':
+        elif self.sym == "^":
             return Chem.BondStereo.STEREOZ
         else:
             return None
+
     def asToken(self, b, atom):
         if self.rdStereo() is None:
             return
@@ -27,24 +30,26 @@ class Bond():
                 flip = not flip
             elif i in n2 and i != min(n2):
                 flip = not flip
-        if self.sym == '_':
-            yield '^' if flip else '_'
-        if self.sym == '^':
-            yield '_' if flip else '^'
+        if self.sym == "_":
+            yield "^" if flip else "_"
+        if self.sym == "^":
+            yield "_" if flip else "^"
+
     @classmethod
     def fromRD(cls, b):
         t = b.GetBondType()
         s = b.GetStereo()
         if s == Chem.BondStereo.STEREOE:
-            return cls('_')
+            return cls("_")
         if s == Chem.BondStereo.STEREOZ:
-            return cls('^')
+            return cls("^")
         return cls()
-   
+
+
 def bondStereo(bond):
-    if bond == '_':
+    if bond == "_":
         return Chem.BondStereo.STEREOE
-    elif bond == '^':
+    elif bond == "^":
         return Chem.BondStereo.STEREOZ
     else:
         return None
