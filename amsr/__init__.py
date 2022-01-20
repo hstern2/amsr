@@ -1,7 +1,16 @@
 from .version import __version__
 
-__all__ = ["FromMol", "FromMolToTokens", "ToMol", "CheckMol"]
+__all__ = [
+    "FromMol",
+    "FromMolToTokens",
+    "FromSmiles",
+    "FromSmilesToTokens",
+    "ToMol",
+    "ToSmiles",
+    "CheckMol",
+    "CheckSmiles",
+]
 
-from .encode import FromMol, FromMolToTokens
-from .decode import ToMol
-from .check import CheckMol
+from .encode import FromMol, FromMolToTokens, FromSmiles, FromSmilesToTokens
+from .decode import ToMol, ToSmiles
+from .check import CheckMol, CheckSmiles

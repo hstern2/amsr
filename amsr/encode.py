@@ -112,12 +112,35 @@ def FromMolToTokens(mol):
     def needsSpace(prv, nxt):
         return (isDigit(prv) and isDotOrDigit(nxt)) or (isDot(prv) and isDot(nxt))
 
-    tok = list(getTokens2())
+    def getTokens3():
+        tok = list(getTokens2())
+        ntok = len(tok)
+        for i, t in enumerate(tok):
+            if t != " " or (0 < i < ntok - 1 and needsSpace(tok[i - 1], tok[i + 1])):
+                yield t
+
+    tok = list(getTokens3())
     ntok = len(tok)
-    for i, t in enumerate(tok):
-        if t != " " or (0 < i < ntok - 1 and needsSpace(tok[i - 1], tok[i + 1])):
-            yield t
+    PHENYL = list("cccccc6 .....")
+    N_PHENYL = len(PHENYL)
+    i = 0
+    while i < ntok:
+        j = max(7, min(N_PHENYL, ntok - i))
+        if tok[i : i + j] == PHENYL[:j]:
+            yield "[Ph]"
+            i += N_PHENYL
+        else:
+            yield tok[i]
+            i += 1
 
 
 def FromMol(m):
     return "".join(FromMolToTokens(m))
+
+
+def FromSmiles(s):
+    return FromMol(Chem.MolFromSmiles(s))
+
+
+def FromSmilesToTokens(s):
+    return FromMolToTokens(Chem.MolFromSmiles(s))
