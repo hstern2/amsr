@@ -3,6 +3,7 @@ from itertools import repeat
 from .atom import Atom, visitedIndex
 from .bfs import BFSFind
 from .bond import Bond
+from .groups import EncodeGroups
 
 
 def Partition3456(n):
@@ -119,19 +120,7 @@ def FromMolToTokens(mol):
             if t != " " or (0 < i < ntok - 1 and needsSpace(tok[i - 1], tok[i + 1])):
                 yield t
 
-    tok = list(getTokens3())
-    ntok = len(tok)
-    PHENYL = list("cccccc6 .....")
-    N_PHENYL = len(PHENYL)
-    i = 0
-    while i < ntok:
-        j = max(7, min(N_PHENYL, ntok - i))
-        if tok[i : i + j] == PHENYL[:j]:
-            yield "[Ph]"
-            i += N_PHENYL
-        else:
-            yield tok[i]
-            i += 1
+    yield from EncodeGroups(list(getTokens3()))
 
 
 def FromMol(m):

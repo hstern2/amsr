@@ -5,6 +5,7 @@ from .bond import Bond
 from .pibonds import PiBonds
 from .bfs import BFSTree
 from .parity import IsEvenParity
+from .groups import DecodeGroups
 
 
 def AddBond(mol, atom, i, j, bond):
@@ -53,9 +54,6 @@ def Ring(mol, atom, ring, skip, bond):
                         nSkip -= 1
 
 
-PHENYL = "cccccc6 ....."
-
-
 def ToMol(s, activeAtom=None):
     pbond = r"(?P<bond>[\^\_])"
     patom = r"(?P<atom>\[\d*[A-Za-z][a-z]?([\+\-]\d?)?[\:\!\*\(\)]*\]|[A-Za-z][\:\!\*\(\)]*)"
@@ -65,10 +63,8 @@ def ToMol(s, activeAtom=None):
     pampersand = r"(?P<ampersand>\&)"
     mol = Chem.RWMol()
     atom = []
-    for m in finditer(
-        f"({pbond}?({patom}|({pring}{pskip})))|{pdot}|{pampersand}",
-        s.replace("[Ph]", PHENYL),
-    ):
+    s = DecodeGroups(s)
+    for m in finditer(f"({pbond}?({patom}|({pring}{pskip})))|{pdot}|{pampersand}", s):
         if m.group("ring"):
             Ring(mol, atom, m.group("ring"), m.group("skip"), Bond(m.group("bond")))
         elif m.group("atom"):
