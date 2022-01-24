@@ -1,10 +1,18 @@
 from re import compile, escape
 
-GROUPS = {
+Groups = {
     "[Ph]": [list("cccccc6 .....")],
+    "[OEt]": [list("OCC..")],
+    "[OMe]": [list("OC.")],
+    "[OAc]": [list("OcoC."), list("OcC.o")],
+    "[OH]": [list("O.")],
+    "[OiBu]": [list("OCCC.C..")],
     "[Ac]": [list("coC."), list("cC.o")],
-    "[COOH]": [list("coO."), list("cO.o")],
+    "[COOEt]": [list("coOCC.."), list("cOoCC..")],
     "[COO-]": [["c", "o", "[O-]"], ["c", "[O-]", "o"]],
+    "[NO2]": [["[n+]", "o", "[O-]"], ["[n+]", "[O-]", "o"]],
+    "[COOH]": [list("coO."), list("cO.o")],
+    "[CHO]": [list("co.")],
     "[nDec]": [list("CCCCCCCCCC..........")],
     "[nNon]": [list("CCCCCCCCC.........")],
     "[nOct]": [list("CCCCCCCC........")],
@@ -17,14 +25,25 @@ GROUPS = {
     "[nPr]": [list("CCC...")],
     "[iPr]": [list("CC.C.")],
     "[Et]": [list("CC..")],
+    "[Me]": [list("C.")],
+    "[CN]": [["C:", "N:"]],
+    "[CF3]": [list("CFFF")],
+    "[CCl3]": [["C"] + ["[Cl]"] * 3],
 }
 
-groupStr = {k: "".join(v[0]) for k, v in GROUPS.items()}
-pattern = compile("(" + "|".join([escape(k) for k in groupStr.keys()]) + ")")
+# must be called (again) if Groups is changed
+def Initialize():
+    global _groupSym, _groupStr, _pattern
+    _groupSym = sorted(Groups.keys(), key=lambda k: len(Groups[k][0]), reverse=True)
+    _groupStr = {k: "".join(v[0]) for k, v in Groups.items()}
+    _pattern = compile("(" + "|".join([escape(k) for k in _groupStr.keys()]) + ")")
+
+
+Initialize()
 
 
 def DecodeGroups(s):
-    return pattern.sub(lambda m: groupStr[m.group(1)], s)
+    return _pattern.sub(lambda m: _groupStr[m.group(1)], s)
 
 
 def EncodeGroups(tok):
@@ -32,8 +51,8 @@ def EncodeGroups(tok):
     i = 0
     t = []
     while i < ntok:
-        for k, v in GROUPS.items():
-            for g in v:
+        for k in _groupSym:
+            for g in Groups[k]:
                 n = len(g)
                 j = min(n, ntok - i)
                 if tok[i : i + j] == g[:j]:

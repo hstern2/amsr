@@ -35,9 +35,28 @@ def Saturate(atom):
             return
 
 
+def AddDanglingBond(atom, dangling):
+    for i in reversed(range(len(atom))):
+        if atom[i].canBond():
+            atom[i].nNeighbors += 1
+            dangling.append(i)
+            return
+
+
+def ConnectToDanglingBond(atom, dangling):
+    if not dangling:
+        return
+    i = dangling.pop()
+    atom[i].nNeighbors -= 1
+    for a in atom[i + 1 :]:
+        a.isSaturated = True
+
+
+"""
 def Unsaturate(atom):
     for a in atom:
         a.isSaturated = False
+"""
 
 
 def Ring(mol, atom, ring, skip, bond):
@@ -60,19 +79,25 @@ def ToMol(s, activeAtom=None):
     pring = r"(?P<ring>[3-6]+)"
     pskip = r"(?P<skip>\.*)"
     pdot = r"(?P<dot>\.)"
+    ptilde = r"(?P<tilde>\~)"
     pampersand = r"(?P<ampersand>\&)"
     mol = Chem.RWMol()
     atom = []
+    dangling = []
     s = DecodeGroups(s)
-    for m in finditer(f"({pbond}?({patom}|({pring}{pskip})))|{pdot}|{pampersand}", s):
+    for m in finditer(
+        f"({pbond}?({patom}|({pring}{pskip})))|{pdot}|{ptilde}|{pampersand}", s
+    ):
         if m.group("ring"):
             Ring(mol, atom, m.group("ring"), m.group("skip"), Bond(m.group("bond")))
         elif m.group("atom"):
             AddAtom(mol, atom, Atom(m.group("atom")), Bond(m.group("bond")))
         elif m.group("dot"):
             Saturate(atom)
+        elif m.group("tilde"):
+            AddDanglingBond(atom, dangling)
         elif m.group("ampersand"):
-            Unsaturate(atom)
+            ConnectToDanglingBond(atom, dangling)
     for a in mol.GetAtoms():
         if a.GetChiralTag() != Chem.ChiralType.CHI_UNSPECIFIED:
             n = len(a.GetBonds())
