@@ -15,8 +15,6 @@ class Bond:
             return None
 
     def asToken(self, b, atom):
-        if self.rdStereo() is None:
-            return
         a1 = b.GetBeginAtom()
         i1 = a1.GetIdx()
         a2 = b.GetEndAtom()
@@ -31,19 +29,18 @@ class Bond:
             elif i in n2 and i != min(n2):
                 flip = not flip
         if self.sym == "_":
-            yield "^" if flip else "_"
+            return "^" if flip else "_"
         if self.sym == "^":
-            yield "_" if flip else "^"
+            return "_" if flip else "^"
 
     @classmethod
     def fromRD(cls, b):
-        t = b.GetBondType()
         s = b.GetStereo()
         if s == Chem.BondStereo.STEREOE:
             return cls("_")
         if s == Chem.BondStereo.STEREOZ:
             return cls("^")
-        return cls()
+        return None
 
 
 def bondStereo(bond):

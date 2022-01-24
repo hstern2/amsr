@@ -26,13 +26,10 @@ def RingTokens(n, nSkip):
 
 
 def FromMolToTokens(mol):
-    nAtoms = mol.GetNumAtoms()
-    if nAtoms == 0:
-        return
+
     atom = [Atom.fromRD(a) for a in mol.GetAtoms()]
     seenBonds = set()
     nSeenAtoms = 0
-    nBonds = mol.GetNumBonds()
 
     def byVisitedIndex(n):
         return visitedIndex(n.name, atom)
@@ -71,7 +68,8 @@ def FromMolToTokens(mol):
                 ):
                     k = n.name.GetIdx()
                     if k == j:
-                        yield (b, bond)
+                        if bond is not None:
+                            yield (b, bond)
                         yield from RingTokens(n.depth + 1, nSkip)
                         seenBonds.add(ij)
                         si.nNeighbors += 1
@@ -83,23 +81,26 @@ def FromMolToTokens(mol):
                 seenBonds.add(ij)
                 si.nNeighbors += 1
                 sj.nNeighbors += 1
-                yield (b, bond)
+                if bond is not None:
+                    yield (b, bond)
                 yield (c, sj)
                 yield from search(c)
         # end loop over bonds
-        if si.canBond() and (len(seenBonds) < nBonds or nSeenAtoms < nAtoms):
+        if si.canBond():
             si.isSaturated = True
             yield "."
 
-    def getTokens1():
+    def getPreTokens():
         for a in mol.GetAtoms():
             if not seen(a):
                 yield a, atom[a.GetIdx()]
                 yield from search(a)
 
-    def getTokens2():
-        for t in list(getTokens1()):
-            yield from t[1].asToken(t[0], atom) if type(t) == tuple else t
+    def getTokens():
+        return [
+            t[1].asToken(t[0], atom) if type(t) == tuple else t
+            for t in list(getPreTokens())
+        ]
 
     def isDot(t):
         return t == "."
@@ -113,14 +114,25 @@ def FromMolToTokens(mol):
     def needsSpace(prv, nxt):
         return (isDigit(prv) and isDotOrDigit(nxt)) or (isDot(prv) and isDot(nxt))
 
-    def getTokens3():
-        tok = list(getTokens2())
+    def omitUnneededSpaces(tok):
         ntok = len(tok)
-        for i, t in enumerate(tok):
-            if t != " " or (0 < i < ntok - 1 and needsSpace(tok[i - 1], tok[i + 1])):
-                yield t
+        return [
+            t
+            for i, t in enumerate(tok)
+            if t != " " or (0 < i < ntok - 1 and needsSpace(tok[i - 1], tok[i + 1]))
+        ]
 
-    yield from EncodeGroups(list(getTokens3()))
+    def removeTrailingDots(tok):
+        i = len(tok) - 1
+        while i >= 0:
+            if tok[i] != ".":
+                if not isDigit(tok[i]):
+                    del tok[i + 1 :]
+                break
+            i -= 1
+        return tok
+
+    return removeTrailingDots(EncodeGroups(omitUnneededSpaces(getTokens())))
 
 
 def FromMol(m):

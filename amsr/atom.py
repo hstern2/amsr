@@ -71,11 +71,11 @@ class Atom:
         ct = a.GetChiralTag()
         isEven = IsEvenParity([visitedIndex(b, atom) for b in a.GetNeighbors()])
         if ct == Chem.ChiralType.CHI_TETRAHEDRAL_CCW:
-            yield self.symWith("(" if isEven else ")")
+            return self.symWith("(" if isEven else ")")
         elif ct == Chem.ChiralType.CHI_TETRAHEDRAL_CW:
-            yield self.symWith(")" if isEven else "(")
+            return self.symWith(")" if isEven else "(")
         else:
-            yield self.sym
+            return self.sym
 
     @classmethod
     def fromRD(cls, a):
