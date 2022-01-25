@@ -79,14 +79,14 @@ def ToMol(s, activeAtom=None):
     pring = r"(?P<ring>[3-6]+)"
     pskip = r"(?P<skip>\.*)"
     pdot = r"(?P<dot>\.)"
-    ptilde = r"(?P<tilde>\~)"
+    pdangling = r"(?P<dangling>\[\])"
     pampersand = r"(?P<ampersand>\&)"
     mol = Chem.RWMol()
     atom = []
     dangling = []
     s = DecodeGroups(s)
     for m in finditer(
-        f"({pbond}?({patom}|({pring}{pskip})))|{pdot}|{ptilde}|{pampersand}", s
+        f"({pbond}?({patom}|({pring}{pskip})))|{pdot}|{pdangling}|{pampersand}", s
     ):
         if m.group("ring"):
             Ring(mol, atom, m.group("ring"), m.group("skip"), Bond(m.group("bond")))
@@ -94,7 +94,7 @@ def ToMol(s, activeAtom=None):
             AddAtom(mol, atom, Atom(m.group("atom")), Bond(m.group("bond")))
         elif m.group("dot"):
             Saturate(atom)
-        elif m.group("tilde"):
+        elif m.group("dangling"):
             AddDanglingBond(atom, dangling)
         elif m.group("ampersand"):
             ConnectToDanglingBond(atom, dangling)
