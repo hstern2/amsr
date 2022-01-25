@@ -111,12 +111,19 @@ for structures accompanying the following examples.</p>
 enclosed in square brackets. If the atom is designated by a one-letter symbol,
 brackets may be omitted.  All atoms are assumed to have a fixed
 valence.  If an atom makes fewer bonds than its valence, hydrogens are assumed.</p>
-<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">ToMol</span><span class="p">(</span><span class="s2">&quot;C&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-<p><a class="reference external" href="https://en.wikipedia.org/wiki/Methane">methane</a></p>
-<div>
-<?xml version='1.0' encoding='iso-8859-1'?>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>molecule</p></th>
+<th class="head"><p>AMSR</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference external" href="https://en.wikipedia.org/wiki/Methane">methane</a></p></td>
+<td><p>C</p></td>
+</tr>
+</tbody>
+</table>
+<div><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -175,12 +182,19 @@ L 140.3 122.1
 ' fill='#000000'/>
 </svg>
 </div>
-<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">ToMol</span><span class="p">(</span><span class="s2">&quot;O&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-<p><a class="reference external" href="https://en.wikipedia.org/wiki/Water">water</a></p>
-<div>
-<?xml version='1.0' encoding='iso-8859-1'?>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>molecule</p></th>
+<th class="head"><p>AMSR</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference external" href="https://en.wikipedia.org/wiki/Water">water</a></p></td>
+<td><p>O</p></td>
+</tr>
+</tbody>
+</table>
+<div><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -244,12 +258,19 @@ Q 95.7 111.6, 100.0 111.6
 ' fill='#FF0000'/>
 </svg>
 </div>
-<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">ToMol</span><span class="p">(</span><span class="s2">&quot;[Cl]&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-<p><a class="reference external" href="https://en.wikipedia.org/wiki/Hydrochloric_acid">hydrochloric acid</a></p>
-<div>
-<?xml version='1.0' encoding='iso-8859-1'?>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>molecule</p></th>
+<th class="head"><p>AMSR</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference external" href="https://en.wikipedia.org/wiki/Hydrochloric_acid">hydrochloric acid</a></p></td>
+<td><p>[Cl]</p></td>
+</tr>
+</tbody>
+</table>
+<div><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -305,12 +326,19 @@ can still make bonds, according to its valence. Hydrogens may be added
 explicitly like any other atom.  In the following
 example, the fluorines are added to the second carbon.  The chlorine
 is then added to the first carbon, since the second can no longer bond.</p>
-<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">ToMol</span><span class="p">(</span><span class="s2">&quot;CCFFF[Cl]&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-<p><a class="reference external" href="https://pubchem.ncbi.nlm.nih.gov/compound/2-Chloro-1_1_1-trifluoroethane">2-chloro-1,1,1-trifluoroethane</a></p>
-<div>
-<?xml version='1.0' encoding='iso-8859-1'?>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>molecule</p></th>
+<th class="head"><p>AMSR</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference external" href="https://pubchem.ncbi.nlm.nih.gov/compound/2-Chloro-1_1_1-trifluoroethane">2-chloro-1,1,1-trifluoroethane</a></p></td>
+<td><p>CCFFF[Cl]</p></td>
+</tr>
+</tbody>
+</table>
+<div><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -390,12 +418,19 @@ L 24.7 90.7
 </svg>
 </div>
 <p>If no atoms are available to bond, a new molecule is formed.</p>
-<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">ToMol</span><span class="p">(</span><span class="s2">&quot;CFFFFCO&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-<p><a class="reference external" href="https://en.wikipedia.org/wiki/Carbon_tetrafluoride">carbon tetrafluoride</a> and <a class="reference external" href="https://en.wikipedia.org/wiki/Methanol">methanol</a></p>
-<div>
-<?xml version='1.0' encoding='iso-8859-1'?>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>molecule</p></th>
+<th class="head"><p>AMSR</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference external" href="https://en.wikipedia.org/wiki/Carbon_tetrafluoride">carbon tetrafluoride</a> and <a class="reference external" href="https://en.wikipedia.org/wiki/Methanol">methanol</a></p></td>
+<td><p>CFFFFCO</p></td>
+</tr>
+</tbody>
+</table>
+<div><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -508,12 +543,19 @@ recently-added atom which can still make bonds.  In
 the example below, the dot caps the third carbon,
 so that the fourth is added to the second rather than the third,
 to form isobutane rather than <em>n</em>-butane.</p>
-<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">ToMol</span><span class="p">(</span><span class="s2">&quot;CCC.C&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-<p><a class="reference external" href="https://en.wikipedia.org/wiki/Isobutane">isobutane</a></p>
-<div>
-<?xml version='1.0' encoding='iso-8859-1'?>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>molecule</p></th>
+<th class="head"><p>AMSR</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference external" href="https://en.wikipedia.org/wiki/Isobutane">isobutane</a></p></td>
+<td><p>CCC.C</p></td>
+</tr>
+</tbody>
+</table>
+<div><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -535,12 +577,19 @@ the size of the ring.
 A new bond is formed between atoms <em>i</em> and <em>j</em> where
 <em>i</em> and <em>j</em> are the most recently-added atoms which
 can still make bonds and when bonded will form a ring of that size.</p>
-<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">ToMol</span><span class="p">(</span><span class="s2">&quot;CCO3&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-<p><a class="reference external" href="https://en.wikipedia.org/wiki/Ethylene_oxide">oxirane</a></p>
-<div>
-<?xml version='1.0' encoding='iso-8859-1'?>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>molecule</p></th>
+<th class="head"><p>AMSR</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference external" href="https://en.wikipedia.org/wiki/Ethylene_oxide">oxirane</a></p></td>
+<td><p>CCO3</p></td>
+</tr>
+</tbody>
+</table>
+<div><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -575,12 +624,19 @@ Q 28.7 189.1, 33.0 189.1
 ' fill='#FF0000'/>
 </svg>
 </div>
-<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">ToMol</span><span class="p">(</span><span class="s2">&quot;CCCCCC6&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-<p><a class="reference external" href="https://en.wikipedia.org/wiki/Cyclohexane">cyclohexane</a></p>
-<div>
-<?xml version='1.0' encoding='iso-8859-1'?>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>molecule</p></th>
+<th class="head"><p>AMSR</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference external" href="https://en.wikipedia.org/wiki/Cyclohexane">cyclohexane</a></p></td>
+<td><p>CCCCCC6</p></td>
+</tr>
+</tbody>
+</table>
+<div><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -602,12 +658,19 @@ width='200px' height='200px' viewBox='0 0 200 200'>
 <h3>Large rings<a class="headerlink" href="#large-rings" title="Permalink to this headline"></a></h3>
 <p>Rings with seven or more members are denoted by a
 sequence of digits <code class="docutils literal notranslate"><span class="pre">3,4,5,6</span></code> which are added to give the size of the ring.</p>
-<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">ToMol</span><span class="p">(</span><span class="s2">&quot;CCCCCCC43&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-<p><a class="reference external" href="https://en.wikipedia.org/wiki/Cycloheptane">cycloheptane</a></p>
-<div>
-<?xml version='1.0' encoding='iso-8859-1'?>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>molecule</p></th>
+<th class="head"><p>AMSR</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference external" href="https://en.wikipedia.org/wiki/Cycloheptane">cycloheptane</a></p></td>
+<td><p>CCCCCCC43</p></td>
+</tr>
+</tbody>
+</table>
+<div><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -625,12 +688,19 @@ width='200px' height='200px' viewBox='0 0 200 200'>
 <path class='bond-5 atom-5 atom-6' d='M 74.6,190.9 L 153.5,172.9' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 </svg>
 </div>
-<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">ToMol</span><span class="p">(</span><span class="s2">&quot;CCCCCCCCCCCC66&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-<p><a class="reference external" href="https://en.wikipedia.org/wiki/Cyclododecane">cyclododecane</a></p>
-<div>
-<?xml version='1.0' encoding='iso-8859-1'?>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>molecule</p></th>
+<th class="head"><p>AMSR</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference external" href="https://en.wikipedia.org/wiki/Cyclododecane">cyclododecane</a></p></td>
+<td><p>CCCCCCCCCCCC66</p></td>
+</tr>
+</tbody>
+</table>
+<div><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -656,12 +726,19 @@ width='200px' height='200px' viewBox='0 0 200 200'>
 <p>If any characters appear between digits, multiple rings are formed
 rather than a single large ring.
 Whitespace may be used if this is desired (without adding any additional atoms).</p>
-<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">ToMol</span><span class="p">(</span><span class="s2">&quot;CCCCCCCCCCCC6 6&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-<p><a class="reference external" href="https://pubchem.ncbi.nlm.nih.gov/compound/33053">1-ethyldecalin</a></p>
-<div>
-<?xml version='1.0' encoding='iso-8859-1'?>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>molecule</p></th>
+<th class="head"><p>AMSR</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference external" href="https://pubchem.ncbi.nlm.nih.gov/compound/33053">1-ethyldecalin</a></p></td>
+<td><p>CCCCCCCCCCCC6 6</p></td>
+</tr>
+</tbody>
+</table>
+<div><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -697,12 +774,19 @@ matching cannot be found (for instance, in the case
 of an odd number of contiguous lowercase atoms) a
 maximal matching is chosen, non-matched atoms
 remain singly bonded, and hydrogens are added.</p>
-<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">ToMol</span><span class="p">(</span><span class="s2">&quot;co&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-<p><a class="reference external" href="https://en.wikipedia.org/wiki/Formaldehyde">formaldehyde</a></p>
-<div>
-<?xml version='1.0' encoding='iso-8859-1'?>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>molecule</p></th>
+<th class="head"><p>AMSR</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference external" href="https://en.wikipedia.org/wiki/Formaldehyde">formaldehyde</a></p></td>
+<td><p>co</p></td>
+</tr>
+</tbody>
+</table>
+<div><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -736,12 +820,19 @@ Q 158.0 111.6, 162.3 111.6
 ' fill='#FF0000'/>
 </svg>
 </div>
-<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">ToMol</span><span class="p">(</span><span class="s2">&quot;cccccc6&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-<p><a class="reference external" href="https://en.wikipedia.org/wiki/Benzene">benzene</a></p>
-<div>
-<?xml version='1.0' encoding='iso-8859-1'?>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>molecule</p></th>
+<th class="head"><p>AMSR</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference external" href="https://en.wikipedia.org/wiki/Benzene">benzene</a></p></td>
+<td><p>cccccc6</p></td>
+</tr>
+</tbody>
+</table>
+<div><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -761,12 +852,19 @@ width='200px' height='200px' viewBox='0 0 200 200'>
 <path class='bond-4 atom-4 atom-5' d='M 68.2,39.5 L 131.8,39.5' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 </svg>
 </div>
-<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">ToMol</span><span class="p">(</span><span class="s2">&quot;cco&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-<p><a class="reference external" href="https://en.wikipedia.org/wiki/Acetaldehyde">acetaldehyde</a> - only one double bond added</p>
-<div>
-<?xml version='1.0' encoding='iso-8859-1'?>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>molecule</p></th>
+<th class="head"><p>AMSR</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference external" href="https://en.wikipedia.org/wiki/Acetaldehyde">acetaldehyde</a> - only one double bond added</p></td>
+<td><p>cco</p></td>
+</tr>
+</tbody>
+</table>
+<div><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
