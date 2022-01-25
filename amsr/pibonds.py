@@ -48,13 +48,17 @@ def PiBonds(mol, atom):
             if canBePi(i, j):
                 yield i, j
 
+    def isCarbon(i):
+        return atom[i].isCarbon()
+
     # subgraph of atoms that can make pi bonds
     g = Graph(possiblePiBonds())
-    # single coordinate
+
+    # single coordinate - heteroatoms first
     done = False
     while not done:
         done = True
-        for i in g.nodes:
+        for i in sorted(g.nodes, key=isCarbon):
             if singleCoordinate(g, i):
                 for j in g.neighbors(i):
                     if canBeTriple(i, j):
@@ -66,6 +70,7 @@ def PiBonds(mol, atom):
                     done = False
         if not done:
             g = g.subgraph(filter(canPiBond, g.nodes))
+
     # isolated sp centers
     for i in g.nodes:
         if canMultiplePiBond(i):
@@ -76,6 +81,7 @@ def PiBonds(mol, atom):
                 for j in g.neighbors(i):
                     if canBePi(i, j):
                         piBond(mol, atom, i, j, 2)
+
     # remaining pi bonds
     done = False
     while not done:

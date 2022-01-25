@@ -60,6 +60,9 @@ class Atom:
             a.SetIsotope(self.isotope)
         return a
 
+    def isCarbon(self):
+        return self.atomSym == "C"
+
     def symWith(self, s):
         sym = self.sym
         if sym.startswith("["):
