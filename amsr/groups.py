@@ -9,6 +9,7 @@ Groups = {
     "[OiBu]": [list("OCCC.C..")],
     "[Ac]": [list("coC."), list("cC.o")],
     "[COOEt]": [list("coOCC.."), list("cOoCC..")],
+    "[COOMe]": [list("coOC."), list("cOoC.")],
     "[COO-]": [["c", "o", "[O-]"], ["c", "[O-]", "o"]],
     "[NO2]": [["[n+]", "o", "[O-]"], ["[n+]", "[O-]", "o"]],
     "[COOH]": [list("coO."), list("cO.o")],
