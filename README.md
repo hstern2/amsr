@@ -26,6 +26,7 @@ valence.  If an atom makes fewer bonds than its valence, hydrogens are assumed.
 
 ```py
 ToMol("C")
+# methane
 ```
 
 <div>
@@ -93,6 +94,7 @@ L 140.3 122.1
 
 ```py
 ToMol("O")
+# water
 ```
 
 <div>
@@ -165,6 +167,7 @@ Q 95.7 111.6, 100.0 111.6
 
 ```py
 ToMol("[Cl]")
+# hydrochloric acid
 ```
 
 <div>
@@ -227,6 +230,7 @@ example, the fluorines are added to the second carbon.  The chlorine
 is then added to the first carbon, since the second can no longer bond.
 ```py
 ToMol("CCFFF[Cl]")
+# 2-chloro-1,1,1-trifluoroethane
 ```
 
 <div>
