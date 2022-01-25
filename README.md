@@ -28,13 +28,12 @@ enclosed in square brackets. If the atom is designated by a one-letter symbol,
 brackets may be omitted.  All atoms are assumed to have a fixed
 valence.  If an atom makes fewer bonds than its valence, hydrogens are assumed.
 
-```py
-ToMol("C")
-```
-[methane](https://en.wikipedia.org/wiki/Methane)
 
-<div>
-<?xml version='1.0' encoding='iso-8859-1'?>
+| molecule | AMSR |
+| ---  | ---  |
+| [methane](https://en.wikipedia.org/wiki/Methane) | C |
+
+<div><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -92,17 +91,15 @@ L 146.9 111.5
 L 140.3 122.1
 ' fill='#000000'/>
 </svg>
-
 </div>
 
 
-```py
-ToMol("O")
-```
-[water](https://en.wikipedia.org/wiki/Water)
 
-<div>
-<?xml version='1.0' encoding='iso-8859-1'?>
+| molecule | AMSR |
+| ---  | ---  |
+| [water](https://en.wikipedia.org/wiki/Water) | O |
+
+<div><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -165,17 +162,15 @@ Q 91.0 105.8, 93.3 108.7
 Q 95.7 111.6, 100.0 111.6
 ' fill='#FF0000'/>
 </svg>
-
 </div>
 
 
-```py
-ToMol("[Cl]")
-```
-[hydrochloric acid](https://en.wikipedia.org/wiki/Hydrochloric_acid)
 
-<div>
-<?xml version='1.0' encoding='iso-8859-1'?>
+| molecule | AMSR |
+| ---  | ---  |
+| [hydrochloric acid](https://en.wikipedia.org/wiki/Hydrochloric_acid) | [Cl] |
+
+<div><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -222,7 +217,6 @@ L 98.2 115.2
 L 98.2 84.8
 ' fill='#00CC00'/>
 </svg>
-
 </div>
 
 
@@ -233,13 +227,12 @@ can still make bonds, according to its valence. Hydrogens may be added
 explicitly like any other atom.  In the following
 example, the fluorines are added to the second carbon.  The chlorine
 is then added to the first carbon, since the second can no longer bond.
-```py
-ToMol("CCFFF[Cl]")
-```
-[2-chloro-1,1,1-trifluoroethane](https://pubchem.ncbi.nlm.nih.gov/compound/2-Chloro-1_1_1-trifluoroethane)
 
-<div>
-<?xml version='1.0' encoding='iso-8859-1'?>
+| molecule | AMSR |
+| ---  | ---  |
+| [2-chloro-1,1,1-trifluoroethane](https://pubchem.ncbi.nlm.nih.gov/compound/2-Chloro-1_1_1-trifluoroethane) | CCFFF[Cl] |
+
+<div><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -317,18 +310,16 @@ L 24.7 109.3
 L 24.7 90.7
 ' fill='#00CC00'/>
 </svg>
-
 </div>
 
 
 If no atoms are available to bond, a new molecule is formed.
-```py
-ToMol("CFFFFCO")
-```
-[carbon tetrafluoride](https://en.wikipedia.org/wiki/Carbon_tetrafluoride) and [methanol](https://en.wikipedia.org/wiki/Methanol)
 
-<div>
-<?xml version='1.0' encoding='iso-8859-1'?>
+| molecule | AMSR |
+| ---  | ---  |
+| [carbon tetrafluoride](https://en.wikipedia.org/wiki/Carbon_tetrafluoride) and [methanol](https://en.wikipedia.org/wiki/Methanol) | CFFFFCO |
+
+<div><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -429,7 +420,6 @@ L 140.8 190.6
 L 140.8 173.2
 ' fill='#FF0000'/>
 </svg>
-
 </div>
 
 
@@ -443,13 +433,12 @@ recently-added atom which can still make bonds.  In
 the example below, the dot caps the third carbon,
 so that the fourth is added to the second rather than the third,
 to form isobutane rather than *n*-butane.
-```py
-ToMol("CCC.C")
-```
-[isobutane](https://en.wikipedia.org/wiki/Isobutane)
 
-<div>
-<?xml version='1.0' encoding='iso-8859-1'?>
+| molecule | AMSR |
+| ---  | ---  |
+| [isobutane](https://en.wikipedia.org/wiki/Isobutane) | CCC.C |
+
+<div><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -462,7 +451,6 @@ width='200px' height='200px' viewBox='0 0 200 200'>
 <path class='bond-1 atom-1 atom-2' d='M 100.0,126.2 L 190.9,178.7' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-2 atom-1 atom-3' d='M 100.0,126.2 L 100.0,21.3' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 </svg>
-
 </div>
 
 
@@ -473,13 +461,12 @@ the size of the ring.
 A new bond is formed between atoms *i* and *j* where
 *i* and *j* are the most recently-added atoms which
 can still make bonds and when bonded will form a ring of that size.
-```py
-ToMol("CCO3")
-```
-[oxirane](https://en.wikipedia.org/wiki/Ethylene_oxide)
 
-<div>
-<?xml version='1.0' encoding='iso-8859-1'?>
+| molecule | AMSR |
+| ---  | ---  |
+| [oxirane](https://en.wikipedia.org/wiki/Ethylene_oxide) | CCO3 |
+
+<div><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -513,17 +500,15 @@ Q 24.0 183.3, 26.3 186.2
 Q 28.7 189.1, 33.0 189.1
 ' fill='#FF0000'/>
 </svg>
-
 </div>
 
 
-```py
-ToMol("CCCCCC6")
-```
-[cyclohexane](https://en.wikipedia.org/wiki/Cyclohexane)
 
-<div>
-<?xml version='1.0' encoding='iso-8859-1'?>
+| molecule | AMSR |
+| ---  | ---  |
+| [cyclohexane](https://en.wikipedia.org/wiki/Cyclohexane) | CCCCCC6 |
+
+<div><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -539,7 +524,6 @@ width='200px' height='200px' viewBox='0 0 200 200'>
 <path class='bond-3 atom-3 atom-4' d='M 9.1,100.0 L 54.5,21.3' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-4 atom-4 atom-5' d='M 54.5,21.3 L 145.5,21.3' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 </svg>
-
 </div>
 
 
@@ -547,13 +531,12 @@ width='200px' height='200px' viewBox='0 0 200 200'>
 ### Large rings
 Rings with seven or more members are denoted by a
 sequence of digits `3,4,5,6` which are added to give the size of the ring.
-```py
-ToMol("CCCCCCC43")
-```
-[cycloheptane](https://en.wikipedia.org/wiki/Cycloheptane)
 
-<div>
-<?xml version='1.0' encoding='iso-8859-1'?>
+| molecule | AMSR |
+| ---  | ---  |
+| [cycloheptane](https://en.wikipedia.org/wiki/Cycloheptane) | CCCCCCC43 |
+
+<div><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -570,17 +553,15 @@ width='200px' height='200px' viewBox='0 0 200 200'>
 <path class='bond-4 atom-4 atom-5' d='M 11.4,140.5 L 74.6,190.9' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-5 atom-5 atom-6' d='M 74.6,190.9 L 153.5,172.9' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 </svg>
-
 </div>
 
 
-```py
-ToMol("CCCCCCCCCCCC66")
-```
-[cyclododecane](https://en.wikipedia.org/wiki/Cyclododecane)
 
-<div>
-<?xml version='1.0' encoding='iso-8859-1'?>
+| molecule | AMSR |
+| ---  | ---  |
+| [cyclododecane](https://en.wikipedia.org/wiki/Cyclododecane) | CCCCCCCCCCCC66 |
+
+<div><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -602,7 +583,6 @@ width='200px' height='200px' viewBox='0 0 200 200'>
 <path class='bond-9 atom-9 atom-10' d='M 100.0,9.1 L 145.5,21.3' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-10 atom-10 atom-11' d='M 145.5,21.3 L 178.7,54.5' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 </svg>
-
 </div>
 
 
@@ -610,13 +590,12 @@ width='200px' height='200px' viewBox='0 0 200 200'>
 If any characters appear between digits, multiple rings are formed
 rather than a single large ring.
 Whitespace may be used if this is desired (without adding any additional atoms).
-```py
-ToMol("CCCCCCCCCCCC6 6")
-```
-[1-ethyldecalin](https://pubchem.ncbi.nlm.nih.gov/compound/33053)
 
-<div>
-<?xml version='1.0' encoding='iso-8859-1'?>
+| molecule | AMSR |
+| ---  | ---  |
+| [1-ethyldecalin](https://pubchem.ncbi.nlm.nih.gov/compound/33053) | CCCCCCCCCCCC6 6 |
+
+<div><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -639,7 +618,6 @@ width='200px' height='200px' viewBox='0 0 200 200'>
 <path class='bond-9 atom-9 atom-10' d='M 168.6,44.7 L 128.7,47.5' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-10 atom-10 atom-11' d='M 128.7,47.5 L 111.2,83.4' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 </svg>
-
 </div>
 
 
@@ -654,13 +632,12 @@ matching cannot be found (for instance, in the case
 of an odd number of contiguous lowercase atoms) a
 maximal matching is chosen, non-matched atoms
 remain singly bonded, and hydrogens are added.
-```py
-ToMol("co")
-```
-[formaldehyde](https://en.wikipedia.org/wiki/Formaldehyde)
 
-<div>
-<?xml version='1.0' encoding='iso-8859-1'?>
+| molecule | AMSR |
+| ---  | ---  |
+| [formaldehyde](https://en.wikipedia.org/wiki/Formaldehyde) | co |
+
+<div><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -693,17 +670,15 @@ Q 153.3 105.8, 155.6 108.7
 Q 158.0 111.6, 162.3 111.6
 ' fill='#FF0000'/>
 </svg>
-
 </div>
 
 
-```py
-ToMol("cccccc6")
-```
-[benzene](https://en.wikipedia.org/wiki/Benzene)
 
-<div>
-<?xml version='1.0' encoding='iso-8859-1'?>
+| molecule | AMSR |
+| ---  | ---  |
+| [benzene](https://en.wikipedia.org/wiki/Benzene) | cccccc6 |
+
+<div><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -722,17 +697,15 @@ width='200px' height='200px' viewBox='0 0 200 200'>
 <path class='bond-4 atom-4 atom-5' d='M 54.5,21.3 L 145.5,21.3' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-4 atom-4 atom-5' d='M 68.2,39.5 L 131.8,39.5' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 </svg>
-
 </div>
 
 
-```py
-ToMol("cco")
-```
-[acetaldehyde](https://en.wikipedia.org/wiki/Acetaldehyde) - only one double bond added
 
-<div>
-<?xml version='1.0' encoding='iso-8859-1'?>
+| molecule | AMSR |
+| ---  | ---  |
+| [acetaldehyde](https://en.wikipedia.org/wiki/Acetaldehyde) - only one double bond added | cco |
+
+<div><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -766,7 +739,6 @@ Q 170.3 123.5, 172.5 126.3
 Q 174.9 129.2, 179.1 129.2
 ' fill='#FF0000'/>
 </svg>
-
 </div>
 
 
