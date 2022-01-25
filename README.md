@@ -19,8 +19,8 @@ from amsr import ToMol, FromMol, ToSmiles, FromSmiles
 
 ## Description
 
-See [documentation](https://hstern2.github.io/amsr/) for
-the structures produced by the examples below.
+See [documentation](https://hstern2.github.io/amsr/)
+for structures accompanying the following examples.
 
 ### Atoms
 As in SMILES, atoms are represented by their symbol
@@ -30,8 +30,8 @@ valence.  If an atom makes fewer bonds than its valence, hydrogens are assumed.
 
 ```py
 ToMol("C")
-# methane
 ```
+[methane](https://en.wikipedia.org/wiki/Methane)
 
 <div>
 <?xml version='1.0' encoding='iso-8859-1'?>
@@ -98,8 +98,8 @@ L 140.3 122.1
 
 ```py
 ToMol("O")
-# water
 ```
+[water](https://en.wikipedia.org/wiki/Water)
 
 <div>
 <?xml version='1.0' encoding='iso-8859-1'?>
@@ -171,8 +171,8 @@ Q 95.7 111.6, 100.0 111.6
 
 ```py
 ToMol("[Cl]")
-# hydrochloric acid
 ```
+[hydrochloric acid](https://en.wikipedia.org/wiki/Hydrochloric_acid)
 
 <div>
 <?xml version='1.0' encoding='iso-8859-1'?>
@@ -235,8 +235,8 @@ example, the fluorines are added to the second carbon.  The chlorine
 is then added to the first carbon, since the second can no longer bond.
 ```py
 ToMol("CCFFF[Cl]")
-# 2-chloro-1,1,1-trifluoroethane
 ```
+[2-chloro-1,1,1-trifluoroethane](https://pubchem.ncbi.nlm.nih.gov/compound/2-Chloro-1_1_1-trifluoroethane)
 
 <div>
 <?xml version='1.0' encoding='iso-8859-1'?>
@@ -324,8 +324,8 @@ L 24.7 90.7
 If no atoms are available to bond, a new molecule is formed.
 ```py
 ToMol("CFFFFCO")
-# carbon tetrafluoride and methanol
 ```
+[carbon tetrafluoride](https://en.wikipedia.org/wiki/Carbon_tetrafluoride) and [methanol](https://en.wikipedia.org/wiki/Methanol)
 
 <div>
 <?xml version='1.0' encoding='iso-8859-1'?>
@@ -437,7 +437,7 @@ L 140.8 173.2
 ### Branches
 Branches are formed automatically when atoms can no longer
 make bonds.  They can also be made by "capping" or
-"saturating" an atom with hydrogens, using a period.
+"saturating" an atom with hydrogens, using a period (`.`).
 The capping hydrogens are applied to the most
 recently-added atom which can still make bonds.  In
 the example below, the dot caps the third carbon,
@@ -445,8 +445,8 @@ so that the fourth is added to the second rather than the third,
 to form isobutane rather than *n*-butane.
 ```py
 ToMol("CCC.C")
-# isobutane
 ```
+[isobutane](https://en.wikipedia.org/wiki/Isobutane)
 
 <div>
 <?xml version='1.0' encoding='iso-8859-1'?>
@@ -475,8 +475,8 @@ A new bond is formed between atoms *i* and *j* where
 can still make bonds and when bonded will form a ring of that size.
 ```py
 ToMol("CCO3")
-# oxirane
 ```
+[oxirane](https://en.wikipedia.org/wiki/Ethylene_oxide)
 
 <div>
 <?xml version='1.0' encoding='iso-8859-1'?>
@@ -519,8 +519,8 @@ Q 28.7 189.1, 33.0 189.1
 
 ```py
 ToMol("CCCCCC6")
-# cyclohexane
 ```
+[cyclohexane](https://en.wikipedia.org/wiki/Cyclohexane)
 
 <div>
 <?xml version='1.0' encoding='iso-8859-1'?>
@@ -549,8 +549,8 @@ Rings with seven or more members are denoted by a
 sequence of digits `3,4,5,6` which are added to give the size of the ring.
 ```py
 ToMol("CCCCCCC43")
-# cycloheptane
 ```
+[cycloheptane](https://en.wikipedia.org/wiki/Cycloheptane)
 
 <div>
 <?xml version='1.0' encoding='iso-8859-1'?>
@@ -575,9 +575,9 @@ width='200px' height='200px' viewBox='0 0 200 200'>
 
 
 ```py
-ToMol("CCCCCCCCCC55")
-# cyclodecane
+ToMol("CCCCCCCCCCCC66")
 ```
+[cyclododecane](https://en.wikipedia.org/wiki/Cyclododecane)
 
 <div>
 <?xml version='1.0' encoding='iso-8859-1'?>
@@ -589,28 +589,31 @@ ToMol("CCCCCCCCCC55")
 width='200px' height='200px' viewBox='0 0 200 200'>
 <!-- END OF HEADER -->
 <rect style='opacity:1.0;fill:#FFFFFF;stroke:none' width='200.0' height='200.0' x='0.0' y='0.0'> </rect>
-<path class='bond-0 atom-0 atom-1' d='M 190.9,100.0 L 173.5,153.4' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-9 atom-9 atom-0' d='M 173.5,46.6 L 190.9,100.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-1 atom-1 atom-2' d='M 173.5,153.4 L 128.1,186.5' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-2 atom-2 atom-3' d='M 128.1,186.5 L 71.9,186.5' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-3 atom-3 atom-4' d='M 71.9,186.5 L 26.5,153.4' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-4 atom-4 atom-5' d='M 26.5,153.4 L 9.1,100.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-5 atom-5 atom-6' d='M 9.1,100.0 L 26.5,46.6' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-6 atom-6 atom-7' d='M 26.5,46.6 L 71.9,13.5' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-7 atom-7 atom-8' d='M 71.9,13.5 L 128.1,13.5' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-8 atom-8 atom-9' d='M 128.1,13.5 L 173.5,46.6' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-0 atom-0 atom-1' d='M 190.9,100.0 L 178.7,145.5' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-11 atom-11 atom-0' d='M 178.7,54.5 L 190.9,100.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-1 atom-1 atom-2' d='M 178.7,145.5 L 145.5,178.7' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-2 atom-2 atom-3' d='M 145.5,178.7 L 100.0,190.9' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-3 atom-3 atom-4' d='M 100.0,190.9 L 54.5,178.7' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-4 atom-4 atom-5' d='M 54.5,178.7 L 21.3,145.5' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-5 atom-5 atom-6' d='M 21.3,145.5 L 9.1,100.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-6 atom-6 atom-7' d='M 9.1,100.0 L 21.3,54.5' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-7 atom-7 atom-8' d='M 21.3,54.5 L 54.5,21.3' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-8 atom-8 atom-9' d='M 54.5,21.3 L 100.0,9.1' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-9 atom-9 atom-10' d='M 100.0,9.1 L 145.5,21.3' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-10 atom-10 atom-11' d='M 145.5,21.3 L 178.7,54.5' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 </svg>
 
 </div>
+
 
 
 If any characters appear between digits, multiple rings are formed
 rather than a single large ring.
 Whitespace may be used if this is desired (without adding any additional atoms).
 ```py
-ToMol("CCCCCCCCCC5 5")
-# 1-ethyl-1,2,3,3a,4,5,6,6a-octahydropentalene
+ToMol("CCCCCCCCCCCC6 6")
 ```
+[1-ethyldecalin](https://pubchem.ncbi.nlm.nih.gov/compound/33053)
 
 <div>
 <?xml version='1.0' encoding='iso-8859-1'?>
@@ -622,17 +625,146 @@ ToMol("CCCCCCCCCC5 5")
 width='200px' height='200px' viewBox='0 0 200 200'>
 <!-- END OF HEADER -->
 <rect style='opacity:1.0;fill:#FFFFFF;stroke:none' width='200.0' height='200.0' x='0.0' y='0.0'> </rect>
-<path class='bond-0 atom-0 atom-1' d='M 190.9,80.1 L 150.7,65.2' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-1 atom-1 atom-2' d='M 150.7,65.2 L 117.8,92.5' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-2 atom-2 atom-3' d='M 117.8,92.5 L 120.5,135.3' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-10 atom-9 atom-2' d='M 76.2,81.9 L 117.8,92.5' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-3 atom-3 atom-4' d='M 120.5,135.3 L 80.7,151.1' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-4 atom-4 atom-5' d='M 80.7,151.1 L 53.3,118.1' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-5 atom-5 atom-6' d='M 53.3,118.1 L 11.8,107.5' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-9 atom-9 atom-5' d='M 76.2,81.9 L 53.3,118.1' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-6 atom-6 atom-7' d='M 11.8,107.5 L 9.1,64.7' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-7 atom-7 atom-8' d='M 9.1,64.7 L 48.9,48.9' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-8 atom-8 atom-9' d='M 48.9,48.9 L 76.2,81.9' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-0 atom-0 atom-1' d='M 9.1,55.8 L 49.0,53.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-1 atom-1 atom-2' d='M 49.0,53.0 L 71.3,86.2' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-2 atom-2 atom-3' d='M 71.3,86.2 L 53.8,122.1' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-12 atom-11 atom-2' d='M 111.2,83.4 L 71.3,86.2' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-3 atom-3 atom-4' d='M 53.8,122.1 L 76.1,155.3' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-4 atom-4 atom-5' d='M 76.1,155.3 L 116.0,152.5' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-5 atom-5 atom-6' d='M 116.0,152.5 L 133.5,116.6' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-6 atom-6 atom-7' d='M 133.5,116.6 L 173.4,113.8' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-11 atom-11 atom-6' d='M 111.2,83.4 L 133.5,116.6' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-7 atom-7 atom-8' d='M 173.4,113.8 L 190.9,77.9' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-8 atom-8 atom-9' d='M 190.9,77.9 L 168.6,44.7' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-9 atom-9 atom-10' d='M 168.6,44.7 L 128.7,47.5' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-10 atom-10 atom-11' d='M 128.7,47.5 L 111.2,83.4' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+</svg>
+
+</div>
+
+
+
+### Double bonds
+Atoms making a single double bond are indicated by changing
+the symbol to lowercase (note that lowercase
+does not mean "aromatic"; merely, "atom having one
+fewer neighbor than its valence.")  Double bonds are
+assigned by a matching algorithm.  If a perfect
+matching cannot be found (for instance, in the case
+of an odd number of contiguous lowercase atoms) a
+maximal matching is chosen, non-matched atoms
+remain singly bonded, and hydrogens are added.
+```py
+ToMol("co")
+```
+[formaldehyde](https://en.wikipedia.org/wiki/Formaldehyde)
+
+<div>
+<?xml version='1.0' encoding='iso-8859-1'?>
+<svg version='1.1' baseProfile='full'
+              xmlns='http://www.w3.org/2000/svg'
+                      xmlns:rdkit='http://www.rdkit.org/xml'
+                      xmlns:xlink='http://www.w3.org/1999/xlink'
+                  xml:space='preserve'
+width='200px' height='200px' viewBox='0 0 200 200'>
+<!-- END OF HEADER -->
+<rect style='opacity:1.0;fill:#FFFFFF;stroke:none' width='200.0' height='200.0' x='0.0' y='0.0'> </rect>
+<path class='bond-0 atom-0 atom-1' d='M 25.9,113.6 L 85.9,113.6' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-0 atom-0 atom-1' d='M 85.9,113.6 L 145.9,113.6' style='fill:none;fill-rule:evenodd;stroke:#FF0000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-0 atom-0 atom-1' d='M 25.9,86.4 L 85.9,86.4' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-0 atom-0 atom-1' d='M 85.9,86.4 L 145.9,86.4' style='fill:none;fill-rule:evenodd;stroke:#FF0000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path  class='atom-1' d='M 149.3 100.1
+Q 149.3 93.3, 152.6 89.5
+Q 156.0 85.7, 162.3 85.7
+Q 168.6 85.7, 171.9 89.5
+Q 175.3 93.3, 175.3 100.1
+Q 175.3 107.0, 171.9 110.9
+Q 168.5 114.8, 162.3 114.8
+Q 156.0 114.8, 152.6 110.9
+Q 149.3 107.0, 149.3 100.1
+M 162.3 111.6
+Q 166.6 111.6, 168.9 108.7
+Q 171.3 105.8, 171.3 100.1
+Q 171.3 94.5, 168.9 91.7
+Q 166.6 88.9, 162.3 88.9
+Q 158.0 88.9, 155.6 91.7
+Q 153.3 94.5, 153.3 100.1
+Q 153.3 105.8, 155.6 108.7
+Q 158.0 111.6, 162.3 111.6
+' fill='#FF0000'/>
+</svg>
+
+</div>
+
+
+```py
+ToMol("cccccc6")
+```
+[benzene](https://en.wikipedia.org/wiki/Benzene)
+
+<div>
+<?xml version='1.0' encoding='iso-8859-1'?>
+<svg version='1.1' baseProfile='full'
+              xmlns='http://www.w3.org/2000/svg'
+                      xmlns:rdkit='http://www.rdkit.org/xml'
+                      xmlns:xlink='http://www.w3.org/1999/xlink'
+                  xml:space='preserve'
+width='200px' height='200px' viewBox='0 0 200 200'>
+<!-- END OF HEADER -->
+<rect style='opacity:1.0;fill:#FFFFFF;stroke:none' width='200.0' height='200.0' x='0.0' y='0.0'> </rect>
+<path class='bond-0 atom-0 atom-1' d='M 190.9,100.0 L 145.5,178.7' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-0 atom-0 atom-1' d='M 168.3,102.7 L 136.5,157.8' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-5 atom-5 atom-0' d='M 145.5,21.3 L 190.9,100.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-1 atom-1 atom-2' d='M 145.5,178.7 L 54.5,178.7' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-2 atom-2 atom-3' d='M 54.5,178.7 L 9.1,100.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-2 atom-2 atom-3' d='M 63.5,157.8 L 31.7,102.7' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-3 atom-3 atom-4' d='M 9.1,100.0 L 54.5,21.3' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-4 atom-4 atom-5' d='M 54.5,21.3 L 145.5,21.3' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-4 atom-4 atom-5' d='M 68.2,39.5 L 131.8,39.5' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+</svg>
+
+</div>
+
+
+```py
+ToMol("cco")
+```
+[acetaldehyde](https://en.wikipedia.org/wiki/Acetaldehyde) - only one double bond added
+
+<div>
+<?xml version='1.0' encoding='iso-8859-1'?>
+<svg version='1.1' baseProfile='full'
+              xmlns='http://www.w3.org/2000/svg'
+                      xmlns:rdkit='http://www.rdkit.org/xml'
+                      xmlns:xlink='http://www.w3.org/1999/xlink'
+                  xml:space='preserve'
+width='200px' height='200px' viewBox='0 0 200 200'>
+<!-- END OF HEADER -->
+<rect style='opacity:1.0;fill:#FFFFFF;stroke:none' width='200.0' height='200.0' x='0.0' y='0.0'> </rect>
+<path class='bond-0 atom-0 atom-1' d='M 9.1,117.8 L 94.1,68.8' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-1 atom-1 atom-2' d='M 89.2,77.3 L 124.1,97.4' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-1 atom-1 atom-2' d='M 124.1,97.4 L 159.0,117.5' style='fill:none;fill-rule:evenodd;stroke:#FF0000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-1 atom-1 atom-2' d='M 99.0,60.3 L 133.9,80.4' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-1 atom-1 atom-2' d='M 133.9,80.4 L 168.8,100.5' style='fill:none;fill-rule:evenodd;stroke:#FF0000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path  class='atom-2' d='M 166.3 117.9
+Q 166.3 111.2, 169.6 107.5
+Q 172.9 103.8, 179.1 103.8
+Q 185.3 103.8, 188.6 107.5
+Q 191.9 111.2, 191.9 117.9
+Q 191.9 124.7, 188.5 128.5
+Q 185.2 132.3, 179.1 132.3
+Q 173.0 132.3, 169.6 128.5
+Q 166.3 124.7, 166.3 117.9
+M 179.1 129.2
+Q 183.3 129.2, 185.6 126.3
+Q 187.9 123.5, 187.9 117.9
+Q 187.9 112.5, 185.6 109.7
+Q 183.3 106.9, 179.1 106.9
+Q 174.9 106.9, 172.5 109.7
+Q 170.3 112.4, 170.3 117.9
+Q 170.3 123.5, 172.5 126.3
+Q 174.9 129.2, 179.1 129.2
+' fill='#FF0000'/>
 </svg>
 
 </div>
