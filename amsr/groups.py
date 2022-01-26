@@ -1,17 +1,19 @@
 from re import compile, escape
 
 Groups = {
+    "[Bn]": [list("Ccccccc6 ......")],
+    "[Bz]": [list("cocccccc6 .....")],
     "[Ph]": [list("cccccc6 .....")],
     "[OEt]": [list("OCC..")],
     "[OMe]": [list("OC.")],
     "[OAc]": [list("OcoC."), list("OcC.o")],
-    "[OH]": [list("O.")],
     "[OiBu]": [list("OCCC.C..")],
-    "[Ac]": [list("coC."), list("cC.o")],
+    "[OH]": [list("O.")],
     "[COOEt]": [list("coOCC.."), list("cOoCC..")],
     "[COOMe]": [list("coOC."), list("cOoC.")],
-    "[COO-]": [["c", "o", "[O-]"], ["c", "[O-]", "o"]],
-    "[NO2]": [["[n+]", "o", "[O-]"], ["[n+]", "[O-]", "o"]],
+    "[COO-]": [["c", "o", "O-"], ["c", "O-", "o"]],
+    "[NO2]": [["n+", "o", "O-"], ["n+", "O-", "o"]],
+    "[Ac]": [list("coC."), list("cC.o")],
     "[COOH]": [list("coO."), list("cO.o")],
     "[CHO]": [list("co.")],
     "[nDec]": [list("CCCCCCCCCC..........")],
@@ -33,14 +35,14 @@ Groups = {
 }
 
 # must be called (again) if Groups is changed
-def Initialize():
+def InitializeGroups():
     global _groupSym, _groupStr, _pattern
     _groupSym = sorted(Groups.keys(), key=lambda k: len(Groups[k][0]), reverse=True)
     _groupStr = {k: "".join(v[0]) for k, v in Groups.items()}
     _pattern = compile("(" + "|".join([escape(k) for k in _groupStr.keys()]) + ")")
 
 
-Initialize()
+InitializeGroups()
 
 
 def DecodeGroups(s):

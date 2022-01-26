@@ -14,15 +14,7 @@ class Atom:
         self.bangs = sym.count("!")
         m = match(r"\[(\d+)", sym)
         self.isotope = None if m is None else int(m.group(1))
-        m = search(r"[\+\-]\d?", sym)
-        if m is None:
-            self.chg = 0
-        elif m.group(0) == "+":
-            self.chg = 1
-        elif m.group(0) == "-":
-            self.chg = -1
-        else:
-            self.chg = int(m.group(0))
+        self.chg = sym.count("+") - sym.count("-")
         self.nrad = sym.count("*")
         if "(" in sym:
             self.ct = Chem.ChiralType.CHI_TETRAHEDRAL_CCW
@@ -91,19 +83,15 @@ class Atom:
             nrad = 0
         bangs = BANGS.get((atomSym, chg, valence), 0)
         q, r = divmod(VALENCE[(atomSym, chg, bangs)] - nrad - a.GetTotalDegree(), 2)
-        if chg == 1:
-            c = "+"
-        elif chg > 1:
-            c = f"+{chg}"
-        elif chg == -1:
-            c = "-"
-        elif chg < -1:
-            c = f"-{-chg}"
+        if chg > 0:
+            c = "+" * chg
+        elif chg < 0:
+            c = "-" * (-chg)
         else:
             c = ""
         c += "!" * bangs + ":" * q + "*" * nrad
         sym = (f"{isotope}" if isotope else "") + (atomSym.lower() if r else atomSym)
-        if len(atomSym) == 2 or chg or isotope:
+        if len(atomSym) == 2 or isotope:
             sym = "[" + sym + c + "]"
         else:
             sym += c

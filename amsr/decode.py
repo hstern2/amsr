@@ -52,13 +52,6 @@ def ConnectToDanglingBond(atom, dangling):
         a.isSaturated = True
 
 
-"""
-def Unsaturate(atom):
-    for a in atom:
-        a.isSaturated = False
-"""
-
-
 def Ring(mol, atom, ring, skip, bond):
     n = sum(map(int, ring))
     nSkip = len(skip) if skip else 0
@@ -75,7 +68,8 @@ def Ring(mol, atom, ring, skip, bond):
 
 def ToMol(s, activeAtom=None):
     pbond = r"(?P<bond>[\^\_])"
-    patom = r"(?P<atom>\[\d*[A-Za-z][a-z]?([\+\-]\d?)?[\:\!\*\(\)]*\]|[A-Za-z][\:\!\*\(\)]*)"
+    c = r"[\+\-\:\!\*\(\)]*"
+    patom = r"(?P<atom>\[\d*[A-Za-z][a-z]?" + c + r"\]|[A-Za-z]" + c + r")"
     pring = r"(?P<ring>[3-6]+)"
     pskip = r"(?P<skip>\.*)"
     pdot = r"(?P<dot>\.)"

@@ -9,8 +9,11 @@ __all__ = [
     "ToSmiles",
     "CheckMol",
     "CheckSmiles",
+    "Groups",
+    "InitializeGroups",
 ]
 
 from .encode import FromMol, FromMolToTokens, FromSmiles, FromSmilesToTokens
 from .decode import ToMol, ToSmiles
 from .check import CheckMol, CheckSmiles
+from .groups import Groups, InitializeGroups
