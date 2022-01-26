@@ -1975,7 +1975,7 @@ The following abbreviations may be used to represent various functional groups:
 
 | AMSR | molecule |
 | --- | --- |
-N+C)[Bn][COO-] | [*L*-phenylalanine](https://en.wikipedia.org/wiki/Phenylalanine)
+N+C)[Bn][COO-] | [L-phenylalanine](https://en.wikipedia.org/wiki/Phenylalanine)
 cccccc6[iBu]...C[Me][COOH] | [ibuprofen](https://en.wikipedia.org/wiki/Ibuprofen)
 C[Ph][Et]coNcoNco6 | [phenobarbital](https://en.wikipedia.org/wiki/Phenobarbital)
 
