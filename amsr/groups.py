@@ -24,7 +24,7 @@ Groups = {
     "[nPent]": [list("CCCCC.....")],
     "[tBu]": [list("CC.C.C.")],
     "[nBu]": [list("CCCC....")],
-    "[iBu]": [list("CCC.C..")],
+    "[iBu]": [list("CCC.C...")],
     "[nPr]": [list("CCC...")],
     "[iPr]": [list("CC.C.")],
     "[Et]": [list("CC..")],
