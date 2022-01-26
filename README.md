@@ -955,7 +955,7 @@ Q 12.9 87.4, 15.6 87.4
 
 ### Hypervalent atoms
 Atoms denoted by their symbol alone are assumed to have their lowest possible valence
-(for instance, two for sulfur).  Higher valences are denoted by one or more exclamation points (`!`).
+(for instance, two for sulfur).  Higher valences are denoted by one or more exclamation points `!`.
 
 | AMSR | molecule |
 | --- | --- |
