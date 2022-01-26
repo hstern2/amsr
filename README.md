@@ -458,7 +458,7 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 
 
 ### Small rings
-Small rings are denoted by one of the digits `3,4,5,` or `6` indicating
+Small rings are denoted by one of the digits `3,4,5,6` indicating
 the size of the ring.
 A new bond is formed between atoms *i* and *j* where
 *i* and *j* are the most recently-added atoms which
@@ -528,7 +528,7 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 
 ### Large rings
 Rings with seven or more members are denoted by a
-sequence of digits `3,4,5,` or `6` which are added to give the size of the ring.
+sequence of digits `3,4,5,6` which are added to give the size of the ring.
 If any characters appear between digits, multiple rings are formed
 rather than a single large ring.  Whitespace may be used if this is desired
 (without adding any additional atoms).
@@ -1976,7 +1976,7 @@ The following abbreviations may be used to represent various functional groups:
 | AMSR | molecule |
 | --- | --- |
 N+C)[Bn][COO-] | [L-phenylalanine](https://en.wikipedia.org/wiki/Phenylalanine)
-cccccc6[iBu]...C[Me][COOH] | [ibuprofen](https://en.wikipedia.org/wiki/Ibuprofen)
+cccccc6[iBu]..C[Me][COOH] | [ibuprofen](https://en.wikipedia.org/wiki/Ibuprofen)
 C[Ph][Et]coNcoNco6 | [phenobarbital](https://en.wikipedia.org/wiki/Phenobarbital)
 
 
