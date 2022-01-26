@@ -35,8 +35,8 @@ O | [water](https://en.wikipedia.org/wiki/Water)
 [Cl] | [hydrochloric acid](https://en.wikipedia.org/wiki/Hydrochloric_acid)
 
 
-<table><tr>
-<td><?xml version='1.0' encoding='iso-8859-1'?>
+<div>
+<span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -94,8 +94,8 @@ L 126.9 91.5
 L 120.3 102.1
 ' fill='#000000'/>
 </svg>
-</td>
-<td><?xml version='1.0' encoding='iso-8859-1'?>
+</span>
+<span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -158,8 +158,8 @@ Q 71.0 85.8, 73.3 88.7
 Q 75.7 91.6, 80.0 91.6
 ' fill='#FF0000'/>
 </svg>
-</td>
-<td><?xml version='1.0' encoding='iso-8859-1'?>
+</span>
+<span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -206,8 +206,8 @@ L 78.2 95.2
 L 78.2 64.8
 ' fill='#00CC00'/>
 </svg>
-</td>
-</tr></table>
+</span>
+</div>
 
 
 ### Chains
@@ -222,8 +222,8 @@ is then added to the first carbon, since the second can no longer bond.
 CCFFF[Cl] | [2-chloro-1,1,1-trifluoroethane](https://pubchem.ncbi.nlm.nih.gov/compound/2-Chloro-1_1_1-trifluoroethane)
 
 
-<table><tr>
-<td><?xml version='1.0' encoding='iso-8859-1'?>
+<div>
+<span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -301,8 +301,8 @@ L 19.7 87.5
 L 19.7 72.5
 ' fill='#00CC00'/>
 </svg>
-</td>
-</tr></table>
+</span>
+</div>
 
 If no atoms are available to bond, a new molecule is formed.
 
@@ -311,8 +311,8 @@ If no atoms are available to bond, a new molecule is formed.
 CFFFFCO | [carbon tetrafluoride](https://en.wikipedia.org/wiki/Carbon_tetrafluoride) and [methanol](https://en.wikipedia.org/wiki/Methanol)
 
 
-<table><tr>
-<td><?xml version='1.0' encoding='iso-8859-1'?>
+<div>
+<span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -413,8 +413,8 @@ L 112.7 152.5
 L 112.7 138.6
 ' fill='#FF0000'/>
 </svg>
-</td>
-</tr></table>
+</span>
+</div>
 
 
 ### Branches
@@ -431,8 +431,8 @@ CCC.C | [isobutane](https://en.wikipedia.org/wiki/Isobutane)
 CC.CC.C.C | [2,2-dimethylbutane](https://pubchem.ncbi.nlm.nih.gov/compound/6403)
 
 
-<table><tr>
-<td><?xml version='1.0' encoding='iso-8859-1'?>
+<div>
+<span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -445,8 +445,8 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 <path class='bond-1 atom-1 atom-2' d='M 80.0,101.0 L 152.7,143.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-2 atom-1 atom-3' d='M 80.0,101.0 L 80.0,17.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 </svg>
-</td>
-<td><?xml version='1.0' encoding='iso-8859-1'?>
+</span>
+<span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -461,8 +461,8 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 <path class='bond-3 atom-2 atom-4' d='M 104.2,80.0 L 76.2,128.5' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-4 atom-2 atom-5' d='M 104.2,80.0 L 152.7,108.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 </svg>
-</td>
-</tr></table>
+</span>
+</div>
 
 
 ### Small rings
@@ -478,8 +478,8 @@ CCO3 | [oxirane](https://en.wikipedia.org/wiki/Ethylene_oxide)
 CCCCCC6 | [cyclohexane](https://en.wikipedia.org/wiki/Cyclohexane)
 
 
-<table><tr>
-<td><?xml version='1.0' encoding='iso-8859-1'?>
+<div>
+<span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -513,8 +513,8 @@ Q 19.7 145.1, 22.0 148.0
 Q 24.4 150.9, 28.7 150.9
 ' fill='#FF0000'/>
 </svg>
-</td>
-<td><?xml version='1.0' encoding='iso-8859-1'?>
+</span>
+<span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -530,8 +530,8 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 <path class='bond-3 atom-3 atom-4' d='M 7.3,80.0 L 43.6,17.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-4 atom-4 atom-5' d='M 43.6,17.0 L 116.4,17.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 </svg>
-</td>
-</tr></table>
+</span>
+</div>
 
 
 ### Large rings
@@ -548,8 +548,8 @@ CCCCCCCCCCCC66 | [cyclododecane](https://en.wikipedia.org/wiki/Cyclododecane)
 CCCCCCCCCCCC6 6 | [1-ethyldecalin](https://pubchem.ncbi.nlm.nih.gov/compound/33053)
 
 
-<table><tr>
-<td><?xml version='1.0' encoding='iso-8859-1'?>
+<div>
+<span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -566,8 +566,8 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 <path class='bond-4 atom-4 atom-5' d='M 9.1,112.4 L 59.7,152.7' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-5 atom-5 atom-6' d='M 59.7,152.7 L 122.8,138.3' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 </svg>
-</td>
-<td><?xml version='1.0' encoding='iso-8859-1'?>
+</span>
+<span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -589,8 +589,8 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 <path class='bond-9 atom-9 atom-10' d='M 80.0,7.3 L 116.4,17.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-10 atom-10 atom-11' d='M 116.4,17.0 L 143.0,43.6' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 </svg>
-</td>
-<td><?xml version='1.0' encoding='iso-8859-1'?>
+</span>
+<span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -613,8 +613,8 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 <path class='bond-9 atom-9 atom-10' d='M 134.9,35.8 L 103.0,38.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-10 atom-10 atom-11' d='M 103.0,38.0 L 88.9,66.7' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 </svg>
-</td>
-</tr></table>
+</span>
+</div>
 
 
 ### Double bonds (sp<sup>2</sup> centers)
@@ -635,8 +635,8 @@ cccccc6 | [benzene](https://en.wikipedia.org/wiki/Benzene)
 cco | [acetaldehyde](https://en.wikipedia.org/wiki/Acetaldehyde) (only one double bond added)
 
 
-<table><tr>
-<td><?xml version='1.0' encoding='iso-8859-1'?>
+<div>
+<span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -669,8 +669,8 @@ Q 119.6 85.8, 122.0 88.7
 Q 124.3 91.6, 128.6 91.6
 ' fill='#FF0000'/>
 </svg>
-</td>
-<td><?xml version='1.0' encoding='iso-8859-1'?>
+</span>
+<span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -689,8 +689,8 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 <path class='bond-4 atom-4 atom-5' d='M 43.6,17.0 L 116.4,17.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-4 atom-4 atom-5' d='M 54.5,31.6 L 105.5,31.6' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 </svg>
-</td>
-<td><?xml version='1.0' encoding='iso-8859-1'?>
+</span>
+<span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -724,8 +724,8 @@ Q 135.5 98.3, 137.4 100.5
 Q 139.2 102.8, 142.6 102.8
 ' fill='#FF0000'/>
 </svg>
-</td>
-</tr></table>
+</span>
+</div>
 
 
 Note that an oxygen with two neighbors or a nitrogen with three in an aromatic ring
@@ -739,8 +739,8 @@ ccccO5 | [furan](https://en.wikipedia.org/wiki/Furan)
 ccccN5 | [pyrrole](https://en.wikipedia.org/wiki/Pyrrole)
 
 
-<table><tr>
-<td><?xml version='1.0' encoding='iso-8859-1'?>
+<div>
+<span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -778,8 +778,8 @@ Q 87.5 145.3, 89.5 147.7
 Q 91.4 150.1, 95.0 150.1
 ' fill='#FF0000'/>
 </svg>
-</td>
-<td><?xml version='1.0' encoding='iso-8859-1'?>
+</span>
+<span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -828,8 +828,8 @@ L 85.0 152.7
 L 85.0 132.8
 ' fill='#0000FF'/>
 </svg>
-</td>
-</tr></table>
+</span>
+</div>
 
 
 ### Triple bonds (sp centers)
@@ -842,8 +842,8 @@ C\:N\: | [hydrogen cyanide](https://en.wikipedia.org/wiki/Hydrogen_cyanide)
 oC\:o | [carbon dioxide](https://en.wikipedia.org/wiki/Carbon_dioxide)
 
 
-<table><tr>
-<td><?xml version='1.0' encoding='iso-8859-1'?>
+<div>
+<span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -875,8 +875,8 @@ L 19.6 65.8
 L 24.1 65.8
 ' fill='#0000FF'/>
 </svg>
-</td>
-<td><?xml version='1.0' encoding='iso-8859-1'?>
+</span>
+<span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -949,8 +949,8 @@ Q 9.8 83.7, 11.3 85.6
 Q 12.9 87.4, 15.6 87.4
 ' fill='#FF0000'/>
 </svg>
-</td>
-</tr></table>
+</span>
+</div>
 
 
 ### Hypervalent atoms
@@ -964,8 +964,8 @@ Cs!oC | [dimethyl sulfoxide](https://en.wikipedia.org/wiki/Dimethyl_sulfoxide)
 S!!FFFFFF | [sulfur hexafluoride](https://en.wikipedia.org/wiki/Sulfur_hexafluoride)
 
 
-<table><tr>
-<td><?xml version='1.0' encoding='iso-8859-1'?>
+<div>
+<span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -1010,8 +1010,8 @@ Q 74.3 76.5, 72.4 75.8
 L 73.3 73.1
 ' fill='#CCCC00'/>
 </svg>
-</td>
-<td><?xml version='1.0' encoding='iso-8859-1'?>
+</span>
+<span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -1079,8 +1079,8 @@ Q 72.4 27.9, 74.4 30.3
 Q 76.4 32.7, 80.0 32.7
 ' fill='#FF0000'/>
 </svg>
-</td>
-<td><?xml version='1.0' encoding='iso-8859-1'?>
+</span>
+<span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -1205,8 +1205,8 @@ L 19.5 57.2
 L 19.5 39.1
 ' fill='#33CCCC'/>
 </svg>
-</td>
-</tr></table>
+</span>
+</div>
 
 
 ### Tetrahedral stereochemistry
@@ -1221,8 +1221,8 @@ C(C.FO | [(S)-1-fluoroethanol](https://pubchem.ncbi.nlm.nih.gov/compound/5751876
 C)C.FO | [(1R)-1-fluoroethanol](https://pubchem.ncbi.nlm.nih.gov/compound/60205193)
 
 
-<table><tr>
-<td><?xml version='1.0' encoding='iso-8859-1'?>
+<div>
+<span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -1287,8 +1287,8 @@ L 137.5 141.1
 L 137.5 121.7
 ' fill='#FF0000'/>
 </svg>
-</td>
-<td><?xml version='1.0' encoding='iso-8859-1'?>
+</span>
+<span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
                       xmlns:rdkit='http://www.rdkit.org/xml'
@@ -1348,8 +1348,8 @@ L 137.5 141.1
 L 137.5 121.7
 ' fill='#FF0000'/>
 </svg>
-</td>
-</tr></table>
+</span>
+</div>
 
 
 ## Developing
