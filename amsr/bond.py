@@ -1,5 +1,6 @@
 from rdkit import Chem
 from .atom import visitedIndex
+from .tokens import E, Z
 
 
 class Bond:
@@ -7,9 +8,9 @@ class Bond:
         self.sym = sym
 
     def rdStereo(self):
-        if self.sym == "_":
+        if self.sym == E:
             return Chem.BondStereo.STEREOE
-        elif self.sym == "^":
+        elif self.sym == Z:
             return Chem.BondStereo.STEREOZ
         else:
             return None
@@ -28,25 +29,25 @@ class Bond:
                 flip = not flip
             elif i in n2 and i != min(n2):
                 flip = not flip
-        if self.sym == "_":
-            return "^" if flip else "_"
-        if self.sym == "^":
-            return "_" if flip else "^"
+        if self.sym == E:
+            return Z if flip else E
+        if self.sym == Z:
+            return E if flip else Z
 
     @classmethod
     def fromRD(cls, b):
         s = b.GetStereo()
         if s == Chem.BondStereo.STEREOE:
-            return cls("_")
+            return cls(E)
         if s == Chem.BondStereo.STEREOZ:
-            return cls("^")
+            return cls(Z)
         return None
 
 
 def bondStereo(bond):
-    if bond == "_":
+    if bond == E:
         return Chem.BondStereo.STEREOE
-    elif bond == "^":
+    elif bond == Z:
         return Chem.BondStereo.STEREOZ
     else:
         return None

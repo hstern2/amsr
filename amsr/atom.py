@@ -2,6 +2,7 @@ from rdkit import Chem
 from re import match, search, sub
 from .valence import VALENCE, BANGS
 from .parity import IsEvenParity
+from .tokens import CW, CCW, PLUS, MINUS, RADICAL, EXTRA_PI, BANG
 
 
 def visitedIndex(rda, atom):
@@ -11,14 +12,14 @@ def visitedIndex(rda, atom):
 class Atom:
     def __init__(self, sym):
         self.sym = sym
-        self.bangs = sym.count("!")
+        self.bangs = sym.count(BANG)
         m = match(r"\[(\d+)", sym)
         self.isotope = None if m is None else int(m.group(1))
-        self.chg = sym.count("+") - sym.count("-")
-        self.nrad = sym.count("*")
-        if "(" in sym:
+        self.chg = sym.count(PLUS) - sym.count(MINUS)
+        self.nrad = sym.count(RADICAL)
+        if CCW in sym:
             self.ct = Chem.ChiralType.CHI_TETRAHEDRAL_CCW
-        elif ")" in sym:
+        elif CW in sym:
             self.ct = Chem.ChiralType.CHI_TETRAHEDRAL_CW
         else:
             self.ct = Chem.ChiralType.CHI_UNSPECIFIED
@@ -28,7 +29,7 @@ class Atom:
             self.maxPiBonds = 1
         else:
             self.maxPiBonds = 0
-        self.maxPiBonds += 2 * sym.count(":")
+        self.maxPiBonds += 2 * sym.count(EXTRA_PI)
         self.nPiBonds = 0
         self.maxNeighbors = (
             VALENCE[(self.atomSym, self.chg, self.bangs)] - self.nrad - self.maxPiBonds
@@ -66,9 +67,9 @@ class Atom:
         ct = a.GetChiralTag()
         isEven = IsEvenParity([visitedIndex(b, atom) for b in a.GetNeighbors()])
         if ct == Chem.ChiralType.CHI_TETRAHEDRAL_CCW:
-            return self.symWith("(" if isEven else ")")
+            return self.symWith(CCW if isEven else CW)
         elif ct == Chem.ChiralType.CHI_TETRAHEDRAL_CW:
-            return self.symWith(")" if isEven else "(")
+            return self.symWith(CW if isEven else CCW)
         else:
             return self.sym
 
@@ -79,20 +80,10 @@ class Atom:
         valence = a.GetTotalValence()
         nrad = a.GetNumRadicalElectrons()
         isotope = a.GetIsotope()
-        if atomSym == "He" or nrad > 4:
+        if atomSym == "He" or nrad > 4:  # RDKit weirdness?
             nrad = 0
         bangs = BANGS.get((atomSym, chg, valence), 0)
         q, r = divmod(VALENCE[(atomSym, chg, bangs)] - nrad - a.GetTotalDegree(), 2)
-        if chg > 0:
-            c = "+" * chg
-        elif chg < 0:
-            c = "-" * (-chg)
-        else:
-            c = ""
-        c += "!" * bangs + ":" * q + "*" * nrad
+        c = f"{PLUS*chg if chg > 0 else ''}{MINUS*(-chg) if chg < 0 else ''}{RADICAL*nrad}{BANG*bangs}{EXTRA_PI*q}"
         sym = (f"{isotope}" if isotope else "") + (atomSym.lower() if r else atomSym)
-        if len(atomSym) == 2 or isotope:
-            sym = "[" + sym + c + "]"
-        else:
-            sym += c
-        return cls(sym)
+        return cls(f"[{sym}{c}]" if len(atomSym) == 2 or isotope else f"{sym}{c}")

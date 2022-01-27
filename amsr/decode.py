@@ -1,11 +1,11 @@
 from rdkit import Chem
-from re import finditer
 from .atom import Atom
 from .bond import Bond
 from .pibonds import PiBonds
 from .bfs import BFSTree
 from .parity import IsEvenParity
 from .groups import DecodeGroups
+from .tokens import Matches
 
 
 def AddBond(mol, atom, i, j, bond):
@@ -67,26 +67,15 @@ def Ring(mol, atom, ring, skip, bond):
 
 
 def ToMol(s, activeAtom=None):
-    pbond = r"(?P<bond>[\^\_])"
-    c = r"[\+\-\:\!\*\(\)]*"
-    patom = r"(?P<atom>\[\d*[A-Za-z][a-z]?" + c + r"\]|[A-Za-z]" + c + r")"
-    pring = r"(?P<ring>[3-6]+)"
-    pskip = r"(?P<skip>\.*)"
-    pdot = r"(?P<dot>\.)"
-    pdangling = r"(?P<dangling>\[\])"
-    pampersand = r"(?P<ampersand>\&)"
     mol = Chem.RWMol()
     atom = []
     dangling = []
-    s = DecodeGroups(s)
-    for m in finditer(
-        f"({pbond}?({patom}|({pring}{pskip})))|{pdot}|{pdangling}|{pampersand}", s
-    ):
+    for m in Matches(DecodeGroups(s)):
         if m.group("ring"):
             Ring(mol, atom, m.group("ring"), m.group("skip"), Bond(m.group("bond")))
         elif m.group("atom"):
             AddAtom(mol, atom, Atom(m.group("atom")), Bond(m.group("bond")))
-        elif m.group("dot"):
+        elif m.group("saturate"):
             Saturate(atom)
         elif m.group("dangling"):
             AddDanglingBond(atom, dangling)

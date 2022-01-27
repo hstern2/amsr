@@ -4,25 +4,26 @@ from .atom import Atom, visitedIndex
 from .bfs import BFSFind
 from .bond import Bond
 from .groups import EncodeGroups
+from .tokens import DOT, NOP, RemoveTrailingDots, OmitUnneededNOPs
 
 
-def Partition3456(n):
+def _partition3456(n):
     if n <= 6:
-        yield str(n)
+        yield n
     elif n <= 8:
-        yield from Partition3456(n - 3)
+        yield from _partition3456(n - 3)
         yield 3
     else:
         yield 6
-        yield from Partition3456(n - 6)
+        yield from _partition3456(n - 6)
 
 
-def RingTokens(n, nSkip):
-    for _ in map(str, Partition3456(n)):
+def _ringTokens(n, nSkip):
+    for _ in map(str, _partition3456(n)):
         yield _
     for _ in repeat(None, nSkip):
-        yield "."
-    yield " "
+        yield DOT
+    yield NOP
 
 
 def FromMolToTokens(mol):
@@ -70,7 +71,7 @@ def FromMolToTokens(mol):
                     if k == j:
                         if bond is not None:
                             yield (b, bond)
-                        yield from RingTokens(n.depth + 1, nSkip)
+                        yield from _ringTokens(n.depth + 1, nSkip)
                         seenBonds.add(ij)
                         si.nNeighbors += 1
                         sj.nNeighbors += 1
@@ -88,7 +89,7 @@ def FromMolToTokens(mol):
         # end loop over bonds
         if si.canBond():
             si.isSaturated = True
-            yield "."
+            yield DOT
 
     def getPreTokens():
         for a in mol.GetAtoms():
@@ -102,37 +103,7 @@ def FromMolToTokens(mol):
             for t in list(getPreTokens())
         ]
 
-    def isDot(t):
-        return t == "."
-
-    def isDigit(t):
-        return t in ("3", "4", "5", "6")
-
-    def isDotOrDigit(t):
-        return isDot(t) or isDigit(t)
-
-    def needsSpace(prv, nxt):
-        return (isDigit(prv) and isDotOrDigit(nxt)) or (isDot(prv) and isDot(nxt))
-
-    def omitUnneededSpaces(tok):
-        ntok = len(tok)
-        return [
-            t
-            for i, t in enumerate(tok)
-            if t != " " or (0 < i < ntok - 1 and needsSpace(tok[i - 1], tok[i + 1]))
-        ]
-
-    def removeTrailingDots(tok):
-        i = len(tok) - 1
-        while i >= 0:
-            if tok[i] != ".":
-                if not isDigit(tok[i]):
-                    del tok[i + 1 :]
-                break
-            i -= 1
-        return tok
-
-    return removeTrailingDots(EncodeGroups(omitUnneededSpaces(getTokens())))
+    return RemoveTrailingDots(EncodeGroups(OmitUnneededNOPs(getTokens())))
 
 
 def FromMol(m):
