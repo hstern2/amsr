@@ -1,14 +1,25 @@
 from re import compile, escape
 
+# [Boc]
+# [Cbz]
+# [Ms]
+# [Piv]
+# [PMB]
+# [PMP]
+# [Tf]
+# [TMS]
+# [Ts]
+
 Groups = {
     "[Bn]": [list("Ccccccc6 ......")],
     "[Bz]": [list("cocccccc6 .....")],
     "[Ph]": [list("cccccc6 .....")],
     "[OEt]": [list("OCC..")],
     "[OMe]": [list("OC.")],
+    "[NHAc]": [list("NcoC..")],
+    "[NHMe]": [list("NC..")],
+    "[NMe2]": [list("NC.C.")],
     "[OAc]": [list("OcoC."), list("OcC.o")],
-    "[OiBu]": [list("OCCC.C..")],
-    "[OH]": [list("O.")],
     "[COOEt]": [list("coOCC.."), list("cOoCC..")],
     "[COOMe]": [list("coOC."), list("cOoC.")],
     "[COO-]": [["c", "o", "O-"], ["c", "O-", "o"]],
@@ -16,19 +27,13 @@ Groups = {
     "[Ac]": [list("coC."), list("cC.o")],
     "[COOH]": [list("coO."), list("cO.o")],
     "[CHO]": [list("co.")],
-    "[nDec]": [list("CCCCCCCCCC..........")],
-    "[nNon]": [list("CCCCCCCCC.........")],
-    "[nOct]": [list("CCCCCCCC........")],
-    "[nHept]": [list("CCCCCCC.......")],
-    "[nHex]": [list("CCCCCC......")],
-    "[nPent]": [list("CCCCC.....")],
     "[tBu]": [list("CC.C.C.")],
     "[nBu]": [list("CCCC....")],
+    "[sBu]": [list("CC.CC..."), list("CCC..C..")],
     "[iBu]": [list("CCC.C...")],
     "[nPr]": [list("CCC...")],
     "[iPr]": [list("CC.C.")],
     "[Et]": [list("CC..")],
-    "[Me]": [list("C.")],
     "[CN]": [["C:", "N:"]],
     "[CF3]": [list("CFFF")],
     "[CCl3]": [["C"] + ["[Cl]"] * 3],
