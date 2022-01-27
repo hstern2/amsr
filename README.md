@@ -1970,7 +1970,7 @@ L 19.3 84.4
 ### Groups
 The following abbreviations may be used to represent various functional groups:
 ```py
-[Ac], [Bn], [Bz], [CCl3], [CF3], [CHO], [CN], [COO-], [COOEt], [COOH], [COOMe], [Et], [NHAc], [NHMe], [NMe2], [NO2], [OAc], [OEt], [OMe], [Ph], [iBu], [iPr], [nBu], [nPr], [sBu], [tBu]
+[Ac], [Bn], [Boc], [Bz], [CCl3], [CF3], [CHO], [CN], [COO-], [COOEt], [COOH], [COOMe], [Cbz], [Et], [Ms], [NHAc], [NHMe], [NMe2], [NO2], [OAc], [OEt], [OMe], [Ph], [Piv], [Tf], [Tol], [Ts], [iBu], [iPr], [nBu], [nPr], [sBu], [tBu]
 ```
 
 | AMSR | molecule |
