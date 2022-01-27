@@ -2,23 +2,20 @@ from re import compile, escape
 from .mreplace import MultipleReplace
 from .tokens import ToTokens
 
-# [Boc]
-# [Cbz]
-# [Ms]
-# [Piv]
-# [PMB]
-# [PMP]
-# [Tf]
-# [TMS]
-# [Ts]
-
 Groups = {
+    "[Ts]": ["S!!:oocccccc6 ..C...", "S!!:occcccc6 ..C...o", "S!!:cccccc6 ..C...oo"],
+    "[Tf]": ["S!!:ooCFFF", "S!!:oCFFFo", "S!!:CFFFoo"],
+    "[Ms]": ["S!!:ooC.", "S!!:oC.o", "S!!:C.oo"],
+    "[Piv]": ["coCC.C.C.", "cCC.C.C.o"],
+    "[Boc]": ["coOCC.C.C.", "cOCC.C.C.o"],
+    "[Tol]": ["cccccc6 ..C...", "ccccC.cc6 ...."],
+    "[Cbz]": ["coOCcccccc6 ......", "cOCcccccc6 ......o"],
     "[Bn]": ["Ccccccc6 ......"],
     "[Bz]": ["cocccccc6 ....."],
     "[Ph]": ["cccccc6 ....."],
     "[OEt]": ["OCC.."],
     "[OMe]": ["OC."],
-    "[NHAc]": ["NcoC.."],
+    "[NHAc]": ["NcoC..", "NcC.o."],
     "[NHMe]": ["NC.."],
     "[NMe2]": ["NC.C."],
     "[OAc]": ["OcoC.", "OcC.o"],
