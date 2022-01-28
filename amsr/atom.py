@@ -81,7 +81,7 @@ class Atom:
             return self.sym
 
     @classmethod
-    def fromRD(cls, a):
+    def fromRDAtom(cls, a):
         atomSym = a.GetSymbol()
         chg = a.GetFormalCharge()
         valence = a.GetTotalValence()
