@@ -1,4 +1,5 @@
 from rdkit import Chem
+from re import match
 from .atom import Atom
 from .bond import Bond
 from .pibonds import PiBonds
@@ -52,9 +53,10 @@ def _connectToDanglingBond(atom, dangling):
         a.isSaturated = True
 
 
-def _ring(mol, atom, ring, skip, bond):
-    n = sum(map(int, ring))
-    nSkip = len(skip) if skip else 0
+def _ring(mol, atom, ring, bond):
+    m = match(r"(\d+)(\.*)", ring)
+    n = sum(map(int, m.group(1)))
+    nSkip = len(m.group(2))
     for i in reversed(range(len(atom))):
         if atom[i].canBond():
             for j in BFSTree(mol.GetAtomWithIdx(i), n - 1):
@@ -72,7 +74,7 @@ def ToMol(s, activeAtom=None):
     dangling = []
     for m in Matches(DecodeGroups(s)):
         if m.group("ring"):
-            _ring(mol, atom, m.group("ring"), m.group("skip"), Bond(m.group("bond")))
+            _ring(mol, atom, m.group("ring"), Bond(m.group("bond")))
         elif m.group("atom"):
             _addAtom(mol, atom, Atom(m.group("atom")), Bond(m.group("bond")))
         elif m.group("saturate"):

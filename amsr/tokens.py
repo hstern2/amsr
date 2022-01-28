@@ -11,23 +11,37 @@ MINUS = "-"
 EXTRA_PI = ":"
 BANG = "!"
 RADICAL = "*"
+RING_DIGITS = "3456"
+L_BRACKET = "["
+R_BRACKET = "]"
+AMPERSAND = "&"
 
-_pbond = r"(?P<bond>[" + escape(E) + escape(Z) + "])"
-_c = "[" + escape(PLUS + MINUS + RADICAL + EXTRA_PI + BANG + CW + CCW) + "]*"
-_patom = r"(?P<atom>\[[^\]]+\]|[A-Za-z]" + _c + ")"
-_pring = r"(?P<ring>[3-6]+)"
-_pskip = r"(?P<skip>" + escape(DOT) + r"*)"
-_psaturate = r"(?P<saturate>" + escape(DOT) + r")"
-_pdangling = r"(?P<dangling>\[\])"
-_pampersand = r"(?P<ampersand>\&)"
-_pnop = r"(?P<nop>\s+)"
+_pbond = f"(?P<bond>[{escape(E)}{escape(Z)}])"
+_c = f"[{escape(PLUS+MINUS+RADICAL+EXTRA_PI+BANG+CW+CCW)}]*"
+_patom = f"(?P<atom>{escape(L_BRACKET)}[^{escape(R_BRACKET)}]+{escape(R_BRACKET)}|[A-Za-z]{_c})"
+_pring = f"(?P<ring>[{RING_DIGITS}]+" + escape(DOT) + "*)"
+_psaturate = f"(?P<saturate>{escape(DOT)})"
+_pdangling = f"(?P<dangling>{escape(L_BRACKET)}{escape(R_BRACKET)})"
+_pampersand = f"(?P<ampersand>{escape(AMPERSAND)})"
+_pnop = f"(?P<nop>{escape(NOP)}+)"
 _re = compile(
-    f"({_pbond}?({_patom}|({_pring}{_pskip})))|{_psaturate}|{_pdangling}|{_pampersand}|{_pnop}"
+    f"({_pbond}?({_patom}|({_pring})))|{_psaturate}|{_pdangling}|{_pampersand}|{_pnop}"
 )
 
 
 def ToTokens(s):
-    return [m.group() for m in Matches(s)]
+    t = []
+    for m in Matches(s):
+        g = m.groupdict()
+        for k in ["bond", "atom"]:
+            if g[k] is not None:
+                t.append(g[k])
+        if g["ring"] is not None:
+            t.extend(g["ring"])
+        for k in ["saturate", "dangling", "ampersand", "nop"]:
+            if g[k] is not None:
+                t.append(g[k])
+    return t
 
 
 def Matches(s):
@@ -39,7 +53,7 @@ def _isDot(t):
 
 
 def _isRingDigit(t):
-    return t in ("3", "4", "5", "6")
+    return t in RING_DIGITS
 
 
 def _isDotOrRingDigit(t):
@@ -52,21 +66,23 @@ def _needsNOP(prv, nxt):
     )
 
 
-def RemoveTrailingDots(tok):
-    i = len(tok) - 1
+def RemoveTrailingDots(t):
+    i = len(t) - 1
     while i >= 0:
-        if not _isDot(tok[i]):
-            if not _isRingDigit(tok[i]):
-                del tok[i + 1 :]
+        if not _isDot(t[i]):
+            if not _isRingDigit(t[i]):
+                del t[i + 1 :]
             break
         i -= 1
-    return tok
+    return t
 
 
-def OmitUnneededNOPs(tok):
-    ntok = len(tok)
+def OmitUnneededNOPs(t):
+    n = len(t)
+    while n > 0 and t[n - 1] == NOP:
+        n -= 1
     return [
-        t
-        for i, t in enumerate(tok)
-        if t != NOP or (0 < i < ntok - 1 and _needsNOP(tok[i - 1], tok[i + 1]))
+        t[i]
+        for i in range(n)
+        if t[i] != NOP or (0 < i < n - 1 and _needsNOP(t[i - 1], t[i + 1]))
     ]
