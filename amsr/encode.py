@@ -1,6 +1,6 @@
 from rdkit import Chem
 from itertools import repeat
-from .atom import Atom, visitedIndex
+from .atom import Atom, GetSeenIndex, SetSeenIndex, IsSeen
 from .bfs import BFSFind
 from .bond import Bond
 from .groups import EncodeGroups
@@ -26,46 +26,45 @@ def _ringTokens(n, nSkip):
     yield NOP
 
 
+def _bySeenIndex(n):
+    return GetSeenIndex(n.name)
+
+
+def _searchOrder(b, a):
+    # 1. seen atoms before unseen atoms (i.e. rings)
+    # 2. small rings before larger (for seen) .. otherwise atom index (for unseen)
+    c = b.GetOtherAtom(a)
+    isSeen = IsSeen(c)
+    return (
+        not isSeen,
+        GetSeenIndex(a) - GetSeenIndex(c) if isSeen else c.GetIdx(),
+    )
+
+
 def FromMolToTokens(mol):
 
     atom = [Atom.fromRD(a) for a in mol.GetAtoms()]
     seenBonds = set()
     nSeenAtoms = 0
 
-    def byVisitedIndex(n):
-        return visitedIndex(n.name, atom)
-
-    def seen(a):
-        return visitedIndex(a, atom) is not None
-
-    def searchOrder(b, a):
-        # 1. seen atoms before unseen atoms (i.e. rings)
-        # 2. small rings before larger (for seen) .. otherwise atom index (for unseen)
-        c = b.GetOtherAtom(a)
-        isSeen = seen(c)
-        return (
-            not isSeen,
-            visitedIndex(a, atom) - visitedIndex(c, atom) if isSeen else c.GetIdx(),
-        )
-
-    def search(a):
+    def _search(a):
         nonlocal nSeenAtoms
         i = a.GetIdx()
-        si = atom[i]
-        si.visitedIndex = nSeenAtoms
+        ai = atom[i]
+        SetSeenIndex(a, nSeenAtoms)
         nSeenAtoms += 1
-        for b in sorted(a.GetBonds(), key=lambda b: searchOrder(b, a)):
+        for b in sorted(a.GetBonds(), key=lambda b: _searchOrder(b, a)):
             c = b.GetOtherAtom(a)
             j = c.GetIdx()
             ij = frozenset([i, j])
             if ij in seenBonds:
                 continue
-            sj = atom[j]
+            aj = atom[j]
             bond = Bond.fromRD(b)
-            if seen(c):  # ring
+            if IsSeen(c):  # ring
                 nSkip = 0
                 for n in sorted(
-                    BFSFind(a, j, seenBonds), key=byVisitedIndex, reverse=True
+                    BFSFind(a, j, seenBonds), key=_bySeenIndex, reverse=True
                 ):
                     k = n.name.GetIdx()
                     if k == j:
@@ -73,37 +72,37 @@ def FromMolToTokens(mol):
                             yield (b, bond)
                         yield from _ringTokens(n.depth + 1, nSkip)
                         seenBonds.add(ij)
-                        si.nNeighbors += 1
-                        sj.nNeighbors += 1
+                        ai.nNeighbors += 1
+                        aj.nNeighbors += 1
                         break
                     elif atom[k].canBond():
                         nSkip += 1
             else:  # new atom
                 seenBonds.add(ij)
-                si.nNeighbors += 1
-                sj.nNeighbors += 1
+                ai.nNeighbors += 1
+                aj.nNeighbors += 1
                 if bond is not None:
                     yield (b, bond)
-                yield (c, sj)
-                yield from search(c)
+                yield (c, aj)
+                yield from _search(c)
         # end loop over bonds
-        if si.canBond():
-            si.isSaturated = True
+        if ai.canBond():
+            ai.isSaturated = True
             yield DOT
 
-    def getPreTokens():
+    def _getPreTokens():
         for a in mol.GetAtoms():
-            if not seen(a):
+            if not IsSeen(a):
                 yield a, atom[a.GetIdx()]
-                yield from search(a)
+                yield from _search(a)
 
-    def getTokens():
+    def _getTokens():
         return [
-            t[1].asToken(t[0], atom) if type(t) == tuple else t
-            for t in list(getPreTokens())
+            t[1].asToken(t[0], mol) if type(t) == tuple else t
+            for t in list(_getPreTokens())
         ]
 
-    return RemoveTrailingDots(EncodeGroups(OmitUnneededNOPs(getTokens())))
+    return RemoveTrailingDots(EncodeGroups(OmitUnneededNOPs(_getTokens())))
 
 
 def FromMol(m):

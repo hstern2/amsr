@@ -1,12 +1,20 @@
 from rdkit import Chem
-from re import match, search, sub
+from re import match, sub
 from .valence import VALENCE, BANGS
 from .parity import IsEvenParity
 from .tokens import CW, CCW, PLUS, MINUS, RADICAL, EXTRA_PI, BANG
 
 
-def visitedIndex(rda, atom):
-    return atom[rda.GetIdx()].visitedIndex
+def GetSeenIndex(a):
+    return a.GetIntProp("_seenIndex")
+
+
+def SetSeenIndex(a, i):
+    return a.SetIntProp("_seenIndex", i)
+
+
+def IsSeen(a):
+    return a.HasProp("_seenIndex")
 
 
 class Atom:
@@ -35,7 +43,6 @@ class Atom:
             VALENCE[(self.atomSym, self.chg, self.bangs)] - self.nrad - self.maxPiBonds
         )
         self.nNeighbors = 0
-        self.visitedIndex = None
         self.isSaturated = False
 
     def canBond(self):
@@ -63,9 +70,9 @@ class Atom:
         else:
             return sym + s
 
-    def asToken(self, a, atom):
+    def asToken(self, a, mol):
         ct = a.GetChiralTag()
-        isEven = IsEvenParity([visitedIndex(b, atom) for b in a.GetNeighbors()])
+        isEven = IsEvenParity([GetSeenIndex(b) for b in a.GetNeighbors()])
         if ct == Chem.ChiralType.CHI_TETRAHEDRAL_CCW:
             return self.symWith(CCW if isEven else CW)
         elif ct == Chem.ChiralType.CHI_TETRAHEDRAL_CW:

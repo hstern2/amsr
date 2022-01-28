@@ -8,7 +8,7 @@ from .groups import DecodeGroups
 from .tokens import Matches
 
 
-def AddBond(mol, atom, i, j, bond):
+def _addBond(mol, atom, i, j, bond):
     atom[i].nNeighbors += 1
     atom[j].nNeighbors += 1
     n = mol.AddBond(i, j, Chem.BondType.SINGLE)
@@ -17,25 +17,25 @@ def AddBond(mol, atom, i, j, bond):
         mol.GetBondWithIdx(n - 1).SetStereo(s)
 
 
-def AddAtom(mol, atom, a, bond):
+def _addAtom(mol, atom, a, bond):
     atom.append(a)
     mol.AddAtom(a.asRDAtom())
     if a.canBond():
         j = len(atom) - 1
         for i in reversed(range(j)):
             if atom[i].canBond():
-                AddBond(mol, atom, i, j, bond)
+                _addBond(mol, atom, i, j, bond)
                 return
 
 
-def Saturate(atom):
+def _saturate(atom):
     for i in reversed(range(len(atom))):
         if atom[i].canBond():
             atom[i].isSaturated = True
             return
 
 
-def AddDanglingBond(atom, dangling):
+def _addDanglingBond(atom, dangling):
     for i in reversed(range(len(atom))):
         if atom[i].canBond():
             atom[i].nNeighbors += 1
@@ -43,7 +43,7 @@ def AddDanglingBond(atom, dangling):
             return
 
 
-def ConnectToDanglingBond(atom, dangling):
+def _connectToDanglingBond(atom, dangling):
     if not dangling:
         return
     i = dangling.pop()
@@ -52,7 +52,7 @@ def ConnectToDanglingBond(atom, dangling):
         a.isSaturated = True
 
 
-def Ring(mol, atom, ring, skip, bond):
+def _ring(mol, atom, ring, skip, bond):
     n = sum(map(int, ring))
     nSkip = len(skip) if skip else 0
     for i in reversed(range(len(atom))):
@@ -60,7 +60,7 @@ def Ring(mol, atom, ring, skip, bond):
             for j in BFSTree(mol.GetAtomWithIdx(i), n - 1):
                 if atom[j].canBond():
                     if nSkip == 0:
-                        AddBond(mol, atom, i, j, bond)
+                        _addBond(mol, atom, i, j, bond)
                         return
                     else:
                         nSkip -= 1
@@ -72,15 +72,15 @@ def ToMol(s, activeAtom=None):
     dangling = []
     for m in Matches(DecodeGroups(s)):
         if m.group("ring"):
-            Ring(mol, atom, m.group("ring"), m.group("skip"), Bond(m.group("bond")))
+            _ring(mol, atom, m.group("ring"), m.group("skip"), Bond(m.group("bond")))
         elif m.group("atom"):
-            AddAtom(mol, atom, Atom(m.group("atom")), Bond(m.group("bond")))
+            _addAtom(mol, atom, Atom(m.group("atom")), Bond(m.group("bond")))
         elif m.group("saturate"):
-            Saturate(atom)
+            _saturate(atom)
         elif m.group("dangling"):
-            AddDanglingBond(atom, dangling)
+            _addDanglingBond(atom, dangling)
         elif m.group("ampersand"):
-            ConnectToDanglingBond(atom, dangling)
+            _connectToDanglingBond(atom, dangling)
     for a in mol.GetAtoms():
         if a.GetChiralTag() != Chem.ChiralType.CHI_UNSPECIFIED:
             n = len(a.GetBonds())
