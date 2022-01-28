@@ -14,7 +14,7 @@ RADICAL = "*"
 
 _pbond = r"(?P<bond>[" + escape(E) + escape(Z) + "])"
 _c = "[" + escape(PLUS + MINUS + RADICAL + EXTRA_PI + BANG + CW + CCW) + "]*"
-_patom = r"(?P<atom>\[\d*[A-Za-z][a-z]?" + _c + r"\]|[A-Za-z]" + _c + r")"
+_patom = r"(?P<atom>\[[^\]]+\]|[A-Za-z]" + _c + ")"
 _pring = r"(?P<ring>[3-6]+)"
 _pskip = r"(?P<skip>" + escape(DOT) + r"*)"
 _psaturate = r"(?P<saturate>" + escape(DOT) + r")"
