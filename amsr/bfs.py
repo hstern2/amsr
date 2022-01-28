@@ -1,5 +1,6 @@
 import anytree
 import rdkit.Chem as rd
+from .atom import GetSeenIndex
 
 
 def BFSTree(a, n):
@@ -46,4 +47,11 @@ def BFSFind(a, targetIdx, seenBonds):
                     targetNode = child
                 if targetNode is None:
                     q.append(child)
-    return anytree.LevelOrderIter(root, filter_=lambda n: n.depth == targetNode.depth)
+    return (
+        (n.name.GetIdx(), n.depth)
+        for n in sorted(
+            anytree.LevelOrderIter(root, filter_=lambda n: n.depth == targetNode.depth),
+            key=lambda n: GetSeenIndex(n.name),
+            reverse=True,
+        )
+    )
