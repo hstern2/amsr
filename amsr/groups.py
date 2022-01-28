@@ -8,7 +8,7 @@ Groups = {
     "[Ms]": ["S!!:ooC.", "S!!:oC.o", "S!!:C.oo"],
     "[Piv]": ["coCC.C.C.", "cCC.C.C.o"],
     "[Boc]": ["coOCC.C.C.", "cOCC.C.C.o"],
-    "[Tol]": ["cccccc6 ..C...", "ccccC.cc6 ...."],
+    "[Tol]": ["cccccc6 ..C..."],
     "[Cbz]": ["coOCcccccc6 ......", "cOCcccccc6 ......o"],
     "[Bn]": ["Ccccccc6 ......"],
     "[Bz]": ["cocccccc6 ....."],
