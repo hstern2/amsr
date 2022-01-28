@@ -1,5 +1,4 @@
 from rdkit import Chem
-from itertools import repeat
 from .atom import Atom, GetSeenIndex, SetSeenIndex, IsSeen
 from .bfs import BFSFind
 from .bond import Bond
@@ -19,31 +18,27 @@ def _partition3456(n):
 
 
 def _ringTokens(n, nSkip):
-    for _ in map(str, _partition3456(n)):
-        yield _
-    for _ in repeat(None, nSkip):
-        yield DOT
+    yield from map(str, _partition3456(n))
+    yield from iter(DOT * nSkip)
     yield NOP
-
-
-def _bySeenIndex(n):
-    return GetSeenIndex(n.name)
 
 
 def _searchOrder(b, a):
     # 1. seen atoms before unseen atoms (i.e. rings)
-    # 2. small rings before larger (for seen) .. otherwise atom index (for unseen)
+    # 2. aromatic bonds first
+    # 3. small rings before larger (for seen) .. otherwise atom index (for unseen)
     c = b.GetOtherAtom(a)
     isSeen = IsSeen(c)
     return (
         not isSeen,
+        not b.GetIsAromatic(),
         GetSeenIndex(a) - GetSeenIndex(c) if isSeen else c.GetIdx(),
     )
 
 
 def FromMolToTokens(mol):
 
-    atom = [Atom.fromRD(a) for a in mol.GetAtoms()]
+    atom = [Atom.fromRDAtom(a) for a in mol.GetAtoms()]
     seenBonds = set()
     nSeenAtoms = 0
 
@@ -63,14 +58,11 @@ def FromMolToTokens(mol):
             bond = Bond.fromRD(b)
             if IsSeen(c):  # ring
                 nSkip = 0
-                for n in sorted(
-                    BFSFind(a, j, seenBonds), key=_bySeenIndex, reverse=True
-                ):
-                    k = n.name.GetIdx()
+                for k, depth in BFSFind(a, j, seenBonds):
                     if k == j:
                         if bond is not None:
                             yield (b, bond)
-                        yield from _ringTokens(n.depth + 1, nSkip)
+                        yield from _ringTokens(depth + 1, nSkip)
                         seenBonds.add(ij)
                         ai.nNeighbors += 1
                         aj.nNeighbors += 1
@@ -91,9 +83,9 @@ def FromMolToTokens(mol):
             yield DOT
 
     def _getPreTokens():
-        for a in mol.GetAtoms():
+        for i, a in enumerate(mol.GetAtoms()):
             if not IsSeen(a):
-                yield a, atom[a.GetIdx()]
+                yield a, atom[i]
                 yield from _search(a)
 
     def _getTokens():
