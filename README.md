@@ -1,6 +1,10 @@
 # AMSR
 **A**nother **M**olecular **S**tring **R**epresentation,
-inspired by [H. Hiz "A Linearization of Chemical Graphs,"](https://pubs.acs.org/doi/10.1021/c160014a015) [SMILES](https://pubs.acs.org/doi/10.1021/ci00057a005), [DeepSMILES](https://github.com/baoilleach/deepsmiles), and [SELFIES](https://github.com/aspuru-guzik-group/selfies).
+inspired by [H. Hiz "A Linearization of Chemical Graphs"](https://pubs.acs.org/doi/10.1021/c160014a015),
+[SMILES](https://pubs.acs.org/doi/10.1021/ci00057a005),
+[PATTY](https://pubs.acs.org/doi/10.1021/ci00015a015),
+[DeepSMILES](https://github.com/baoilleach/deepsmiles),
+and [SELFIES](https://github.com/aspuru-guzik-group/selfies).
 
 ## Installing
 ```
