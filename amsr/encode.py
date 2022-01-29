@@ -78,7 +78,7 @@ def _omitUnneededNOPs(t):
 
 
 def FromMolToTokens(mol: Chem.Mol, useGroups: Optional[bool] = True) -> List[str]:
-    """convert RDKit Mol to list of AMSR tokens
+    """Convert RDKit Mol to list of AMSR tokens
 
     :param mol: RDKit Mol
     :param useGroups: use group symbols/abbreviations
@@ -147,7 +147,7 @@ def FromMolToTokens(mol: Chem.Mol, useGroups: Optional[bool] = True) -> List[str
 
 
 def FromMol(mol: Chem.Mol, useGroups: Optional[bool] = True) -> str:
-    """convert RDKit Mol to AMSR
+    """Convert RDKit Mol to AMSR
 
     :param mol: RDKit Mol
     :param useGroups: use group symbols/abbreviations
@@ -157,7 +157,7 @@ def FromMol(mol: Chem.Mol, useGroups: Optional[bool] = True) -> str:
 
 
 def FromSmiles(s: str, useGroups: Optional[bool] = True) -> str:
-    """convert SMILES to AMSR
+    """Convert SMILES to AMSR
 
     :param s: SMILES
     :param useGroups: use group symbols/abbreviations
@@ -167,7 +167,7 @@ def FromSmiles(s: str, useGroups: Optional[bool] = True) -> str:
 
 
 def FromSmilesToTokens(s, useGroups: Optional[bool] = True) -> str:
-    """convert SMILES to list of AMSR tokens
+    """Convert SMILES to list of AMSR tokens
 
     :param mol: RDKit Mol
     :param useGroups: use group symbols/abbreviations
