@@ -1,4 +1,5 @@
 from rdkit import Chem
+from typing import Optional, List
 from .atom import Atom, GetSeenIndex, SetSeenIndex, IsSeen
 from .bfs import BFSFind
 from .bond import Bond
@@ -36,7 +37,13 @@ def _searchOrder(b, a):
     )
 
 
-def FromMolToTokens(mol, useGroups=True):
+def FromMolToTokens(mol: Chem.Mol, useGroups: Optional[bool] = True) -> List[str]:
+    """convert RDKit Mol to a list of tokens
+
+    :param mol: RDKit Mol
+    :param useGroups: use group symbols/abbreviations
+    :return: token list
+    """
 
     atom = [Atom.fromRDAtom(a) for a in mol.GetAtoms()]
     seenBonds = set()

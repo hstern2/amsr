@@ -70,9 +70,9 @@ def _ring(mol, atom, ring, bond):
 
 
 def ToMol(s: str) -> Chem.Mol:
-    """Convert AMSR string to an RDKit Mol
+    """Convert AMSR to an RDKit Mol
 
-    :param: s: AMSR string
+    :param s: AMSR
     :return: RDKit Mol
     """
     mol = Chem.RWMol()
@@ -121,4 +121,9 @@ def ToMol(s: str) -> Chem.Mol:
 
 
 def ToSmiles(s: str) -> str:
+    """Convert AMSR to SMILES
+
+    :param s: AMSR
+    :return: SMILES
+    """
     return Chem.MolToSmiles(ToMol(s))
