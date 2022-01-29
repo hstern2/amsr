@@ -1,4 +1,4 @@
-Getting Started
+AMSR
 ================
 
 ```{include} ../../README.md
