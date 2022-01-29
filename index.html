@@ -100,11 +100,19 @@ inspired by <a class="reference external" href="https://pubs.acs.org/doi/10.1021
 </section>
 <section id="usage">
 <h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline"></a></h2>
-<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">amsr</span> <span class="kn">import</span> <span class="n">ToMol</span><span class="p">,</span> <span class="n">FromMol</span><span class="p">,</span> <span class="n">ToSmiles</span><span class="p">,</span> <span class="n">FromSmiles</span>
-<span class="c1"># ToMol(s) takes an AMSR string s and returns an RDKit Mol</span>
-<span class="c1"># FromMol(m) takes an RDKit Mol m and returns an AMSR string</span>
-<span class="c1"># ToSmiles(s) takes an AMSR string s and returns SMILES</span>
-<span class="c1"># FromSmiles(s) takes a SMILES string s and returns AMSR</span>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">amsr</span>
+
+<span class="n">amsr</span><span class="o">.</span><span class="n">ToMol</span><span class="p">(</span><span class="s2">&quot;CNcncc5cNcN6C.oC.o&quot;</span><span class="p">)</span> <span class="c1"># caffeine</span>
+</pre></div>
+</div>
+<p><img alt="caffine" src="https://user-images.githubusercontent.com/19351218/151638119-b1439d47-5e5a-417e-9254-c34568e2f3d1.png" /></p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">taxol_smi</span> <span class="o">=</span> <span class="s2">&quot;CC1=C2[C@@]([C@]([C@H]([C@@H]3[C@]4([C@H](OC4)C[C@@H]([C@]3(C(=O)[C@@H]2OC(=O)C)C)O)OC(=O)C)OC(=O)c5ccccc5)(C[C@@H]1OC(=O)[C@H](O)[C@@H](NC(=O)c6ccccc6)c7ccccc7)O)(C)C&quot;</span>
+
+<span class="n">amsr</span><span class="o">.</span><span class="n">FromSmiles</span><span class="p">(</span><span class="n">taxol_smi</span><span class="p">)</span>
+<span class="c1"># CccCC(C(C(C)C(OC4 .CC)C)6coC(53[OAc].C.O....[OAc].O[Bz].CC(6OcoC(O.C)N[Bz].[Ph]....O.C.C</span>
+
+<span class="n">amsr</span><span class="o">.</span><span class="n">FromSmiles</span><span class="p">(</span><span class="n">taxol_smi</span><span class="p">,</span> <span class="n">useGroups</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="c1"># CccCC(C(C(C)C(OC4 .CC)C)6coC(53OcoC..C.O....OcoC..Ococccccc6 ......CC(6OcoC(O.C)Ncocccccc6 ......cccccc6 .........O.C.C</span>
 </pre></div>
 </div>
 </section>
