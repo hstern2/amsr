@@ -9,11 +9,20 @@ pip install git+git://github.com/hstern2/amsr.git
 
 ## Usage
 ```py
-from amsr import ToMol, FromMol, ToSmiles, FromSmiles
-# ToMol(s) takes an AMSR string s and returns an RDKit Mol
-# FromMol(m) takes an RDKit Mol m and returns an AMSR string
-# ToSmiles(s) takes an AMSR string s and returns SMILES
-# FromSmiles(s) takes a SMILES string s and returns AMSR
+import amsr
+
+amsr.ToMol("CNcncc5cNcN6C.oC.o") # caffeine
+```
+![caffine](https://user-images.githubusercontent.com/19351218/151638119-b1439d47-5e5a-417e-9254-c34568e2f3d1.png)
+
+```py
+taxol_smi = "CC1=C2[C@@]([C@]([C@H]([C@@H]3[C@]4([C@H](OC4)C[C@@H]([C@]3(C(=O)[C@@H]2OC(=O)C)C)O)OC(=O)C)OC(=O)c5ccccc5)(C[C@@H]1OC(=O)[C@H](O)[C@@H](NC(=O)c6ccccc6)c7ccccc7)O)(C)C"
+
+amsr.FromSmiles(taxol_smi)
+# CccCC(C(C(C)C(OC4 .CC)C)6coC(53[OAc].C.O....[OAc].O[Bz].CC(6OcoC(O.C)N[Bz].[Ph]....O.C.C
+
+amsr.FromSmiles(taxol_smi, useGroups=False)
+# CccCC(C(C(C)C(OC4 .CC)C)6coC(53OcoC..C.O....OcoC..Ococccccc6 ......CC(6OcoC(O.C)Ncocccccc6 ......cccccc6 .........O.C.C
 ```
 
 ## Description

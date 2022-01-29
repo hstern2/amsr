@@ -1,4 +1,5 @@
 from rdkit import Chem
+from typing import Optional, List
 from re import match
 from .atom import Atom
 from .bond import Bond
@@ -68,7 +69,13 @@ def _ring(mol, atom, ring, bond):
                         nSkip -= 1
 
 
-def ToMol(s, activeAtom=None):
+def ToMol(s: str, activeAtom: Optional[List[Chem.Atom]] = None) -> Chem.Mol:
+    """Convert AMSR string to an RDKit Mol
+
+    :param: s: AMSR string
+    :param: activeAtom: if given, current atom (to which subsequent atoms will be attached) will be appended
+    :return: RDKit Mol
+    """
     mol = Chem.RWMol()
     atom = []
     dangling = []
@@ -115,5 +122,5 @@ def ToMol(s, activeAtom=None):
     return mol
 
 
-def ToSmiles(s):
+def ToSmiles(s: str) -> str:
     return Chem.MolToSmiles(ToMol(s))

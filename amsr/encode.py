@@ -36,7 +36,7 @@ def _searchOrder(b, a):
     )
 
 
-def FromMolToTokens(mol):
+def FromMolToTokens(mol, useGroups=True):
 
     atom = [Atom.fromRDAtom(a) for a in mol.GetAtoms()]
     seenBonds = set()
@@ -88,22 +88,24 @@ def FromMolToTokens(mol):
                 yield a, atom[i]
                 yield from _search(a)
 
-    def _getTokens():
-        return [
+    t = OmitUnneededNOPs(
+        [
             t[1].asToken(t[0], mol) if type(t) == tuple else t
             for t in list(_getPreTokens())
         ]
-
-    return RemoveTrailingDots(EncodeGroups(OmitUnneededNOPs(_getTokens())))
-
-
-def FromMol(m):
-    return "".join(FromMolToTokens(m))
+    )
+    if useGroups:
+        t = EncodeGroups(t)
+    return RemoveTrailingDots(t)
 
 
-def FromSmiles(s):
-    return FromMol(Chem.MolFromSmiles(s))
+def FromMol(m, useGroups=True):
+    return "".join(FromMolToTokens(m, useGroups=useGroups))
 
 
-def FromSmilesToTokens(s):
-    return FromMolToTokens(Chem.MolFromSmiles(s))
+def FromSmiles(s, useGroups=True):
+    return FromMol(Chem.MolFromSmiles(s), useGroups=useGroups)
+
+
+def FromSmilesToTokens(s, useGroups=True):
+    return FromMolToTokens(Chem.MolFromSmiles(s), useGroups=useGroups)
