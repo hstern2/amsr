@@ -34,7 +34,8 @@ for structures accompanying the following examples.
 As in SMILES, atoms are represented by their symbol
 enclosed in square brackets. If the atom is designated by a one-letter symbol,
 the brackets may be omitted.  All atoms are assumed to have a fixed
-valence.  If an atom makes fewer bonds than its valence, hydrogens are assumed.
+valence which limits the number of covalently-bonded neighbors.
+If an atom makes fewer bonds than its valence, hydrogens are assumed.
 
 | AMSR | molecule |
 | --- | --- |
@@ -421,10 +422,10 @@ L 112.7 138.6
 ### Branches
 Branches are formed automatically when atoms can no longer
 make bonds.  They can also be made by "capping" or
-"saturating" an atom with hydrogens, using a period `.`.
-The capping hydrogens are applied to the most
-recently-added atom which can still make bonds.
-New atoms will then be added to those added earlier, forming a branch.
+"saturating" an atom with hydrogens, using a period `.`
+(capping hydrogens are applied to the most
+recently-added atom which can still make bonds).
+New atoms will then be bonded to those added earlier, forming a branch.
 
 | AMSR | molecule |
 | --- | --- |
@@ -536,7 +537,7 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 
 
 ### Double bonds (sp<sup>2</sup> centers)
-Atoms making a single double bond are indicated by changing
+Atoms making a double bond are indicated by changing
 the symbol to lowercase (note that lowercase
 does not mean "aromatic"; merely, "atom having one
 fewer neighbor than its valence.")  Double bonds are
@@ -751,9 +752,9 @@ L 85.0 132.8
 
 
 ### Ring selection
-When more than one ring of a given size can be formed, a period `.` immediately after
-the digit indicating the ring will select additional options (ring-forming bonds with
-atoms appearing earlier in the string).
+When more than one ring of a given size can be formed, one or more periods `.` immediately after
+the digit will make ring-forming bonds with atoms appearing earlier in the
+string, rather than the most recent
 
 | AMSR | molecule |
 | --- | --- |
