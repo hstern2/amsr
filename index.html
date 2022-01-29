@@ -125,7 +125,8 @@ for structures accompanying the following examples.</p>
 <p>As in SMILES, atoms are represented by their symbol
 enclosed in square brackets. If the atom is designated by a one-letter symbol,
 the brackets may be omitted.  All atoms are assumed to have a fixed
-valence.  If an atom makes fewer bonds than its valence, hydrogens are assumed.</p>
+valence which limits the number of covalently-bonded neighbors.
+If an atom makes fewer bonds than its valence, hydrogens are assumed.</p>
 <table class="colwidths-auto docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"><p>AMSR</p></th>
@@ -530,10 +531,10 @@ L 112.7 138.6
 <h3>Branches<a class="headerlink" href="#branches" title="Permalink to this headline"></a></h3>
 <p>Branches are formed automatically when atoms can no longer
 make bonds.  They can also be made by “capping” or
-“saturating” an atom with hydrogens, using a period <code class="docutils literal notranslate"><span class="pre">.</span></code>.
-The capping hydrogens are applied to the most
-recently-added atom which can still make bonds.
-New atoms will then be added to those added earlier, forming a branch.</p>
+“saturating” an atom with hydrogens, using a period <code class="docutils literal notranslate"><span class="pre">.</span></code>
+(capping hydrogens are applied to the most
+recently-added atom which can still make bonds).
+New atoms will then be bonded to those added earlier, forming a branch.</p>
 <table class="colwidths-auto docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"><p>AMSR</p></th>
@@ -661,7 +662,7 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 </section>
 <section id="double-bonds-sp-sup-2-sup-centers">
 <h3>Double bonds (sp<sup>2</sup> centers)<a class="headerlink" href="#double-bonds-sp-sup-2-sup-centers" title="Permalink to this headline"></a></h3>
-<p>Atoms making a single double bond are indicated by changing
+<p>Atoms making a double bond are indicated by changing
 the symbol to lowercase (note that lowercase
 does not mean “aromatic”; merely, “atom having one
 fewer neighbor than its valence.”)  Double bonds are
@@ -892,9 +893,9 @@ L 85.0 132.8
 </section>
 <section id="ring-selection">
 <h3>Ring selection<a class="headerlink" href="#ring-selection" title="Permalink to this headline"></a></h3>
-<p>When more than one ring of a given size can be formed, a period <code class="docutils literal notranslate"><span class="pre">.</span></code> immediately after
-the digit indicating the ring will select additional options (ring-forming bonds with
-atoms appearing earlier in the string).</p>
+<p>When more than one ring of a given size can be formed, one or more periods <code class="docutils literal notranslate"><span class="pre">.</span></code> immediately after
+the digit will make ring-forming bonds with atoms appearing earlier in the
+string, rather than the most recent</p>
 <table class="colwidths-auto docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"><p>AMSR</p></th>
