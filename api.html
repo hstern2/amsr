@@ -182,6 +182,112 @@
 </dl>
 </dd></dl>
 
+<span class="target" id="module-amsr.check"></span><dl class="py function">
+<dt class="sig sig-object py" id="amsr.check.CheckMol">
+<span class="sig-name descname"><span class="pre">CheckMol</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">m</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amsr.check.CheckMol" title="Permalink to this definition"></a></dt>
+<dd><p>Do round trip from RDKit mol m to AMSR.
+Compare InChI strings (with -FixedH) before and after round trip.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>m</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Mol</span></code>) – RDKit Mol</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>do InChI strings match?</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="amsr.check.CheckSmiles">
+<span class="sig-name descname"><span class="pre">CheckSmiles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amsr.check.CheckSmiles" title="Permalink to this definition"></a></dt>
+<dd><p>Convert SMILES s to RDKit Mol, then do round trip to AMSR.
+Compare InChI strings (with -FixedH) before and after round trip.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>s</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – SMILES</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>do InChI strings match?</p>
+</dd>
+</dl>
+</dd></dl>
+
+<span class="target" id="module-amsr.groups"></span><dl class="py function">
+<dt class="sig sig-object py" id="amsr.groups.DecodeGroups">
+<span class="sig-name descname"><span class="pre">DecodeGroups</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amsr.groups.DecodeGroups" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="amsr.groups.EncodeGroups">
+<span class="sig-name descname"><span class="pre">EncodeGroups</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amsr.groups.EncodeGroups" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="amsr.groups.Groups">
+<span class="sig-name descname"><span class="pre">Groups</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#amsr.groups.Groups" title="Permalink to this definition"></a></dt>
+<dd><p>Keys are functional group abbreviations, values are lists of one or more AMSR strings.
+May be modified, but :func InitializeGroups: must be called after modification.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]]</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Groups dictionary</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="amsr.groups.InitializeGroups">
+<span class="sig-name descname"><span class="pre">InitializeGroups</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#amsr.groups.InitializeGroups" title="Permalink to this definition"></a></dt>
+<dd><p>Initialize tree and compile regular expression for converting between
+group abbreviations and tokens.  Must be called after modification of
+:func Groups: dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<span class="target" id="module-amsr.tokens"></span><dl class="py function">
+<dt class="sig sig-object py" id="amsr.tokens.Matches">
+<span class="sig-name descname"><span class="pre">Matches</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amsr.tokens.Matches" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="amsr.tokens.OmitUnneededNOPs">
+<span class="sig-name descname"><span class="pre">OmitUnneededNOPs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amsr.tokens.OmitUnneededNOPs" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="amsr.tokens.RemoveTrailingDots">
+<span class="sig-name descname"><span class="pre">RemoveTrailingDots</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amsr.tokens.RemoveTrailingDots" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="amsr.tokens.ToTokens">
+<span class="sig-name descname"><span class="pre">ToTokens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amsr.tokens.ToTokens" title="Permalink to this definition"></a></dt>
+<dd><p>Convert an AMSR string to a list of tokens</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>s</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – AMSR</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>list of tokens</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 
 
