@@ -41,8 +41,9 @@ _groups: Dict[str, List[str]] = {
 
 
 def Groups() -> Dict[str, List[str]]:
-    """Keys are functional group abbreviations, values are lists of one or more AMSR strings.
-    May be modified, but :func InitializeGroups: must be called after modification.
+    """Keys are functional group abbreviations, values are lists of one or more AMSR strings
+    consisting only of atom/bond tokens.  May be modified, but :func InitializeGroups:
+    must be called after modification.
 
     :return: Groups dictionary
     """
@@ -61,9 +62,19 @@ def InitializeGroups() -> None:
 InitializeGroups()
 
 
-def DecodeGroups(s):
+def DecodeGroups(s: str) -> str:
+    """Replace group abbreviations in AMSR with atom/bond/etc tokens
+
+    :param s: AMSR with group abbreviations
+    :return: AMSR with only atom/bond tokens
+    """
     return _pattern.sub(lambda m: _groups[m.group(1)][0], s)
 
 
-def EncodeGroups(s):
+def EncodeGroups(s: str) -> str:
+    """Replace atom/bond tokens matching groups with group abbreviations
+
+    :param s: AMSR with only atom/bond tokens
+    :return: AMSR with group abbreviations
+    """
     return _mr.replace(s)

@@ -1,5 +1,5 @@
-from re import compile, escape
-from typing import List
+from re import compile, escape, Match
+from typing import Iterator, List
 
 DOT = "."
 NOP = " "
@@ -30,6 +30,14 @@ _re = compile(
 )
 
 
+def Matches(s: str) -> Iterator[Match]:
+    """Return iterable of AMSR tokens for AMSR
+    :param s: AMSR
+    :return: Iter[re.Match]
+    """
+    return _re.finditer(s)
+
+
 def ToTokens(s: str) -> List[str]:
     """Convert an AMSR string to a list of tokens
 
@@ -48,47 +56,3 @@ def ToTokens(s: str) -> List[str]:
             if g[k] is not None:
                 t.append(g[k])
     return t
-
-
-def Matches(s):
-    return _re.finditer(s)
-
-
-def _isDot(t):
-    return t == DOT
-
-
-def _isRingDigit(t):
-    return t in RING_DIGITS
-
-
-def _isDotOrRingDigit(t):
-    return _isDot(t) or _isRingDigit(t)
-
-
-def _needsNOP(prv, nxt):
-    return (_isRingDigit(prv) and _isDotOrRingDigit(nxt)) or (
-        _isDot(prv) and _isDot(nxt)
-    )
-
-
-def RemoveTrailingDots(t):
-    i = len(t) - 1
-    while i >= 0:
-        if not _isDot(t[i]):
-            if not _isRingDigit(t[i]):
-                del t[i + 1 :]
-            break
-        i -= 1
-    return t
-
-
-def OmitUnneededNOPs(t):
-    n = len(t)
-    while n > 0 and t[n - 1] == NOP:
-        n -= 1
-    return [
-        t[i]
-        for i in range(n)
-        if t[i] != NOP or (0 < i < n - 1 and _needsNOP(t[i - 1], t[i + 1]))
-    ]

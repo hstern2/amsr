@@ -4,7 +4,7 @@ from .atom import Atom, GetSeenIndex, SetSeenIndex, IsSeen
 from .bfs import BFSFind
 from .bond import Bond
 from .groups import EncodeGroups
-from .tokens import DOT, NOP, RemoveTrailingDots, OmitUnneededNOPs
+from .tokens import DOT, NOP, RING_DIGITS
 
 
 def _partition3456(n):
@@ -35,6 +35,46 @@ def _searchOrder(b, a):
         not b.GetIsAromatic(),
         GetSeenIndex(a) - GetSeenIndex(c) if isSeen else c.GetIdx(),
     )
+
+
+def _isDot(t):
+    return t == DOT
+
+
+def _isRingDigit(t):
+    return t in RING_DIGITS
+
+
+def _isDotOrRingDigit(t):
+    return _isDot(t) or _isRingDigit(t)
+
+
+def _needsNOP(prv, nxt):
+    return (_isRingDigit(prv) and _isDotOrRingDigit(nxt)) or (
+        _isDot(prv) and _isDot(nxt)
+    )
+
+
+def _removeTrailingDots(t):
+    i = len(t) - 1
+    while i >= 0:
+        if not _isDot(t[i]):
+            if not _isRingDigit(t[i]):
+                del t[i + 1 :]
+            break
+        i -= 1
+    return t
+
+
+def _omitUnneededNOPs(t):
+    n = len(t)
+    while n > 0 and t[n - 1] == NOP:
+        n -= 1
+    return [
+        t[i]
+        for i in range(n)
+        if t[i] != NOP or (0 < i < n - 1 and _needsNOP(t[i - 1], t[i + 1]))
+    ]
 
 
 def FromMolToTokens(mol: Chem.Mol, useGroups: Optional[bool] = True) -> List[str]:
@@ -95,7 +135,7 @@ def FromMolToTokens(mol: Chem.Mol, useGroups: Optional[bool] = True) -> List[str
                 yield a, atom[i]
                 yield from _search(a)
 
-    t = OmitUnneededNOPs(
+    t = _omitUnneededNOPs(
         [
             t[1].asToken(t[0], mol) if type(t) == tuple else t
             for t in list(_getPreTokens())
@@ -103,17 +143,17 @@ def FromMolToTokens(mol: Chem.Mol, useGroups: Optional[bool] = True) -> List[str
     )
     if useGroups:
         t = EncodeGroups(t)
-    return RemoveTrailingDots(t)
+    return _removeTrailingDots(t)
 
 
-def FromMol(m: Chem.Mol, useGroups: Optional[bool] = True) -> str:
+def FromMol(mol: Chem.Mol, useGroups: Optional[bool] = True) -> str:
     """convert RDKit Mol to AMSR
 
     :param mol: RDKit Mol
     :param useGroups: use group symbols/abbreviations
     :return: AMSR
     """
-    return "".join(FromMolToTokens(m, useGroups=useGroups))
+    return "".join(FromMolToTokens(mol, useGroups=useGroups))
 
 
 def FromSmiles(s: str, useGroups: Optional[bool] = True) -> str:
