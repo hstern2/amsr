@@ -7,7 +7,7 @@ from .pibonds import PiBonds
 from .bfs import BFSTree
 from .parity import IsEvenParity
 from .groups import DecodeGroups
-from .tokens import Matches
+from .tokens import RegExp
 
 
 def _addBond(mol, atom, i, j, bond):
@@ -78,7 +78,7 @@ def ToMol(s: str) -> Chem.Mol:
     mol = Chem.RWMol()
     atom = []
     dangling = []
-    for m in Matches(DecodeGroups(s)):
+    for m in RegExp.finditer(DecodeGroups(s)):
         if m.group("ring"):
             _ring(mol, atom, m.group("ring"), Bond(m.group("bond")))
         elif m.group("atom"):

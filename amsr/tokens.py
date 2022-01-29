@@ -25,27 +25,20 @@ _psaturate = f"(?P<saturate>{escape(DOT)})"
 _pdangling = f"(?P<dangling>{escape(L_BRACKET)}{escape(R_BRACKET)})"
 _pampersand = f"(?P<ampersand>{escape(AMPERSAND)})"
 _pnop = f"(?P<nop>{escape(NOP)}+)"
-_re = compile(
+
+RegExp = compile(
     f"({_pbond}?({_patom}|({_pring})))|{_psaturate}|{_pdangling}|{_pampersand}|{_pnop}"
 )
 
 
-def Matches(s: str) -> Iterator[Match]:
-    """Return iterable of AMSR tokens for AMSR
-    :param s: AMSR
-    :return: Iter[re.Match]
-    """
-    return _re.finditer(s)
-
-
 def ToTokens(s: str) -> List[str]:
-    """Convert an AMSR string to a list of tokens
+    """Convert AMSR string to a list of tokens
 
     :param s: AMSR
     :return: list of tokens
     """
     t = []
-    for m in Matches(s):
+    for m in RegExp.finditer(s):
         g = m.groupdict()
         for k in ["bond", "atom"]:
             if g[k] is not None:
