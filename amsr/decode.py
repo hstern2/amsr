@@ -69,11 +69,10 @@ def _ring(mol, atom, ring, bond):
                         nSkip -= 1
 
 
-def ToMol(s: str, activeAtom: Optional[List[Chem.Atom]] = None) -> Chem.Mol:
+def ToMol(s: str) -> Chem.Mol:
     """Convert AMSR string to an RDKit Mol
 
     :param: s: AMSR string
-    :param: activeAtom: if given, current atom (to which subsequent atoms will be attached) will be appended
     :return: RDKit Mol
     """
     mol = Chem.RWMol()
@@ -114,11 +113,10 @@ def ToMol(s: str, activeAtom: Optional[List[Chem.Atom]] = None) -> Chem.Mol:
     mol = mol.GetMol()
     Chem.SanitizeMol(mol)
     Chem.AssignStereochemistry(mol)
-    if activeAtom is not None:
-        for i in reversed(range(len(atom))):
-            if atom[i].canBond():
-                activeAtom.append(i)
-                break
+    for a in reversed(mol.GetAtoms()):
+        if atom[a.GetIdx()].canBond():
+            a.SetBoolProp("_active", True)
+            break
     return mol
 
 
