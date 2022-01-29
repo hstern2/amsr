@@ -1,4 +1,5 @@
 from re import compile, escape
+from typing import List
 
 DOT = "."
 NOP = " "
@@ -29,7 +30,12 @@ _re = compile(
 )
 
 
-def ToTokens(s):
+def ToTokens(s: str) -> List[str]:
+    """Convert an AMSR string to a list of tokens
+
+    :param s: AMSR
+    :return: list of tokens
+    """
     t = []
     for m in Matches(s):
         g = m.groupdict()

@@ -1,8 +1,9 @@
 from re import compile, escape
 from .mreplace import MultipleReplace
 from .tokens import ToTokens
+from typing import Dict, List
 
-Groups = {
+_groups: Dict[str, List[str]] = {
     "[Ts]": ["S!!:oocccccc6 ..C...", "S!!:occcccc6 ..C...o", "S!!:cccccc6 ..C...oo"],
     "[Tf]": ["S!!:ooCFFF", "S!!:oCFFFo", "S!!:CFFFoo"],
     "[Ms]": ["S!!:ooC.", "S!!:oC.o", "S!!:C.oo"],
@@ -38,18 +39,30 @@ Groups = {
     "[CCl3]": ["C[Cl][Cl][Cl]"],
 }
 
-# must be called (again) if Groups is changed
-def InitializeGroups():
+
+def Groups() -> Dict[str, List[str]]:
+    """Keys are functional group abbreviations, values are lists of one or more AMSR strings.
+    May be modified, but :func InitializeGroups: must be called after modification.
+
+    :return: Groups dictionary
+    """
+
+
+def InitializeGroups() -> None:
+    """Initialize tree and compile regular expression for converting between
+    group abbreviations and tokens.  Must be called after modification of
+    :func Groups: dictionary.
+    """
     global _mr, _pattern
-    _mr = MultipleReplace([(ToTokens(g), k) for k, v in Groups.items() for g in v])
-    _pattern = compile("(" + "|".join([escape(k) for k in Groups.keys()]) + ")")
+    _mr = MultipleReplace([(ToTokens(g), k) for k, v in _groups.items() for g in v])
+    _pattern = compile("(" + "|".join([escape(k) for k in _groups.keys()]) + ")")
 
 
 InitializeGroups()
 
 
 def DecodeGroups(s):
-    return _pattern.sub(lambda m: Groups[m.group(1)][0], s)
+    return _pattern.sub(lambda m: _groups[m.group(1)][0], s)
 
 
 def EncodeGroups(s):

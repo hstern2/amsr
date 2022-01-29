@@ -1,3 +1,17 @@
+__all__ = [
+    "FromMol",
+    "FromMolToTokens",
+    "FromSmiles",
+    "FromSmilesToTokens",
+    "ToMol",
+    "ToSmiles",
+    "CheckMol",
+    "CheckSmiles",
+    "Groups",
+    "InitializeGroups",
+    "ToTokens",
+]
+
 from .version import __version__
 from .encode import FromMol, FromMolToTokens, FromSmiles, FromSmilesToTokens
 from .decode import ToMol, ToSmiles

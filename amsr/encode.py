@@ -38,11 +38,11 @@ def _searchOrder(b, a):
 
 
 def FromMolToTokens(mol: Chem.Mol, useGroups: Optional[bool] = True) -> List[str]:
-    """convert RDKit Mol to a list of tokens
+    """convert RDKit Mol to list of AMSR tokens
 
     :param mol: RDKit Mol
     :param useGroups: use group symbols/abbreviations
-    :return: token list
+    :return: list of AMSR tokens
     """
 
     atom = [Atom.fromRDAtom(a) for a in mol.GetAtoms()]
@@ -106,13 +106,31 @@ def FromMolToTokens(mol: Chem.Mol, useGroups: Optional[bool] = True) -> List[str
     return RemoveTrailingDots(t)
 
 
-def FromMol(m, useGroups=True):
+def FromMol(m: Chem.Mol, useGroups: Optional[bool] = True) -> str:
+    """convert RDKit Mol to AMSR
+
+    :param mol: RDKit Mol
+    :param useGroups: use group symbols/abbreviations
+    :return: AMSR
+    """
     return "".join(FromMolToTokens(m, useGroups=useGroups))
 
 
-def FromSmiles(s, useGroups=True):
+def FromSmiles(s: str, useGroups: Optional[bool] = True) -> str:
+    """convert SMILES to AMSR
+
+    :param s: SMILES
+    :param useGroups: use group symbols/abbreviations
+    :return: AMSR
+    """
     return FromMol(Chem.MolFromSmiles(s), useGroups=useGroups)
 
 
-def FromSmilesToTokens(s, useGroups=True):
+def FromSmilesToTokens(s, useGroups: Optional[bool] = True) -> str:
+    """convert SMILES to list of AMSR tokens
+
+    :param mol: RDKit Mol
+    :param useGroups: use group symbols/abbreviations
+    :return: AMSR
+    """
     return FromMolToTokens(Chem.MolFromSmiles(s), useGroups=useGroups)
