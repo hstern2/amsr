@@ -1,6 +1,10 @@
 API
 =====================
 
-.. automodule:: amsr
+.. automodule:: amsr.encode
+    :members:
+    :undoc-members:
+
+.. automodule:: amsr.decode
     :members:
     :undoc-members:
