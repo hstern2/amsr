@@ -221,7 +221,7 @@ Compare InChI strings (with -FixedH) before and after round trip.</p>
 <span class="target" id="module-amsr.groups"></span><dl class="py function">
 <dt class="sig sig-object py" id="amsr.groups.DecodeGroups">
 <span class="sig-name descname"><span class="pre">DecodeGroups</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amsr.groups.DecodeGroups" title="Permalink to this definition"></a></dt>
-<dd><p>Replace group abbreviations in AMSR with atom/bond/etc tokens</p>
+<dd><p>Replace group abbreviations in AMSR with atom/bond tokens</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>s</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – AMSR with group abbreviations</p>
@@ -256,7 +256,7 @@ Compare InChI strings (with -FixedH) before and after round trip.</p>
 <dt class="sig sig-object py" id="amsr.groups.Groups">
 <span class="sig-name descname"><span class="pre">Groups</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#amsr.groups.Groups" title="Permalink to this definition"></a></dt>
 <dd><p>Keys are functional group abbreviations, values are lists of one or more AMSR strings
-consisting only of atom/bond tokens.  May be modified, but :func InitializeGroups:
+consisting only of atom/bond tokens.  May be modified, but <a class="reference internal" href="#amsr.groups.InitializeGroups" title="amsr.groups.InitializeGroups"><code class="xref py py-func docutils literal notranslate"><span class="pre">InitializeGroups()</span></code></a>
 must be called after modification.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
@@ -273,7 +273,7 @@ must be called after modification.</p>
 <span class="sig-name descname"><span class="pre">InitializeGroups</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#amsr.groups.InitializeGroups" title="Permalink to this definition"></a></dt>
 <dd><p>Initialize tree and compile regular expression for converting between
 group abbreviations and tokens.  Must be called after modification of
-:func Groups: dictionary.</p>
+<a class="reference internal" href="#amsr.groups.Groups" title="amsr.groups.Groups"><code class="xref py py-func docutils literal notranslate"><span class="pre">Groups()</span></code></a> dictionary.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
@@ -282,19 +282,9 @@ group abbreviations and tokens.  Must be called after modification of
 </dd></dl>
 
 <span class="target" id="module-amsr.tokens"></span><dl class="py function">
-<dt class="sig sig-object py" id="amsr.tokens.Matches">
-<span class="sig-name descname"><span class="pre">Matches</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amsr.tokens.Matches" title="Permalink to this definition"></a></dt>
-<dd><p>Return iterable of AMSR tokens for AMSR
-:type s: <code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>
-:param s: AMSR
-:rtype: <code class="xref py py-class docutils literal notranslate"><span class="pre">Iterator</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Match</span></code>]
-:return: Iter[re.Match]</p>
-</dd></dl>
-
-<dl class="py function">
 <dt class="sig sig-object py" id="amsr.tokens.ToTokens">
 <span class="sig-name descname"><span class="pre">ToTokens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amsr.tokens.ToTokens" title="Permalink to this definition"></a></dt>
-<dd><p>Convert an AMSR string to a list of tokens</p>
+<dd><p>Convert AMSR string to a list of tokens</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>s</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – AMSR</p>
