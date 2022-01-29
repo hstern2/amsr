@@ -69,7 +69,7 @@ def DecodeGroups(s: str) -> str:
     :param s: AMSR with group abbreviations
     :return: AMSR with only atom/bond tokens
     """
-    return _pattern.sub(lambda m: Groups[m.group(1)][0], s)
+    return _pattern.sub(lambda m: _groups[m.group(1)][0], s)
 
 
 def EncodeGroups(s: str) -> str:
