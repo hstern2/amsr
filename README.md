@@ -758,7 +758,7 @@ L 85.0 132.8
 ### Ring selection
 When more than one ring of a given size can be formed, one or more periods `.` immediately after
 the digit will make ring-forming bonds with atoms appearing earlier in the
-string, rather than the most recent
+string, rather than the most recent.
 
 | AMSR | molecule |
 | --- | --- |
