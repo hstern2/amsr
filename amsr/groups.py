@@ -1,7 +1,7 @@
-from re import compile, escape
+from re import compile, escape, Pattern
 from .mreplace import MultipleReplace
 from .tokens import ToTokens
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 _groups: Dict[str, List[str]] = {
     "[Ts]": ["S!!:oocccccc6 ..C...", "S!!:occcccc6 ..C...o", "S!!:cccccc6 ..C...oo"],
@@ -50,12 +50,16 @@ def Groups() -> Dict[str, List[str]]:
     return _groups
 
 
+_mr: Optional[MultipleReplace] = None
+_pattern: Optional[Pattern] = None
+
+
 def InitializeGroups() -> None:
     """Initialize tree and compile regular expression for converting between
     group abbreviations and tokens.  Must be called after modification of
     :func:`Groups` dictionary.
     """
-    global _mr, _pattern
+    global _pattern, _mr
     _mr = MultipleReplace([(ToTokens(g), k) for k, v in _groups.items() for g in v])
     _pattern = compile("(" + "|".join([escape(k) for k in _groups.keys()]) + ")")
 
@@ -69,7 +73,7 @@ def DecodeGroups(s: str) -> str:
     :param s: AMSR with group abbreviations
     :return: AMSR with only atom/bond tokens
     """
-    return _pattern.sub(lambda m: _groups[m.group(1)][0], s)
+    return s if _pattern is None else _pattern.sub(lambda m: _groups[m.group(1)][0], s)
 
 
 def EncodeGroups(s: str) -> str:
@@ -78,4 +82,4 @@ def EncodeGroups(s: str) -> str:
     :param s: AMSR with only atom/bond tokens
     :return: AMSR with group abbreviations
     """
-    return _mr.replace(s)
+    return s if _mr is None else _mr.replace(s)

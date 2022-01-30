@@ -1,5 +1,5 @@
 from rdkit import Chem
-from typing import Optional, List
+from typing import Optional, List, Set, FrozenSet
 from .atom import Atom, GetSeenIndex, SetSeenIndex, IsSeen
 from .bfs import BFSFind
 from .bond import Bond
@@ -86,7 +86,7 @@ def FromMolToTokens(mol: Chem.Mol, useGroups: Optional[bool] = True) -> List[str
     """
 
     atom = [Atom.fromRDAtom(a) for a in mol.GetAtoms()]
-    seenBonds = set()
+    seenBonds: Set[FrozenSet[int]] = set()
     nSeenAtoms = 0
 
     def _search(a):
@@ -166,7 +166,7 @@ def FromSmiles(s: str, useGroups: Optional[bool] = True) -> str:
     return FromMol(Chem.MolFromSmiles(s), useGroups=useGroups)
 
 
-def FromSmilesToTokens(s, useGroups: Optional[bool] = True) -> str:
+def FromSmilesToTokens(s, useGroups: Optional[bool] = True) -> List[str]:
     """Convert SMILES to list of AMSR tokens
 
     :param mol: RDKit Mol

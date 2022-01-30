@@ -76,8 +76,8 @@ def ToMol(s: str) -> Chem.Mol:
     :return: RDKit Mol
     """
     mol = Chem.RWMol()
-    atom = []
-    dangling = []
+    atom: List[Atom] = []
+    dangling: List[int] = []
     for m in RegExp.finditer(DecodeGroups(s)):
         if m.group("ring"):
             _ring(mol, atom, m.group("ring"), Bond(m.group("bond")))
