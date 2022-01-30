@@ -68,18 +68,8 @@ InitializeGroups()
 
 
 def DecodeGroups(s: str) -> str:
-    """Replace group abbreviations in AMSR with atom/bond tokens
-
-    :param s: AMSR with group abbreviations
-    :return: AMSR with only atom/bond tokens
-    """
     return s if _pattern is None else _pattern.sub(lambda m: _groups[m.group(1)][0], s)
 
 
 def EncodeGroups(s: str) -> str:
-    """Replace atom/bond tokens matching groups with group abbreviations
-
-    :param s: AMSR with only atom/bond tokens
-    :return: AMSR with group abbreviations
-    """
     return s if _mr is None else _mr.replace(s)
