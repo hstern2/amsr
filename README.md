@@ -37,8 +37,8 @@ for structures accompanying the following examples.
 ### Atoms
 Atoms are represented by their symbol
 enclosed in square brackets, as in SMILES.
-If the atom is designated by a one-letter symbol,
-the brackets may be omitted.  All atoms are assumed to have a fixed
+For a one-letter symbol,
+brackets may be omitted.  Atoms are assumed to have a fixed
 valence which limits the number of covalently-bonded neighbors.
 If an atom makes fewer bonds than its valence, hydrogens are assumed.
 
