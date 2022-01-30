@@ -1864,15 +1864,15 @@ L 137.5 121.7
 </div>
 
 
-### Double-bond stereochemistry
-Stereochemistry for a double bond is denoted by an underscore `_` meaning "trans" or "*Z*",
-or caret `^` meaning "cis" or *E*, between the two atoms making the bond,
+### *E/Z* stereochemistry
+Stereochemistry for a double bond is denoted by an underscore `_` meaning "trans" or *E*,
+or caret `^` meaning "cis" or *Z*, between the two atoms making the bond,
 where the reference neighboring atoms are those that appear earliest in the string.
 
 | AMSR | molecule |
 | --- | --- |
 c[Br][Cl]_c[Cl] | [(*E*)-1-bromo-1,2-dichloroethene](https://pubchem.ncbi.nlm.nih.gov/compound/E_-1-Bromo-1_2-dichloroethene)
-c[Br][Cl]^c[Cl] | [(Z)-1-Bromo-1,2-dichloroethene](https://pubchem.ncbi.nlm.nih.gov/compound/Z_-1-Bromo-1_2-dichloroethene)
+c[Br][Cl]^c[Cl] | [(*Z*)-1-Bromo-1,2-dichloroethene](https://pubchem.ncbi.nlm.nih.gov/compound/Z_-1-Bromo-1_2-dichloroethene)
 
 
 <div>
