@@ -35,8 +35,9 @@ See [documentation](https://hstern2.github.io/amsr/)
 for structures accompanying the following examples.
 
 ### Atoms
-As in SMILES, atoms are represented by their symbol
-enclosed in square brackets. If the atom is designated by a one-letter symbol,
+Atoms are represented by their symbol
+enclosed in square brackets, as in SMILES.
+If the atom is designated by a one-letter symbol,
 the brackets may be omitted.  All atoms are assumed to have a fixed
 valence which limits the number of covalently-bonded neighbors.
 If an atom makes fewer bonds than its valence, hydrogens are assumed.
