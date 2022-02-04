@@ -19,15 +19,22 @@ def _addBond(mol, atom, i, j, bond):
         mol.GetBondWithIdx(n - 1).SetStereo(s)
 
 
-def _addAtom(mol, atom, a, bond):
+def _addAtom(mol, atom, a, bond, contiguous=False):
     atom.append(a)
     mol.AddAtom(a.asRDAtom())
-    if a.canBond():
-        j = len(atom) - 1
-        for i in reversed(range(j)):
-            if atom[i].canBond():
-                _addBond(mol, atom, i, j, bond)
-                return
+    if not a.canBond():
+        return
+    j = len(atom) - 1
+    for i in reversed(range(j)):
+        if atom[i].canBond():
+            _addBond(mol, atom, i, j, bond)
+            return
+    if not contiguous:
+        return
+    for i in reversed(range(j)):
+        if atom[i].nNeighbors < atom[i].maxNeighbors:
+            _addBond(mol, atom, i, j, bond)
+            return
 
 
 def _saturate(atom):
@@ -35,23 +42,6 @@ def _saturate(atom):
         if atom[i].canBond():
             atom[i].isSaturated = True
             return
-
-
-def _addDanglingBond(atom, dangling):
-    for i in reversed(range(len(atom))):
-        if atom[i].canBond():
-            atom[i].nNeighbors += 1
-            dangling.append(i)
-            return
-
-
-def _connectToDanglingBond(atom, dangling):
-    if not dangling:
-        return
-    i = dangling.pop()
-    atom[i].nNeighbors -= 1
-    for a in atom[i + 1 :]:
-        a.isSaturated = True
 
 
 def _ring(mol, atom, ring, bond):
@@ -69,7 +59,7 @@ def _ring(mol, atom, ring, bond):
                         nSkip -= 1
 
 
-def ToMol(s: str) -> Chem.Mol:
+def ToMol(s: str, contiguous: Optional[bool] = False) -> Chem.Mol:
     """Convert AMSR to an RDKit Mol
 
     :param s: AMSR
@@ -77,18 +67,15 @@ def ToMol(s: str) -> Chem.Mol:
     """
     mol = Chem.RWMol()
     atom: List[Atom] = []
-    dangling: List[int] = []
     for m in RegExp.finditer(DecodeGroups(s)):
         if m.group("ring"):
             _ring(mol, atom, m.group("ring"), Bond(m.group("bond")))
         elif m.group("atom"):
-            _addAtom(mol, atom, Atom(m.group("atom")), Bond(m.group("bond")))
+            _addAtom(
+                mol, atom, Atom(m.group("atom")), Bond(m.group("bond")), contiguous
+            )
         elif m.group("saturate"):
             _saturate(atom)
-        elif m.group("dangling"):
-            _addDanglingBond(atom, dangling)
-        elif m.group("ampersand"):
-            _connectToDanglingBond(atom, dangling)
     for a in mol.GetAtoms():
         if a.GetChiralTag() != Chem.ChiralType.CHI_UNSPECIFIED:
             n = len(a.GetBonds())
