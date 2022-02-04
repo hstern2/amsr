@@ -59,10 +59,11 @@ def _ring(mol, atom, ring, bond):
                         nSkip -= 1
 
 
-def ToMol(s: str, contiguous: Optional[bool] = False) -> Chem.Mol:
+def ToMol(s: str, contiguous: bool = False) -> Chem.Mol:
     """Convert AMSR to an RDKit Mol
 
     :param s: AMSR
+    :param contiguous: make second pass (considering "saturated" atoms) to form bonds, rather than start new molecule
     :return: RDKit Mol
     """
     mol = Chem.RWMol()
@@ -107,10 +108,11 @@ def ToMol(s: str, contiguous: Optional[bool] = False) -> Chem.Mol:
     return mol
 
 
-def ToSmiles(s: str) -> str:
+def ToSmiles(s: str, contiguous: bool = False) -> str:
     """Convert AMSR to SMILES
 
     :param s: AMSR
+    :param contiguous: make second pass (considering "saturated" atoms) to form bonds, rather than start new molecule
     :return: SMILES
     """
-    return Chem.MolToSmiles(ToMol(s))
+    return Chem.MolToSmiles(ToMol(s), contiguous)
