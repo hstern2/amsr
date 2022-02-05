@@ -7,12 +7,13 @@ from .groups import EncodeGroups
 from .tokens import DOT, NOP, RING_DIGITS, ENLARGE
 
 
-def _ringTokens(n, nSkip):
-    if n < 10:
-        yield str(n)
-    else:
+def _ringTokens(n, nSkip, b, bond):
+    if n >= 10:
         yield from iter(ENLARGE * (n - 10))
-        yield "0"
+        n = 0
+    if bond is not None:
+        yield (b, bond)
+    yield str(n)
     yield from iter(DOT * nSkip)
     yield NOP
 
@@ -100,9 +101,7 @@ def FromMolToTokens(mol: Chem.Mol, useGroups: Optional[bool] = True) -> List[str
                 nSkip = 0
                 for k, depth in BFSFind(a, j, seenBonds):
                     if k == j:
-                        if bond is not None:
-                            yield (b, bond)
-                        yield from _ringTokens(depth + 1, nSkip)
+                        yield from _ringTokens(depth + 1, nSkip, b, bond)
                         seenBonds.add(ij)
                         ai.nNeighbors += 1
                         aj.nNeighbors += 1
