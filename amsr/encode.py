@@ -4,22 +4,15 @@ from .atom import Atom, GetSeenIndex, SetSeenIndex, IsSeen
 from .bfs import BFSFind
 from .bond import Bond
 from .groups import EncodeGroups
-from .tokens import DOT, NOP, RING_DIGITS
-
-
-def _partition3456(n):
-    if n <= 6:
-        yield n
-    elif n <= 8:
-        yield from _partition3456(n - 3)
-        yield 3
-    else:
-        yield 6
-        yield from _partition3456(n - 6)
+from .tokens import DOT, NOP, RING_DIGITS, ENLARGE
 
 
 def _ringTokens(n, nSkip):
-    yield from map(str, _partition3456(n))
+    if n < 10:
+        yield str(n)
+    else:
+        yield from iter(ENLARGE * (n - 10))
+        yield "0"
     yield from iter(DOT * nSkip)
     yield NOP
 

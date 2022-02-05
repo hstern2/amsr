@@ -44,9 +44,14 @@ def _saturate(atom):
             return
 
 
-def _ring(mol, atom, ring, bond):
+def _ring(mol, atom, ring, bond, enlarge):
     m = match(r"(\d+)(\.*)", ring)
-    n = sum(map(int, m.group(1)))
+    n = int(m.group(1))
+    if n == 0:
+        n = 10 + enlarge
+        isLarge = True
+    else:
+        isLarge = False
     nSkip = len(m.group(2))
     for i in reversed(range(len(atom))):
         if atom[i].canBond():
@@ -54,9 +59,10 @@ def _ring(mol, atom, ring, bond):
                 if atom[j].canBond():
                     if nSkip == 0:
                         _addBond(mol, atom, i, j, bond)
-                        return
+                        return isLarge
                     else:
                         nSkip -= 1
+    return isLarge
 
 
 def ToMol(s: str, contiguous: bool = False) -> Chem.Mol:
@@ -68,15 +74,20 @@ def ToMol(s: str, contiguous: bool = False) -> Chem.Mol:
     """
     mol = Chem.RWMol()
     atom: List[Atom] = []
+    enlarge = 0
     for m in RegExp.finditer(DecodeGroups(s)):
         if m.group("ring"):
-            _ring(mol, atom, m.group("ring"), Bond(m.group("bond")))
+            isLarge = _ring(mol, atom, m.group("ring"), Bond(m.group("bond")), enlarge)
+            if isLarge:
+                enlarge = 0
         elif m.group("atom"):
             _addAtom(
                 mol, atom, Atom(m.group("atom")), Bond(m.group("bond")), contiguous
             )
         elif m.group("saturate"):
             _saturate(atom)
+        elif m.group("enlarge"):
+            enlarge += 1
     for a in mol.GetAtoms():
         if a.GetChiralTag() != Chem.ChiralType.CHI_UNSPECIFIED:
             n = len(a.GetBonds())

@@ -23,10 +23,10 @@ amsr.ToMol("CNcncc5cNcN6C.oC.o") # caffeine
 taxol_smi = "CC1=C2[C@@]([C@]([C@H]([C@@H]3[C@]4([C@H](OC4)C[C@@H]([C@]3(C(=O)[C@@H]2OC(=O)C)C)O)OC(=O)C)OC(=O)c5ccccc5)(C[C@@H]1OC(=O)[C@H](O)[C@@H](NC(=O)c6ccccc6)c7ccccc7)O)(C)C"
 
 amsr.FromSmiles(taxol_smi)
-# CccCC(C(C(C)C(OC4 .CC)C)6coC(53[OAc].C.O....[OAc].O[Bz].CC(6OcoC(O.C)N[Bz].[Ph]....O.C.C
+# CccCC(C(C(C)C(OC4 .CC)C)6coC(8[OAc].C.O....[OAc].O[Bz].CC(6OcoC(O.C)N[Bz].[Ph]....O.C.C
 
 amsr.FromSmiles(taxol_smi, useGroups=False)
-# CccCC(C(C(C)C(OC4 .CC)C)6coC(53OcoC..C.O....OcoC..Ococccccc6 ......CC(6OcoC(O.C)Ncocccccc6 ......cccccc6 .........O.C.C
+# CccCC(C(C(C)C(OC4 .CC)C)6coC(8OcoC..C.O....OcoC..Ococccccc6 ......CC(6OcoC(O.C)Ncocccccc6 ......cccccc6 .........O.C.C
 ```
 
 ## Description
@@ -472,9 +472,9 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 </div>
 
 
-### Small rings
-Small rings are denoted by one of the digits `3,4,5,6` indicating
-the size of the ring.
+### Rings
+Rings with fewer than ten members are denoted by a digit between `3` and `9`
+indicating the size of the ring.
 A new bond is formed between atoms *i* and *j* where
 *i* and *j* are the most recently-added atoms which
 can still make bonds and when bonded will form a ring of that size.
@@ -864,38 +864,16 @@ Q 11.0 84.9, 12.8 84.9
 
 
 ### Large rings
-Rings with seven or more members are denoted by a
-sequence of digits `3,4,5,6` which are added to give the size of the ring.
-If any characters appear between digits, multiple rings are formed
-rather than a single large ring.  Whitespace may be used if this is desired
-(without adding any additional atoms).
+Rings with ten or more members are denoted by zero or more `<` signs followed by `0`.
+The ring size is 10 plus the number of preceding `<` signs.  (The `<` signs do not
+need to appear immediately before `0`; there can be other intervening tokens.)
 
 | AMSR | molecule |
 | --- | --- |
-CCCCCCC43 | [cycloheptane](https://en.wikipedia.org/wiki/Cycloheptane)
-CCCCCCCCCCCC66 | [cyclododecane](https://en.wikipedia.org/wiki/Cyclododecane)
-CCCCCCCCCCCC6 6 | [1-ethyldecalin](https://pubchem.ncbi.nlm.nih.gov/compound/33053)
+CCCCCCCCCCCC<<0 | [cyclododecane](https://en.wikipedia.org/wiki/Cyclododecane)
 
 
 <div>
-<span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
-<svg version='1.1' baseProfile='full'
-              xmlns='http://www.w3.org/2000/svg'
-                      xmlns:rdkit='http://www.rdkit.org/xml'
-                      xmlns:xlink='http://www.w3.org/1999/xlink'
-                  xml:space='preserve'
-width='160px' height='160px' viewBox='0 0 160 160'>
-<!-- END OF HEADER -->
-<rect style='opacity:1.0;fill:#FFFFFF;stroke:none' width='160.0' height='160.0' x='0.0' y='0.0'> </rect>
-<path class='bond-0 atom-0 atom-1' d='M 150.9,80.0 L 122.8,21.7' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-6 atom-6 atom-0' d='M 122.8,138.3 L 150.9,80.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-1 atom-1 atom-2' d='M 122.8,21.7 L 59.7,7.3' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-2 atom-2 atom-3' d='M 59.7,7.3 L 9.1,47.6' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-3 atom-3 atom-4' d='M 9.1,47.6 L 9.1,112.4' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-4 atom-4 atom-5' d='M 9.1,112.4 L 59.7,152.7' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-5 atom-5 atom-6' d='M 59.7,152.7 L 122.8,138.3' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-</svg>
-</span>
 <span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
               xmlns='http://www.w3.org/2000/svg'
@@ -917,30 +895,6 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 <path class='bond-8 atom-8 atom-9' d='M 43.6,17.0 L 80.0,7.3' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-9 atom-9 atom-10' d='M 80.0,7.3 L 116.4,17.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-10 atom-10 atom-11' d='M 116.4,17.0 L 143.0,43.6' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-</svg>
-</span>
-<span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
-<svg version='1.1' baseProfile='full'
-              xmlns='http://www.w3.org/2000/svg'
-                      xmlns:rdkit='http://www.rdkit.org/xml'
-                      xmlns:xlink='http://www.w3.org/1999/xlink'
-                  xml:space='preserve'
-width='160px' height='160px' viewBox='0 0 160 160'>
-<!-- END OF HEADER -->
-<rect style='opacity:1.0;fill:#FFFFFF;stroke:none' width='160.0' height='160.0' x='0.0' y='0.0'> </rect>
-<path class='bond-0 atom-0 atom-1' d='M 7.3,44.6 L 39.2,42.4' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-1 atom-1 atom-2' d='M 39.2,42.4 L 57.0,69.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-2 atom-2 atom-3' d='M 57.0,69.0 L 43.0,97.7' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-12 atom-11 atom-2' d='M 88.9,66.7 L 57.0,69.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-3 atom-3 atom-4' d='M 43.0,97.7 L 60.9,124.2' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-4 atom-4 atom-5' d='M 60.9,124.2 L 92.8,122.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-5 atom-5 atom-6' d='M 92.8,122.0 L 106.8,93.3' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-6 atom-6 atom-7' d='M 106.8,93.3 L 138.7,91.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-11 atom-11 atom-6' d='M 88.9,66.7 L 106.8,93.3' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-7 atom-7 atom-8' d='M 138.7,91.0 L 152.7,62.3' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-8 atom-8 atom-9' d='M 152.7,62.3 L 134.9,35.8' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-9 atom-9 atom-10' d='M 134.9,35.8 L 103.0,38.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-10 atom-10 atom-11' d='M 103.0,38.0 L 88.9,66.7' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 </svg>
 </span>
 </div>
@@ -2092,7 +2046,7 @@ L 19.3 84.4
 ### Groups
 The following abbreviations may be used to represent various functional groups:
 ```py
-[Ac], [Bn], [Boc], [Bz], [CCl3], [CF3], [CHO], [CN], [COO-], [COOEt], [COOH], [COOMe], [Cbz], [Et], [Ms], [NHAc], [NHMe], [NMe2], [NO2], [OAc], [OEt], [OMe], [Ph], [Piv], [Tf], [Tol], [Ts], [iBu], [iPr], [nBu], [nPr], [sBu], [tBu]
+[Ac], [Bn], [Boc], [Bz], [CCl3], [CF3], [CHO], [CN], [COO-], [COOEt], [COOH], [COOMe], [Cbz], [Et], [Ms], [NHAc], [NHMe], [NMe2], [NO2], [OAc], [OEt], [OMe], [Ph], [Piv], [Tf], [Tol], [Ts], [benzene], [iBu], [iPr], [nBu], [nPr], [sBu], [tBu]
 ```
 
 | AMSR | molecule |
