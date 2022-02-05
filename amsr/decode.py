@@ -45,14 +45,15 @@ def _saturate(atom):
 
 
 def _ring(mol, atom, ring, bond, enlarge):
-    m = match(r"(\d+)(\.*)", ring)
-    n = int(m.group(1))
+    m = match(r"(\<*)(\d+)(\.*)", ring)
+    enlarge += len(m.group(1))
+    n = int(m.group(2))
     if n == 0:
         n = 10 + enlarge
         isLarge = True
     else:
         isLarge = False
-    nSkip = len(m.group(2))
+    nSkip = len(m.group(3))
     for i in reversed(range(len(atom))):
         if atom[i].canBond():
             for j in BFSTree(mol.GetAtomWithIdx(i), n - 1):

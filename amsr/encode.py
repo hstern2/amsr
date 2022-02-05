@@ -7,12 +7,10 @@ from .groups import EncodeGroups
 from .tokens import DOT, NOP, RING_DIGITS, ENLARGE
 
 
-def _ringTokens(n, nSkip, b, bond):
+def _ringTokens(n, nSkip):
     if n >= 10:
         yield from iter(ENLARGE * (n - 10))
         n = 0
-    if bond is not None:
-        yield (b, bond)
     yield str(n)
     yield from iter(DOT * nSkip)
     yield NOP
@@ -71,6 +69,11 @@ def _omitUnneededNOPs(t):
     ]
 
 
+def _bondTokens(b, bond):
+    if bond is not None:
+        yield (b, bond)
+
+
 def FromMolToTokens(mol: Chem.Mol, useGroups: Optional[bool] = True) -> List[str]:
     """Convert RDKit Mol to list of AMSR tokens
 
@@ -101,7 +104,8 @@ def FromMolToTokens(mol: Chem.Mol, useGroups: Optional[bool] = True) -> List[str
                 nSkip = 0
                 for k, depth in BFSFind(a, j, seenBonds):
                     if k == j:
-                        yield from _ringTokens(depth + 1, nSkip, b, bond)
+                        yield from _bondTokens(b, bond)
+                        yield from _ringTokens(depth + 1, nSkip)
                         seenBonds.add(ij)
                         ai.nNeighbors += 1
                         aj.nNeighbors += 1
@@ -112,8 +116,7 @@ def FromMolToTokens(mol: Chem.Mol, useGroups: Optional[bool] = True) -> List[str
                 seenBonds.add(ij)
                 ai.nNeighbors += 1
                 aj.nNeighbors += 1
-                if bond is not None:
-                    yield (b, bond)
+                yield from _bondTokens(b, bond)
                 yield (c, aj)
                 yield from _search(c)
         # end loop over bonds
