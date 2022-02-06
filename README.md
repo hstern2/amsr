@@ -39,7 +39,7 @@ Atoms are represented by their symbol
 enclosed in square brackets, as in SMILES.
 For a one-letter symbol,
 brackets may be omitted.  Atoms are assumed to have a fixed
-valence which limits the number of covalently-bonded neighbors.
+valence that limits the number of covalently-bonded neighbors.
 If an atom makes fewer bonds than its valence, hydrogens are assumed.
 
 | AMSR | molecule |
@@ -429,7 +429,7 @@ Branches are formed automatically when atoms can no longer
 make bonds.  They can also be made by "capping" or
 "saturating" an atom with hydrogens, using a period `.`
 (capping hydrogens are applied to the most
-recently-added atom which can still make bonds).
+recently-added atom that can still make bonds).
 New atoms will then be bonded to those added earlier, forming a branch.
 
 | AMSR | molecule |
@@ -477,7 +477,7 @@ Rings are denoted by a single digit
 (or two or more digits enclosed in square brackets)
 giving the size of the ring.
 A new bond is formed between
-the two most recently-added atoms which
+the two most recently-added atoms that
 can make bonds and when bonded will form a ring of that size.
 
 | AMSR | molecule |
