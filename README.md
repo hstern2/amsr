@@ -23,10 +23,10 @@ amsr.ToMol("CNcncc5cNcN6C.oC.o") # caffeine
 taxol_smi = "CC1=C2[C@@]([C@]([C@H]([C@@H]3[C@]4([C@H](OC4)C[C@@H]([C@]3(C(=O)[C@@H]2OC(=O)C)C)O)OC(=O)C)OC(=O)c5ccccc5)(C[C@@H]1OC(=O)[C@H](O)[C@@H](NC(=O)c6ccccc6)c7ccccc7)O)(C)C"
 
 amsr.FromSmiles(taxol_smi)
-# CccCC(C(C(C)C(OC4 .CC)C)6coC(8[OAc].C.O....[OAc].O[Bz].CC(6OcoC(O.C)N[Bz].[Ph]....O.C.C
+# CccCC(C(C(C)C(OC4.CC)C)6coC(8[OAc].C.O....[OAc].O[Bz].CC(6OcoC(O.C)N[Bz].[Ph]....O.C.C
 
 amsr.FromSmiles(taxol_smi, useGroups=False)
-# CccCC(C(C(C)C(OC4 .CC)C)6coC(8OcoC..C.O....OcoC..Ococccccc6 ......CC(6OcoC(O.C)Ncocccccc6 ......cccccc6 .........O.C.C
+# CccCC(C(C(C)C(OC4.CC)C)6coC(8OcoC..C.O....OcoC..Ococccccc6......CC(6OcoC(O.C)Ncocccccc6......cccccc6.........O.C.C
 ```
 
 ## Description
@@ -473,8 +473,9 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 
 
 ### Rings
-Rings with fewer than ten members are denoted by a digit between `3` and `9`
-indicating the size of the ring.
+Rings are denoted by a single digit
+(or two or more digits enclosed in square brackets)
+giving the size of the ring.
 A new bond is formed between atoms *i* and *j* where
 *i* and *j* are the most recently-added atoms which
 can still make bonds and when bonded will form a ring of that size.
@@ -483,6 +484,7 @@ can still make bonds and when bonded will form a ring of that size.
 | --- | --- |
 CCO3 | [oxirane](https://en.wikipedia.org/wiki/Ethylene_oxide)
 CCCCCC6 | [cyclohexane](https://en.wikipedia.org/wiki/Cyclohexane)
+CCCCCCCCCCCC[12] | [cyclododecane](https://en.wikipedia.org/wiki/Cyclododecane)
 
 
 <div>
@@ -536,6 +538,29 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 <path class='bond-2 atom-2 atom-3' d='M 43.6,143.0 L 7.3,80.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-3 atom-3 atom-4' d='M 7.3,80.0 L 43.6,17.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-4 atom-4 atom-5' d='M 43.6,17.0 L 116.4,17.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+</svg>
+</span>
+<span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
+<svg version='1.1' baseProfile='full'
+              xmlns='http://www.w3.org/2000/svg'
+                      xmlns:rdkit='http://www.rdkit.org/xml'
+                      xmlns:xlink='http://www.w3.org/1999/xlink'
+                  xml:space='preserve'
+width='160px' height='160px' viewBox='0 0 160 160'>
+<!-- END OF HEADER -->
+<rect style='opacity:1.0;fill:#FFFFFF;stroke:none' width='160.0' height='160.0' x='0.0' y='0.0'> </rect>
+<path class='bond-0 atom-0 atom-1' d='M 152.7,80.0 L 143.0,116.4' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-11 atom-11 atom-0' d='M 143.0,43.6 L 152.7,80.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-1 atom-1 atom-2' d='M 143.0,116.4 L 116.4,143.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-2 atom-2 atom-3' d='M 116.4,143.0 L 80.0,152.7' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-3 atom-3 atom-4' d='M 80.0,152.7 L 43.6,143.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-4 atom-4 atom-5' d='M 43.6,143.0 L 17.0,116.4' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-5 atom-5 atom-6' d='M 17.0,116.4 L 7.3,80.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-6 atom-6 atom-7' d='M 7.3,80.0 L 17.0,43.6' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-7 atom-7 atom-8' d='M 17.0,43.6 L 43.6,17.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-8 atom-8 atom-9' d='M 43.6,17.0 L 80.0,7.3' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-9 atom-9 atom-10' d='M 80.0,7.3 L 116.4,17.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-10 atom-10 atom-11' d='M 116.4,17.0 L 143.0,43.6' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 </svg>
 </span>
 </div>
@@ -757,14 +782,14 @@ L 85.0 132.8
 
 
 ### Ring selection
-When more than one ring of a given size can be formed, one or more periods `.` immediately after
+When more than one ring of a given size can be formed, one or more semicolons `;` immediately after
 the digit will make ring-forming bonds with atoms appearing earlier in the
 string, rather than the most recent.
 
 | AMSR | molecule |
 | --- | --- |
 ccOcc5cccc6 | [benzofuran](https://en.wikipedia.org/wiki/Benzofuran)
-ccOcc5cccc6. | [isobenzofuran](https://en.wikipedia.org/wiki/Isobenzofuran)
+ccOcc5cccc6; | [isobenzofuran](https://en.wikipedia.org/wiki/Isobenzofuran)
 
 
 <div>
@@ -858,43 +883,6 @@ Q 9.0 77.6, 9.0 80.0
 Q 9.0 82.5, 10.0 83.7
 Q 11.0 84.9, 12.8 84.9
 ' fill='#FF0000'/>
-</svg>
-</span>
-</div>
-
-
-### Large rings
-Rings with ten or more members are denoted by zero or more `<` signs followed by `0`.
-The ring size is 10 plus the number of preceding `<` signs.  (The `<` signs do not
-need to appear immediately before `0`; there can be other intervening tokens.)
-
-| AMSR | molecule |
-| --- | --- |
-CCCCCCCCCCCC<<0 | [cyclododecane](https://en.wikipedia.org/wiki/Cyclododecane)
-
-
-<div>
-<span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
-<svg version='1.1' baseProfile='full'
-              xmlns='http://www.w3.org/2000/svg'
-                      xmlns:rdkit='http://www.rdkit.org/xml'
-                      xmlns:xlink='http://www.w3.org/1999/xlink'
-                  xml:space='preserve'
-width='160px' height='160px' viewBox='0 0 160 160'>
-<!-- END OF HEADER -->
-<rect style='opacity:1.0;fill:#FFFFFF;stroke:none' width='160.0' height='160.0' x='0.0' y='0.0'> </rect>
-<path class='bond-0 atom-0 atom-1' d='M 152.7,80.0 L 143.0,116.4' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-11 atom-11 atom-0' d='M 143.0,43.6 L 152.7,80.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-1 atom-1 atom-2' d='M 143.0,116.4 L 116.4,143.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-2 atom-2 atom-3' d='M 116.4,143.0 L 80.0,152.7' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-3 atom-3 atom-4' d='M 80.0,152.7 L 43.6,143.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-4 atom-4 atom-5' d='M 43.6,143.0 L 17.0,116.4' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-5 atom-5 atom-6' d='M 17.0,116.4 L 7.3,80.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-6 atom-6 atom-7' d='M 7.3,80.0 L 17.0,43.6' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-7 atom-7 atom-8' d='M 17.0,43.6 L 43.6,17.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-8 atom-8 atom-9' d='M 43.6,17.0 L 80.0,7.3' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-9 atom-9 atom-10' d='M 80.0,7.3 L 116.4,17.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-10 atom-10 atom-11' d='M 116.4,17.0 L 143.0,43.6' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 </svg>
 </span>
 </div>

@@ -4,16 +4,12 @@ from .atom import Atom, GetSeenIndex, SetSeenIndex, IsSeen
 from .bfs import BFSFind
 from .bond import Bond
 from .groups import EncodeGroups
-from .tokens import DOT, NOP, RING_DIGITS, ENLARGE
+from .tokens import DOT, SKIP
 
 
 def _ringTokens(n, nSkip):
-    if n >= 10:
-        yield from iter(ENLARGE * (n - 10))
-        n = 0
-    yield str(n)
-    yield from iter(DOT * nSkip)
-    yield NOP
+    yield f"[{n}]" if n > 9 else f"{n}"
+    yield from iter(SKIP * nSkip)
 
 
 def _searchOrder(b, a):
@@ -33,40 +29,14 @@ def _isDot(t):
     return t == DOT
 
 
-def _isRingDigit(t):
-    return t in RING_DIGITS
-
-
-def _isDotOrRingDigit(t):
-    return _isDot(t) or _isRingDigit(t)
-
-
-def _needsNOP(prv, nxt):
-    return (_isRingDigit(prv) and _isDotOrRingDigit(nxt)) or (
-        _isDot(prv) and _isDot(nxt)
-    )
-
-
 def _removeTrailingDots(t):
     i = len(t) - 1
     while i >= 0:
         if not _isDot(t[i]):
-            if not _isRingDigit(t[i]):
-                del t[i + 1 :]
+            del t[i + 1 :]
             break
         i -= 1
     return t
-
-
-def _omitUnneededNOPs(t):
-    n = len(t)
-    while n > 0 and t[n - 1] == NOP:
-        n -= 1
-    return [
-        t[i]
-        for i in range(n)
-        if t[i] != NOP or (0 < i < n - 1 and _needsNOP(t[i - 1], t[i + 1]))
-    ]
 
 
 def _bondTokens(b, bond):
@@ -130,14 +100,14 @@ def FromMolToTokens(mol: Chem.Mol, useGroups: Optional[bool] = True) -> List[str
                 yield a, atom[i]
                 yield from _search(a)
 
-    t = _omitUnneededNOPs(
-        [
-            t[1].asToken(t[0], mol) if type(t) == tuple else t
-            for t in list(_getPreTokens())
-        ]
-    )
+    t = [
+        t[1].asToken(t[0], mol) if type(t) == tuple else t
+        for t in list(_getPreTokens())
+    ]
+
     if useGroups:
         t = EncodeGroups(t)
+
     return _removeTrailingDots(t)
 
 

@@ -44,6 +44,13 @@ class Atom:
         )
         self.nNeighbors = 0
         self.isSaturated = False
+        self.rings = []
+
+    def isIn3Or4MemberedRing(self):
+        for r in self.rings:
+            if len(r) <= 4:
+                return True
+        return False
 
     def canBond(self):
         return (not self.isSaturated) and self.nNeighbors < self.maxNeighbors

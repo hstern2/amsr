@@ -3,6 +3,16 @@ import rdkit.Chem as rd
 from .atom import GetSeenIndex
 
 
+def _idx(n):
+    return n.name.GetIdx()
+
+
+def BFSPath(n):
+    if n is not None:
+        yield _idx(n)
+        yield from BFSPath(n.parent)
+
+
 def BFSTree(a, n):
     ai = a.GetIdx()
     if n == 0:
@@ -23,8 +33,8 @@ def BFSTree(a, n):
                 if child.depth < n:
                     q.append(child)
                 elif ci < ai:
-                    tree.append(ci)
-    return sorted(tree, reverse=True)
+                    tree.append(child)
+    return sorted(tree, key=_idx, reverse=True)
 
 
 def BFSFind(a, targetIdx, seenBonds):

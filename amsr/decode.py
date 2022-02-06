@@ -1,13 +1,13 @@
 from rdkit import Chem
-from typing import Optional, List
-from re import match
+from typing import List
+from re import match, escape
 from .atom import Atom
 from .bond import Bond
 from .pibonds import PiBonds
-from .bfs import BFSTree
+from .bfs import BFSTree, BFSPath
 from .parity import IsEvenParity
 from .groups import DecodeGroups
-from .tokens import RegExp
+from .tokens import RegExp, SKIP, L_BRACKET, R_BRACKET
 
 
 def _addBond(mol, atom, i, j, bond):
@@ -44,26 +44,29 @@ def _saturate(atom):
             return
 
 
-def _ring(mol, atom, ring, bond, enlarge):
-    m = match(r"(\<*)(\d+)(\.*)", ring)
-    enlarge += len(m.group(1))
-    n = int(m.group(2))
-    if n == 0:
-        n = 10 + enlarge
-        isLarge = True
-    else:
-        isLarge = False
-    nSkip = len(m.group(3))
+def _ring(mol, atom, ringStr, bond):
+    m = match(
+        f"{escape(L_BRACKET)}?([0-9]+){escape(R_BRACKET)}?({escape(SKIP)}*)", ringStr
+    )
+    n = int(m.group(1))
+    if n < 3:
+        return
+    nSkip = len(m.group(2))
     for i in reversed(range(len(atom))):
-        if atom[i].canBond():
-            for j in BFSTree(mol.GetAtomWithIdx(i), n - 1):
-                if atom[j].canBond():
-                    if nSkip == 0:
-                        _addBond(mol, atom, i, j, bond)
-                        return isLarge
-                    else:
-                        nSkip -= 1
-    return isLarge
+        if not atom[i].canBond():
+            continue
+        for node in BFSTree(mol.GetAtomWithIdx(i), n - 1):
+            j = node.name.GetIdx()
+            if not atom[j].canBond():
+                continue
+            r = set(BFSPath(node))
+            if nSkip == 0:
+                for k in r:
+                    atom[k].rings.append(r)
+                _addBond(mol, atom, i, j, bond)
+                return
+            else:
+                nSkip -= 1
 
 
 def ToMol(s: str, contiguous: bool = False) -> Chem.Mol:
@@ -75,20 +78,15 @@ def ToMol(s: str, contiguous: bool = False) -> Chem.Mol:
     """
     mol = Chem.RWMol()
     atom: List[Atom] = []
-    enlarge = 0
     for m in RegExp.finditer(DecodeGroups(s)):
         if m.group("ring"):
-            isLarge = _ring(mol, atom, m.group("ring"), Bond(m.group("bond")), enlarge)
-            if isLarge:
-                enlarge = 0
+            _ring(mol, atom, m.group("ring"), Bond(m.group("bond")))
         elif m.group("atom"):
             _addAtom(
                 mol, atom, Atom(m.group("atom")), Bond(m.group("bond")), contiguous
             )
         elif m.group("saturate"):
             _saturate(atom)
-        elif m.group("enlarge"):
-            enlarge += 1
     for a in mol.GetAtoms():
         if a.GetChiralTag() != Chem.ChiralType.CHI_UNSPECIFIED:
             n = len(a.GetBonds())
@@ -117,6 +115,7 @@ def ToMol(s: str, contiguous: bool = False) -> Chem.Mol:
         if atom[a.GetIdx()].canBond():
             a.SetBoolProp("_active", True)
             break
+
     return mol
 
 
