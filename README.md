@@ -476,9 +476,9 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 Rings are denoted by a single digit
 (or two or more digits enclosed in square brackets)
 giving the size of the ring.
-A new bond is formed between atoms *i* and *j* where
-*i* and *j* are the most recently-added atoms which
-can still make bonds and when bonded will form a ring of that size.
+A new bond is formed between
+the two most recently-added atoms which
+can make bonds and when bonded will form a ring of that size.
 
 | AMSR | molecule |
 | --- | --- |
