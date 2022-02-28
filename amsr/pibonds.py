@@ -1,4 +1,3 @@
-from select import kqueue
 from rdkit import Chem
 from networkx import Graph
 from networkx.algorithms import max_weight_matching
