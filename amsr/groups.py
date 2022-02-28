@@ -72,5 +72,5 @@ def DecodeGroups(s: str) -> str:
     return s if _pattern is None else _pattern.sub(lambda m: _groups[m.group(1)][0], s)
 
 
-def EncodeGroups(s: str) -> str:
+def EncodeGroups(s: List[str]) -> List[str]:
     return s if _mr is None else _mr.replace(s)

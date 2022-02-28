@@ -4,7 +4,7 @@ from re import match, escape
 from .atom import Atom
 from .bond import Bond
 from .pibonds import PiBonds
-from .bfs import BFSTree, BFSPath
+from .bfs import BFSTree
 from .parity import IsEvenParity
 from .groups import DecodeGroups
 from .tokens import RegExp, SKIP, L_BRACKET, R_BRACKET
@@ -59,21 +59,19 @@ def _ring(mol, atom, ringStr, bond):
             j = node.name.GetIdx()
             if not atom[j].canBond():
                 continue
-            r = set(BFSPath(node))
             if nSkip == 0:
-                for k in r:
-                    atom[k].rings.append(r)
                 _addBond(mol, atom, i, j, bond)
                 return
             else:
                 nSkip -= 1
 
 
-def ToMol(s: str, contiguous: bool = False) -> Chem.Mol:
+def ToMol(s: str, contiguous: bool = False, useFilters: bool = True) -> Chem.Mol:
     """Convert AMSR to an RDKit Mol
 
     :param s: AMSR
     :param contiguous: make second pass (considering "saturated" atoms) to form bonds, rather than start new molecule
+    :param useFilters: use a subset of filters from J. Chem. Inf. Model. 52, 2864 (2012) to exclude unstable or synthetically inaccessible molecules
     :return: RDKit Mol
     """
     mol = Chem.RWMol()
@@ -104,7 +102,7 @@ def ToMol(s: str, contiguous: bool = False) -> Chem.Mol:
                 b.SetStereo(Chem.BondStereo.STEREONONE)
             else:
                 b.SetStereoAtoms(min(ni), min(nj))
-    PiBonds(mol, atom)
+    PiBonds(mol, atom, useFilters)
     for i, a in enumerate(atom):
         if a.bangs > 0 and a.canBond():
             mol.GetAtomWithIdx(i).SetNumExplicitHs(a.maxNeighbors - a.nNeighbors)
@@ -119,11 +117,12 @@ def ToMol(s: str, contiguous: bool = False) -> Chem.Mol:
     return mol
 
 
-def ToSmiles(s: str, contiguous: bool = False) -> str:
+def ToSmiles(s: str, contiguous: bool = False, useFilters: bool = True) -> str:
     """Convert AMSR to SMILES
 
     :param s: AMSR
     :param contiguous: make second pass (considering "saturated" atoms) to form bonds, rather than start new molecule
+    :param useFilters: use a subset of filters from J. Chem. Inf. Model. 52, 2864 (2012) to exclude unstable or synthetically inaccessible molecules
     :return: SMILES
     """
-    return Chem.MolToSmiles(ToMol(s), contiguous)
+    return Chem.MolToSmiles(ToMol(s), contiguous, useFilters)

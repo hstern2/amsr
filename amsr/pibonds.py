@@ -1,92 +1,131 @@
+from select import kqueue
 from rdkit import Chem
 from networkx import Graph
 from networkx.algorithms import max_weight_matching
+from itertools import combinations
 
 
-def piBond(mol, atom, i, j, order):
-    mol.GetBondBetweenAtoms(i, j).SetBondType(
-        Chem.BondType.TRIPLE if order == 3 else Chem.BondType.DOUBLE
-    )
-    atom[i].nPiBonds += order - 1
-    atom[j].nPiBonds += order - 1
+def _inc(a, k):
+    if k not in a:
+        a[k] = 0
+    a[k] += 1
 
 
-def incrementBond(mol, atom, i, j):
-    b = mol.GetBondBetweenAtoms(i, j)
-    t = b.GetBondType()
-    if t == Chem.BondType.SINGLE:
-        b.SetBondType(Chem.BondType.DOUBLE)
-    elif t == Chem.BondType.DOUBLE:
-        b.SetBondType(Chem.BondType.TRIPLE)
-    atom[i].nPiBonds += 1
-    atom[j].nPiBonds += 1
+class PiBonds:
+    def piBond(self, i, j, order):
+        self.mol.GetBondBetweenAtoms(i, j).SetBondType(
+            Chem.BondType.TRIPLE if order == 3 else Chem.BondType.DOUBLE
+        )
+        self.atom[i].nPiBonds += order - 1
+        self.atom[j].nPiBonds += order - 1
 
+    def incrementBond(self, i, j):
+        b = self.mol.GetBondBetweenAtoms(i, j)
+        t = b.GetBondType()
+        if t == Chem.BondType.SINGLE:
+            b.SetBondType(Chem.BondType.DOUBLE)
+        elif t == Chem.BondType.DOUBLE:
+            b.SetBondType(Chem.BondType.TRIPLE)
+        self.atom[i].nPiBonds += 1
+        self.atom[j].nPiBonds += 1
 
-def subgraph(d, condition):
-    return {i: {j for j in n if condition(j)} for i, n in d.items() if condition(i)}
+    def canPiBond(self, i):
+        return self.atom[i].nAvailablePiBonds() >= 1 and i not in self.excluded
 
+    def canMultiplePiBond(self, i):
+        return self.atom[i].nAvailablePiBonds() >= 2 and i not in self.excluded
 
-def PiBonds(mol, atom):
-    def canPiBond(i):
-        return atom[i].nAvailablePiBonds() >= 1
+    def canBePi(self, i, j):
+        return self.canPiBond(i) and self.canPiBond(j)
 
-    def canMultiplePiBond(i):
-        return atom[i].nAvailablePiBonds() >= 2
+    def canBeTriple(self, i, j):
+        return self.canMultiplePiBond(i) and self.canMultiplePiBond(j)
 
-    def canBePi(i, j):
-        return canPiBond(i) and canPiBond(j)
-
-    def canBeTriple(i, j):
-        return canMultiplePiBond(i) and canMultiplePiBond(j)
-
-    def singleCoordinate(g, i):
-        return g.degree[i] == 1
-
-    def possiblePiBonds():
-        for b in mol.GetBonds():
+    def possiblePiBonds(self):
+        for b in self.mol.GetBonds():
             i, j = b.GetBeginAtomIdx(), b.GetEndAtomIdx()
-            if canBePi(i, j):
+            if self.canBePi(i, j):
                 yield i, j
 
-    def isCarbon(i):
-        return atom[i].isCarbon()
+    def isCarbon(self, i):
+        return self.atom[i].isCarbon()
 
-    # subgraph of atoms that can make pi bonds
-    g = Graph(possiblePiBonds())
+    def reduceGraph(self):
+        self.graph = self.graph.subgraph(
+            [i for i in self.graph.nodes if self.canPiBond(i)]
+        )
 
-    # single coordinate - heteroatoms first
-    done = False
-    while not done:
-        done = True
-        for i in sorted(g.nodes, key=isCarbon):
-            if singleCoordinate(g, i):
-                for j in g.neighbors(i):
-                    if canBeTriple(i, j):
-                        piBond(mol, atom, i, j, 3)
-                    elif canBePi(i, j):
-                        piBond(mol, atom, i, j, 2)
-                    else:
-                        continue
-                    done = False
-        if not done:
-            g = g.subgraph(filter(canPiBond, g.nodes))
+    def singleCoordinate(self, i):
+        return self.graph.degree[i] == 1
 
-    # isolated sp centers
-    for i in g.nodes:
-        if canMultiplePiBond(i):
-            for j in g.neighbors(i):
-                if canMultiplePiBond(j):
-                    break
-            else:
-                for j in g.neighbors(i):
-                    if canBePi(i, j):
-                        piBond(mol, atom, i, j, 2)
+    def bridgeheadCarbons(self, n):
+        for i, j in combinations(
+            [r for r in self.ringInfo.BondRings() if len(r) <= n], 2
+        ):
+            bridge = set(i) & set(j)
+            if len(bridge) >= 2:
+                a = {}
+                for b in bridge:
+                    b = self.mol.GetBondWithIdx(b)
+                    _inc(a, b.GetBeginAtomIdx())
+                    _inc(a, b.GetEndAtomIdx())
+                for k, n in a.items():
+                    if n == 1 and self.isCarbon(k):
+                        yield k
 
-    # remaining pi bonds
-    done = False
-    while not done:
-        done = True
-        g = g.subgraph(filter(canPiBond, g.nodes))
-        for i, j in max_weight_matching(g):
-            incrementBond(mol, atom, i, j)
-            done = False
+    def ringAtoms(self, n):
+        yield from (i for r in self.ringInfo.AtomRings() if len(r) == n for i in r)
+
+    def __init__(self, mol, atom, useFilters=True):
+
+        self.mol = mol
+        self.atom = atom
+        self.excluded = set()
+
+        if useFilters:
+            # use a subset of filters from GDB17
+            # Ruddigkeit et al., J. Chem. Inf. Model. 52, 2864 (2012)
+            Chem.GetSSSR(self.mol)
+            self.ringInfo = self.mol.GetRingInfo()
+            self.excluded.update(self.bridgeheadCarbons(7))
+            self.excluded.update(self.ringAtoms(3))
+
+        # subgraph of atoms that can make pi bonds
+        self.graph = Graph(self.possiblePiBonds())
+
+        # single coordinate - heteroatoms first
+        done = False
+        while not done:
+            done = True
+            for i in sorted(self.graph.nodes, key=lambda k: self.isCarbon(k)):
+                if self.singleCoordinate(i):
+                    for j in self.graph.neighbors(i):
+                        if self.canBeTriple(i, j):
+                            self.piBond(i, j, 3)
+                        elif self.canBePi(i, j):
+                            self.piBond(i, j, 2)
+                        else:
+                            continue
+                        done = False
+            if not done:
+                self.reduceGraph()
+
+        # isolated sp centers
+        for i in self.graph.nodes:
+            if self.canMultiplePiBond(i):
+                for j in self.graph.neighbors(i):
+                    if self.canMultiplePiBond(j):
+                        break
+                else:
+                    for j in self.graph.neighbors(i):
+                        if self.canBePi(i, j):
+                            self.piBond(i, j, 2)
+
+        # remaining pi bonds
+        done = False
+        while not done:
+            done = True
+            self.reduceGraph()
+            for i, j in max_weight_matching(self.graph):
+                self.incrementBond(i, j)
+                done = False
