@@ -66,9 +66,173 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="module-amsr.groups">
-<span id="api"></span><h1>API<a class="headerlink" href="#module-amsr.groups" title="Permalink to this headline"></a></h1>
+  <section id="module-amsr.encode">
+<span id="api"></span><h1>API<a class="headerlink" href="#module-amsr.encode" title="Permalink to this headline"></a></h1>
 <dl class="py function">
+<dt class="sig sig-object py" id="amsr.encode.FromMol">
+<span class="sig-name descname"><span class="pre">FromMol</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mol</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useGroups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amsr.encode.FromMol" title="Permalink to this definition"></a></dt>
+<dd><p>Convert RDKit Mol to AMSR</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mol</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Mol</span></code>) – RDKit Mol</p></li>
+<li><p><strong>useGroups</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>]) – use group symbols/abbreviations</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>AMSR</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="amsr.encode.FromMolToTokens">
+<span class="sig-name descname"><span class="pre">FromMolToTokens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mol</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useGroups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amsr.encode.FromMolToTokens" title="Permalink to this definition"></a></dt>
+<dd><p>Convert RDKit Mol to list of AMSR tokens</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mol</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Mol</span></code>) – RDKit Mol</p></li>
+<li><p><strong>useGroups</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>]) – use group symbols/abbreviations</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>list of AMSR tokens</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="amsr.encode.FromSmiles">
+<span class="sig-name descname"><span class="pre">FromSmiles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useGroups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amsr.encode.FromSmiles" title="Permalink to this definition"></a></dt>
+<dd><p>Convert SMILES to AMSR</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>s</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – SMILES</p></li>
+<li><p><strong>useGroups</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>]) – use group symbols/abbreviations</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>AMSR</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="amsr.encode.FromSmilesToTokens">
+<span class="sig-name descname"><span class="pre">FromSmilesToTokens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useGroups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amsr.encode.FromSmilesToTokens" title="Permalink to this definition"></a></dt>
+<dd><p>Convert SMILES to list of AMSR tokens</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mol</strong> – RDKit Mol</p></li>
+<li><p><strong>useGroups</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>]) – use group symbols/abbreviations</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>AMSR</p>
+</dd>
+</dl>
+</dd></dl>
+
+<span class="target" id="module-amsr.decode"></span><dl class="py function">
+<dt class="sig sig-object py" id="amsr.decode.ToMol">
+<span class="sig-name descname"><span class="pre">ToMol</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contiguous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useFilters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amsr.decode.ToMol" title="Permalink to this definition"></a></dt>
+<dd><p>Convert AMSR to an RDKit Mol</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>s</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – AMSR</p></li>
+<li><p><strong>contiguous</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – make second pass (considering “saturated” atoms) to form bonds, rather than start new molecule</p></li>
+<li><p><strong>useFilters</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – use a subset of filters from J. Chem. Inf. Model. 52, 2864 (2012) to exclude unstable or synthetically inaccessible molecules</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mol</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>RDKit Mol</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="amsr.decode.ToSmiles">
+<span class="sig-name descname"><span class="pre">ToSmiles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contiguous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useFilters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amsr.decode.ToSmiles" title="Permalink to this definition"></a></dt>
+<dd><p>Convert AMSR to SMILES</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>s</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – AMSR</p></li>
+<li><p><strong>contiguous</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – make second pass (considering “saturated” atoms) to form bonds, rather than start new molecule</p></li>
+<li><p><strong>useFilters</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – use a subset of filters from J. Chem. Inf. Model. 52, 2864 (2012) to exclude unstable or synthetically inaccessible molecules</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>SMILES</p>
+</dd>
+</dl>
+</dd></dl>
+
+<span class="target" id="module-amsr.check"></span><dl class="py function">
+<dt class="sig sig-object py" id="amsr.check.CheckMol">
+<span class="sig-name descname"><span class="pre">CheckMol</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useFilters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amsr.check.CheckMol" title="Permalink to this definition"></a></dt>
+<dd><p>Do round trip from RDKit mol m to AMSR.
+Compare InChI strings (with -FixedH) before and after round trip.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>m</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Mol</span></code>) – RDKit Mol</p></li>
+<li><p><strong>useFilters</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – use a subset of filters from J. Chem. Inf. Model. 52, 2864 (2012) to exclude unstable or synthetically inaccessible molecules</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>do InChI strings match?</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="amsr.check.CheckSmiles">
+<span class="sig-name descname"><span class="pre">CheckSmiles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useFilters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amsr.check.CheckSmiles" title="Permalink to this definition"></a></dt>
+<dd><p>Convert SMILES s to RDKit Mol, then do round trip to AMSR.
+Compare InChI strings (with -FixedH) before and after round trip.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>s</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – SMILES</p></li>
+<li><p><strong>useFilters</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – use a subset of filters from J. Chem. Inf. Model. 52, 2864 (2012) to exclude unstable or synthetically inaccessible molecules</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>do InChI strings match?</p>
+</dd>
+</dl>
+</dd></dl>
+
+<span class="target" id="module-amsr.groups"></span><dl class="py function">
 <dt class="sig sig-object py" id="amsr.groups.Groups">
 <span class="sig-name descname"><span class="pre">Groups</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#amsr.groups.Groups" title="Permalink to this definition"></a></dt>
 <dd><p>Keys are functional group abbreviations, values are lists of one or more AMSR strings
