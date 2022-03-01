@@ -125,4 +125,4 @@ def ToSmiles(s: str, contiguous: bool = False, useFilters: bool = True) -> str:
     :param useFilters: use a subset of filters from J. Chem. Inf. Model. 52, 2864 (2012) to exclude unstable or synthetically inaccessible molecules
     :return: SMILES
     """
-    return Chem.MolToSmiles(ToMol(s), contiguous, useFilters)
+    return Chem.MolToSmiles(ToMol(s, contiguous, useFilters))

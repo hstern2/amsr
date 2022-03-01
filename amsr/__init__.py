@@ -10,6 +10,7 @@ __all__ = [
     "Groups",
     "InitializeGroups",
     "ToTokens",
+    "Morph",
 ]
 
 from .version import __version__
@@ -18,3 +19,4 @@ from .decode import ToMol, ToSmiles
 from .check import CheckMol, CheckSmiles
 from .groups import Groups, InitializeGroups
 from .tokens import ToTokens
+from .morph import Morph
