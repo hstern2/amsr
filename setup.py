@@ -15,7 +15,7 @@ setup(
     url="https://hstern2.github.io/amsr/",
     license="MIT",
     packages=["amsr"],
-    install_requires=["rdkit-pypi", "networkx", "anytree"],
+    install_requires=["rdkit-pypi", "networkx", "anytree", "Levenshtein"],
     test_suite="tests",
     long_description=long_description,
     long_description_content_type="text/markdown",
