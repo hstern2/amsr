@@ -2,12 +2,7 @@ from rdkit import Chem
 from networkx import Graph
 from networkx.algorithms import max_weight_matching
 from itertools import combinations
-
-
-def _inc(a, k):
-    if k not in a:
-        a[k] = 0
-    a[k] += 1
+from .count import Count
 
 
 class PiBonds:
@@ -66,8 +61,8 @@ class PiBonds:
                 a = {}
                 for b in bridge:
                     b = self.mol.GetBondWithIdx(b)
-                    _inc(a, b.GetBeginAtomIdx())
-                    _inc(a, b.GetEndAtomIdx())
+                    Count(a, b.GetBeginAtomIdx())
+                    Count(a, b.GetEndAtomIdx())
                 for k, n in a.items():
                     if n == 1 and self.isCarbon(k):
                         yield k

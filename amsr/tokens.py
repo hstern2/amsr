@@ -42,6 +42,6 @@ def ToTokens(s: str) -> List[str]:
             if g[k] is not None:
                 t.append(g[k])
         if g["ring"] is not None:
-            t.append(g["ring"].replace(";", ""))
-            t.extend(";" * g["ring"].count(";"))
+            t.append(g["ring"].replace(SKIP, ""))
+            t.extend(SKIP * g["ring"].count(SKIP))
     return t
