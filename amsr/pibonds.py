@@ -1,7 +1,6 @@
 from rdkit import Chem
 from networkx import Graph
 from networkx.algorithms import max_weight_matching
-from itertools import combinations
 from .ringinfo import BridgeheadAtoms, RingAtoms
 
 
