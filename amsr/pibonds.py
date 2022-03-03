@@ -2,7 +2,7 @@ from rdkit import Chem
 from networkx import Graph
 from networkx.algorithms import max_weight_matching
 from itertools import combinations
-from .count import Count
+from .ringinfo import BridgeheadAtoms, RingAtoms
 
 
 class PiBonds:
@@ -52,24 +52,6 @@ class PiBonds:
     def singleCoordinate(self, i):
         return self.graph.degree[i] == 1
 
-    def bridgeheadCarbons(self, n):
-        for i, j in combinations(
-            [r for r in self.ringInfo.BondRings() if len(r) <= n], 2
-        ):
-            bridge = set(i) & set(j)
-            if len(bridge) >= 2:
-                a = {}
-                for b in bridge:
-                    b = self.mol.GetBondWithIdx(b)
-                    Count(a, b.GetBeginAtomIdx())
-                    Count(a, b.GetEndAtomIdx())
-                for k, n in a.items():
-                    if n == 1 and self.isCarbon(k):
-                        yield k
-
-    def ringAtoms(self, n):
-        yield from (i for r in self.ringInfo.AtomRings() if len(r) == n for i in r)
-
     def __init__(self, mol, atom, useFilters=True):
 
         self.mol = mol
@@ -80,9 +62,9 @@ class PiBonds:
             # use a subset of filters from GDB17
             # Ruddigkeit et al., J. Chem. Inf. Model. 52, 2864 (2012)
             Chem.GetSSSR(self.mol)
-            self.ringInfo = self.mol.GetRingInfo()
-            self.excluded.update(self.bridgeheadCarbons(7))
-            self.excluded.update(self.ringAtoms(3))
+            ringInfo = self.mol.GetRingInfo()
+            self.excluded.update(BridgeheadAtoms(mol, ringInfo, 7))
+            self.excluded.update(RingAtoms(ringInfo, 3))
 
         # subgraph of atoms that can make pi bonds
         self.graph = Graph(self.possiblePiBonds())
