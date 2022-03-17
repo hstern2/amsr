@@ -10,7 +10,7 @@ inspired by
 
 ## Installing
 ```
-pip install git+git://github.com/hstern2/amsr.git
+pip install amsr
 ```
 
 ## Usage
