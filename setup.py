@@ -4,8 +4,10 @@ from setuptools import setup
 
 exec(open("amsr/version.py").read())
 
-with open("README.md", "r", encoding="utf-8") as fh:
-    long_description = fh.read()
+# with open("README.md", "r", encoding="utf-8") as fh:
+#    long_description = fh.read()
+
+long_description = "See [documentation](https://hstern2.github.io/amsr)"
 
 setup(
     name="amsr",
