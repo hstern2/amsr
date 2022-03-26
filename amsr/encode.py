@@ -77,15 +77,15 @@ def FromMolToTokens(mol: Chem.Mol, useGroups: Optional[bool] = True) -> List[str
                         yield from _bondTokens(b, bond)
                         yield from _ringTokens(depth + 1, nSkip)
                         seenBonds.add(ij)
-                        ai.nNeighbors += 1
-                        aj.nNeighbors += 1
+                        ai.addBondTo(aj)
                         break
-                    elif atom[k].canBond():
+                    elif atom[k].canBond() and ai.canBondWith(
+                        atom[k], useFilters=False
+                    ):
                         nSkip += 1
             else:  # new atom
                 seenBonds.add(ij)
-                ai.nNeighbors += 1
-                aj.nNeighbors += 1
+                ai.addBondTo(aj)
                 yield from _bondTokens(b, bond)
                 yield (c, aj)
                 yield from _search(c)

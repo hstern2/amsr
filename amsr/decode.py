@@ -11,28 +11,29 @@ from .tokens import RegExp, SKIP, L_BRACKET, R_BRACKET
 
 
 def _addBond(mol, atom, i, j, bond):
-    atom[i].nNeighbors += 1
-    atom[j].nNeighbors += 1
+    atom[i].addBondTo(atom[j])
     n = mol.AddBond(i, j, Chem.BondType.SINGLE)
     s = bond.rdStereo()
     if s is not None:
         mol.GetBondWithIdx(n - 1).SetStereo(s)
 
 
-def _addAtom(mol, atom, a, bond, contiguous=False):
+def _addAtom(mol, atom, a, bond, contiguous, useFilters):
     atom.append(a)
     mol.AddAtom(a.asRDAtom())
     if not a.canBond():
         return
     j = len(atom) - 1
     for i in reversed(range(j)):
-        if atom[i].canBond():
+        if atom[i].canBond() and atom[i].canBondWith(atom[j], useFilters):
             _addBond(mol, atom, i, j, bond)
             return
     if not contiguous:
         return
     for i in reversed(range(j)):
-        if atom[i].nNeighbors < atom[i].maxNeighbors:
+        if atom[i].nNeighbors < atom[i].maxNeighbors and atom[i].canBondWith(
+            atom[j], useFilters
+        ):
             _addBond(mol, atom, i, j, bond)
             return
 
@@ -44,7 +45,7 @@ def _saturate(atom):
             return
 
 
-def _ring(mol, atom, ringStr, bond):
+def _ring(mol, atom, ringStr, bond, useFilters):
     m = match(
         f"{escape(L_BRACKET)}?([0-9]+){escape(R_BRACKET)}?({escape(SKIP)}*)", ringStr
     )
@@ -57,7 +58,7 @@ def _ring(mol, atom, ringStr, bond):
             continue
         for node in BFSTree(mol.GetAtomWithIdx(i), n - 1):
             j = node.name.GetIdx()
-            if not atom[j].canBond():
+            if not atom[j].canBond() or not atom[i].canBondWith(atom[j], useFilters):
                 continue
             if nSkip == 0:
                 _addBond(mol, atom, i, j, bond)
@@ -78,10 +79,15 @@ def ToMol(s: str, contiguous: bool = False, useFilters: bool = True) -> Chem.Mol
     atom: List[Atom] = []
     for m in RegExp.finditer(DecodeGroups(s)):
         if m.group("ring"):
-            _ring(mol, atom, m.group("ring"), Bond(m.group("bond")))
+            _ring(mol, atom, m.group("ring"), Bond(m.group("bond")), useFilters)
         elif m.group("atom"):
             _addAtom(
-                mol, atom, Atom(m.group("atom")), Bond(m.group("bond")), contiguous
+                mol,
+                atom,
+                Atom(m.group("atom")),
+                Bond(m.group("bond")),
+                contiguous,
+                useFilters,
             )
         elif m.group("saturate"):
             _saturate(atom)
