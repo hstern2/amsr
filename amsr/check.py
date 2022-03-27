@@ -8,7 +8,7 @@ def CheckMol(m: Chem.Mol, useFilters: bool = False) -> bool:
     Compare InChI strings (with -FixedH) before and after round trip.
 
     :param m: RDKit Mol
-    :param useFilters: use a subset of filters from J. Chem. Inf. Model. 52, 2864 (2012) to exclude unstable or synthetically inaccessible molecules
+    :param useFilters: apply filters to exclude unstable or synthetically inaccessible molecules
     :return: do InChI strings match?
     """
     i1 = Chem.MolToInchi(m, options="-FixedH")
@@ -26,7 +26,7 @@ def CheckSmiles(s: str, useFilters: bool = False) -> bool:
     Compare InChI strings (with -FixedH) before and after round trip.
 
     :param s: SMILES
-    :param useFilters: use a subset of filters from J. Chem. Inf. Model. 52, 2864 (2012) to exclude unstable or synthetically inaccessible molecules
+    :param useFilters: apply filters to exclude unstable or synthetically inaccessible molecules
     :return: do InChI strings match?
     """
     return CheckMol(Chem.MolFromSmiles(s), useFilters=useFilters)

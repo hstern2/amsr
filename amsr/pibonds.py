@@ -51,15 +51,13 @@ class PiBonds:
     def singleCoordinate(self, i):
         return self.graph.degree[i] == 1
 
-    def __init__(self, mol, atom, useFilters=True):
+    def __init__(self, mol, atom, useFilters):
 
         self.mol = mol
         self.atom = atom
         self.excluded = set()
 
         if useFilters:
-            # use a subset of filters from GDB17
-            # Ruddigkeit et al., J. Chem. Inf. Model. 52, 2864 (2012)
             Chem.GetSSSR(self.mol)
             ringInfo = self.mol.GetRingInfo()
             self.excluded.update(BridgeheadAtoms(mol, ringInfo, 7))
