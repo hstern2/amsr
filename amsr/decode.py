@@ -18,23 +18,26 @@ def _addBond(mol, atom, i, j, bond):
         mol.GetBondWithIdx(n - 1).SetStereo(s)
 
 
-def _addAtom(mol, atom, a, bond, contiguous, useFilters):
+def _addAtom(mol, atom, a):
     atom.append(a)
     mol.AddAtom(a.asRDAtom())
-    if not a.canBond():
+
+
+def _bondAtom(mol, atom, a, bond, makeBond, useFilters):
+    if not makeBond or not a.canBond():
+        _addAtom(mol, atom, a)
         return
-    j = len(atom) - 1
-    for i in reversed(range(j)):
-        if atom[i].canBond() and atom[i].canBondWith(atom[j], useFilters):
-            _addBond(mol, atom, i, j, bond)
+    for i in reversed(range(len(atom))):
+        if atom[i].canBond() and atom[i].canBondWith(a, useFilters):
+            _addAtom(mol, atom, a)
+            _addBond(mol, atom, i, len(atom) - 1, bond)
             return
-    if not contiguous:
-        return
-    for i in reversed(range(j)):
+    for i in reversed(range(len(atom))):
         if atom[i].nNeighbors < atom[i].maxNeighbors and atom[i].canBondWith(
-            atom[j], useFilters
+            a, useFilters
         ):
-            _addBond(mol, atom, i, j, bond)
+            _addAtom(mol, atom, a)
+            _addBond(mol, atom, i, len(atom) - 1, bond)
             return
 
 
@@ -67,30 +70,34 @@ def _ring(mol, atom, ringStr, bond, useFilters):
                 nSkip -= 1
 
 
-def ToMol(s: str, contiguous: bool = False, useFilters: bool = True) -> Chem.Mol:
+def ToMol(s: str, useFilters: bool = True) -> Chem.Mol:
     """Convert AMSR to an RDKit Mol
 
     :param s: AMSR
-    :param contiguous: make second pass (considering "saturated" atoms) to form bonds, rather than start new molecule
-    :param useFilters: use a subset of filters from J. Chem. Inf. Model. 52, 2864 (2012) to exclude unstable or synthetically inaccessible molecules
+    :param useFilters: apply filters to exclude unstable or synthetically inaccessible molecules
     :return: RDKit Mol
     """
     mol = Chem.RWMol()
     atom: List[Atom] = []
+    makeBond = False
     for m in RegExp.finditer(DecodeGroups(s)):
         if m.group("ring"):
             _ring(mol, atom, m.group("ring"), Bond(m.group("bond")), useFilters)
         elif m.group("atom"):
-            _addAtom(
+            _bondAtom(
                 mol,
                 atom,
                 Atom(m.group("atom")),
                 Bond(m.group("bond")),
-                contiguous,
+                makeBond,
                 useFilters,
             )
+            makeBond = True
         elif m.group("saturate"):
             _saturate(atom)
+        elif m.group("molsep"):
+            makeBond = False
+
     for a in mol.GetAtoms():
         if a.GetChiralTag() != Chem.ChiralType.CHI_UNSPECIFIED:
             n = len(a.GetBonds())
@@ -123,12 +130,11 @@ def ToMol(s: str, contiguous: bool = False, useFilters: bool = True) -> Chem.Mol
     return mol
 
 
-def ToSmiles(s: str, contiguous: bool = False, useFilters: bool = True) -> str:
+def ToSmiles(s: str, useFilters: bool = True) -> str:
     """Convert AMSR to SMILES
 
     :param s: AMSR
-    :param contiguous: make second pass (considering "saturated" atoms) to form bonds, rather than start new molecule
-    :param useFilters: use a subset of filters from J. Chem. Inf. Model. 52, 2864 (2012) to exclude unstable or synthetically inaccessible molecules
+    :param useFilters: apply filters to exclude unstable or synthetically inaccessible molecules
     :return: SMILES
     """
-    return Chem.MolToSmiles(ToMol(s, contiguous, useFilters))
+    return Chem.MolToSmiles(ToMol(s, useFilters))

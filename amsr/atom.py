@@ -44,15 +44,15 @@ class Atom:
         )
         self.nNeighbors = 0
         self.isSaturated = False
-        self.isBondedToHetero = False
+        self.isBondedToOxygen = False
 
     def addBondTo(self, a):
         self.nNeighbors += 1
         a.nNeighbors += 1
-        if self.isHetero():
-            a.isBondedToHetero = True
-        if a.isHetero():
-            self.isBondedToHetero = True
+        if self.isOxygen():
+            a.isBondedToOxygen = True
+        if a.isOxygen():
+            self.isBondedToOxygen = True
 
     def canBond(self):
         return (not self.isSaturated) and self.nNeighbors < self.maxNeighbors
@@ -61,9 +61,9 @@ class Atom:
         if useFilters and self.maxPiBonds == 0 and a.maxPiBonds == 0:
             if self.isOxygen() and a.isOxygen():
                 return False
-            if self.isCarbon() and self.isBondedToHetero and a.isHetero():
+            if self.isCarbon() and self.isBondedToOxygen and a.isOxygen():
                 return False
-            if a.isCarbon() and a.isBondedToHetero and self.isHetero():
+            if a.isCarbon() and a.isBondedToOxygen and self.isOxygen():
                 return False
         return True
 
@@ -84,9 +84,6 @@ class Atom:
 
     def isOxygen(self):
         return self.atomSym == "O"
-
-    def isHetero(self):
-        return not self.isCarbon()
 
     def symWith(self, s):
         sym = self.sym

@@ -14,7 +14,8 @@ RADICAL = "*"
 L_BRACKET = "["
 R_BRACKET = "]"
 PERCENT = "%"
-SKIP = ";"
+SKIP = "'"
+MOLSEP = ";"
 
 _pbond = f"(?P<bond>[{escape(E)}{escape(Z)}])"
 _c = f"[{escape(PLUS+MINUS+RADICAL+EXTRA_PI+BANG+CW+CCW)}]*"
@@ -25,8 +26,9 @@ _pring = (
     f"(?P<ring>({escape(L_BRACKET)}[0-9]+{escape(R_BRACKET)}|[3-9]){escape(SKIP)}*)"
 )
 _psaturate = f"(?P<saturate>{escape(DOT)})"
+_pmolsep = f"(?P<molsep>{escape(MOLSEP)})"
 
-RegExp = compile(f"({_pbond}?({_patom}|({_pring})))|{_psaturate}")
+RegExp = compile(f"({_pbond}?({_patom}|({_pring})))|{_psaturate}|{_pmolsep}")
 
 
 def ToTokens(s: str) -> List[str]:
@@ -38,7 +40,7 @@ def ToTokens(s: str) -> List[str]:
     t = []
     for m in RegExp.finditer(s):
         g = m.groupdict()
-        for k in ["bond", "atom", "saturate"]:
+        for k in ["bond", "atom", "saturate", "molsep"]:
             if g[k] is not None:
                 t.append(g[k])
         if g["ring"] is not None:

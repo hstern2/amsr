@@ -22,7 +22,7 @@ class Morph:
         self.mol = []
         i0 = None
         for s in self.amsr:
-            m = ToMol(s, contiguous=True, useFilters=True)
+            m = ToMol(s, useFilters=True)
             i = Chem.MolToInchi(m, options="-FixedH")
             if i0 is None or i != i0:
                 self.mol.append(m)

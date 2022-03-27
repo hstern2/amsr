@@ -95,10 +95,14 @@ def FromMolToTokens(mol: Chem.Mol, useGroups: Optional[bool] = True) -> List[str
             yield DOT
 
     def _getPreTokens():
+        _ = False
         for i, a in enumerate(mol.GetAtoms()):
             if not IsSeen(a):
+                if _:
+                    yield ";"
                 yield a, atom[i]
                 yield from _search(a)
+                _ = True
 
     t = [
         t[1].asToken(t[0], mol) if type(t) == tuple else t
