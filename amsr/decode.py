@@ -1,5 +1,5 @@
 from rdkit import Chem
-from typing import List
+from typing import Optional, List
 from re import match, escape
 from .atom import Atom
 from .bond import Bond
@@ -70,7 +70,7 @@ def _ring(mol, atom, ringStr, bond, useFilters):
                 nSkip -= 1
 
 
-def ToMol(s: str, useFilters: bool = True) -> Chem.Mol:
+def ToMol(s: str, useFilters: Optional[bool] = True) -> Chem.Mol:
     """Convert AMSR to an RDKit Mol
 
     :param s: AMSR
@@ -130,7 +130,7 @@ def ToMol(s: str, useFilters: bool = True) -> Chem.Mol:
     return mol
 
 
-def ToSmiles(s: str, useFilters: bool = True) -> str:
+def ToSmiles(s: str, useFilters: Optional[bool] = True) -> str:
     """Convert AMSR to SMILES
 
     :param s: AMSR

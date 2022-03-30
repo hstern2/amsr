@@ -1,9 +1,10 @@
 from rdkit import Chem
+from typing import Optional
 from .encode import FromMol
 from .decode import ToMol
 
 
-def CheckMol(m: Chem.Mol, useFilters: bool = False) -> bool:
+def CheckMol(m: Chem.Mol, useFilters: Optional[bool] = False) -> bool:
     """Do round trip from RDKit mol m to AMSR.
     Compare InChI strings (with -FixedH) before and after round trip.
 
@@ -12,7 +13,10 @@ def CheckMol(m: Chem.Mol, useFilters: bool = False) -> bool:
     :return: do InChI strings match?
     """
     i1 = Chem.MolToInchi(m, options="-FixedH")
-    i2 = Chem.MolToInchi(ToMol(FromMol(m), useFilters=useFilters), options="-FixedH")
+    i2 = Chem.MolToInchi(
+        ToMol(FromMol(m, useFilters=useFilters), useFilters=useFilters),
+        options="-FixedH",
+    )
     if i1 == i2:
         return True
     else:
@@ -21,7 +25,7 @@ def CheckMol(m: Chem.Mol, useFilters: bool = False) -> bool:
         return False
 
 
-def CheckSmiles(s: str, useFilters: bool = False) -> bool:
+def CheckSmiles(s: str, useFilters: Optional[bool] = False) -> bool:
     """Convert SMILES s to RDKit Mol, then do round trip to AMSR.
     Compare InChI strings (with -FixedH) before and after round trip.
 

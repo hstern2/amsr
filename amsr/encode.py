@@ -44,11 +44,14 @@ def _bondTokens(b, bond):
         yield (b, bond)
 
 
-def FromMolToTokens(mol: Chem.Mol, useGroups: Optional[bool] = True) -> List[str]:
+def FromMolToTokens(
+    mol: Chem.Mol, useGroups: Optional[bool] = True, useFilters: Optional[bool] = True
+) -> List[str]:
     """Convert RDKit Mol to list of AMSR tokens
 
     :param mol: RDKit Mol
     :param useGroups: use group symbols/abbreviations
+    :param useFilters: apply filters to exclude unstable or synthetically inaccessible molecules
     :return: list of AMSR tokens
     """
 
@@ -80,7 +83,7 @@ def FromMolToTokens(mol: Chem.Mol, useGroups: Optional[bool] = True) -> List[str
                         ai.addBondTo(aj)
                         break
                     elif atom[k].canBond() and ai.canBondWith(
-                        atom[k], useFilters=False
+                        atom[k], useFilters=useFilters
                     ):
                         nSkip += 1
             else:  # new atom
@@ -115,31 +118,42 @@ def FromMolToTokens(mol: Chem.Mol, useGroups: Optional[bool] = True) -> List[str
     return _removeTrailingDots(t)
 
 
-def FromMol(mol: Chem.Mol, useGroups: Optional[bool] = True) -> str:
+def FromMol(
+    mol: Chem.Mol, useGroups: Optional[bool] = True, useFilters: Optional[bool] = True
+) -> str:
     """Convert RDKit Mol to AMSR
 
     :param mol: RDKit Mol
     :param useGroups: use group symbols/abbreviations
+    :param useFilters: apply filters to exclude unstable or synthetically inaccessible molecules
     :return: AMSR
     """
-    return "".join(FromMolToTokens(mol, useGroups=useGroups))
+    return "".join(FromMolToTokens(mol, useGroups=useGroups, useFilters=useFilters))
 
 
-def FromSmiles(s: str, useGroups: Optional[bool] = True) -> str:
+def FromSmiles(
+    s: str, useGroups: Optional[bool] = True, useFilters: Optional[bool] = True
+) -> str:
     """Convert SMILES to AMSR
 
     :param s: SMILES
     :param useGroups: use group symbols/abbreviations
+    :param useFilters: apply filters to exclude unstable or synthetically inaccessible molecules
     :return: AMSR
     """
-    return FromMol(Chem.MolFromSmiles(s), useGroups=useGroups)
+    return FromMol(Chem.MolFromSmiles(s), useGroups=useGroups, useFilters=useFilters)
 
 
-def FromSmilesToTokens(s, useGroups: Optional[bool] = True) -> List[str]:
+def FromSmilesToTokens(
+    s, useGroups: Optional[bool] = True, useFilters: Optional[bool] = True
+) -> List[str]:
     """Convert SMILES to list of AMSR tokens
 
     :param mol: RDKit Mol
     :param useGroups: use group symbols/abbreviations
+    :param useFilters: apply filters to exclude unstable or synthetically inaccessible molecules
     :return: AMSR
     """
-    return FromMolToTokens(Chem.MolFromSmiles(s), useGroups=useGroups)
+    return FromMolToTokens(
+        Chem.MolFromSmiles(s), useGroups=useGroups, useFilters=useFilters
+    )

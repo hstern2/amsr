@@ -66,20 +66,16 @@ class Atom:
         if useFilters:
             if self.isOxygen() and a.isOxygen():
                 return False
-            if (
-                self.isCarbon()
-                and self.maxPiBonds == 0
-                and self.isBondedToHnH
-                and a.isOxygen()
-            ):
-                return False
-            if (
-                a.isCarbon()
-                and a.maxPiBonds == 0
-                and a.isBondedToOxygen
-                and self.isHnH()
-            ):
-                return False
+            if self.is_sp3_Carbon():
+                if self.isBondedToHnH and a.isOxygen():
+                    return False
+                if self.isBondedToOxygen and a.isHnH():
+                    return False
+            if a.is_sp3_Carbon():
+                if a.isBondedToHnH and self.isOxygen():
+                    return False
+                if a.isBondedToOxygen and self.isHnH():
+                    return False
         return True
 
     def nAvailablePiBonds(self):
@@ -96,6 +92,9 @@ class Atom:
 
     def isCarbon(self):
         return self.atomSym == "C"
+
+    def is_sp3_Carbon(self):
+        return self.isCarbon() and self.maxPiBonds == 0
 
     def isOxygen(self):
         return self.atomSym == "O"
