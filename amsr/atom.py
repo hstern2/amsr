@@ -44,7 +44,8 @@ class Atom:
         )
         self.nNeighbors = 0
         self.isSaturated = False
-        self.isBondedToHnH = False
+        self.isBondedToHnH = False  # Heteroatom not Halogen
+        self.isBondedToOxygen = False
 
     def addBondTo(self, a):
         self.nNeighbors += 1
@@ -53,6 +54,10 @@ class Atom:
             a.isBondedToHnH = True
         if a.isHnH():
             self.isBondedToHnH = True
+        if self.isOxygen():
+            a.isBondedToOxygen = True
+        if a.isOxygen():
+            self.isBondedToOxygen = True
 
     def canBond(self):
         return (not self.isSaturated) and self.nNeighbors < self.maxNeighbors
@@ -65,10 +70,15 @@ class Atom:
                 self.isCarbon()
                 and self.maxPiBonds == 0
                 and self.isBondedToHnH
-                and a.isHnH()
+                and a.isOxygen()
             ):
                 return False
-            if a.isCarbon() and a.maxPiBonds == 0 and a.isBondedToHnH and self.isHnH():
+            if (
+                a.isCarbon()
+                and a.maxPiBonds == 0
+                and a.isBondedToOxygen
+                and self.isHnH()
+            ):
                 return False
         return True
 
