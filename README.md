@@ -33,8 +33,8 @@ amsr.FromSmiles(taxol_smi, useGroups=False)
 
 ## Description
 
-See [documentation](https://hstern2.github.io/amsr/)
-for structures accompanying the following examples.
+A molecular string representation in which every sequence of tokens generates a "reasonable" molecule.
+You may have different ideas about what constitutes a reasonable molecule than this string representation.
 
 ### Atoms
 Atoms are represented by their symbol
