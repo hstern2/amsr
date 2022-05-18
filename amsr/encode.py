@@ -4,7 +4,7 @@ from .atom import Atom, GetSeenIndex, SetSeenIndex, IsSeen
 from .bfs import BFSFind
 from .bond import Bond
 from .groups import EncodeGroups
-from .tokens import DOT, SKIP
+from .tokens import DOT, SKIP, MOLSEP
 
 
 def _ringTokens(n, nSkip):
@@ -102,7 +102,7 @@ def FromMolToTokens(
         for i, a in enumerate(mol.GetAtoms()):
             if not IsSeen(a):
                 if _:
-                    yield ";"
+                    yield MOLSEP
                 yield a, atom[i]
                 yield from _search(a)
                 _ = True
