@@ -58,6 +58,7 @@ class PiBonds:
         self.excluded = set()
 
         if useFilters:
+            Chem.SanitizeMol(self.mol)
             Chem.GetSSSR(self.mol)
             ringInfo = self.mol.GetRingInfo()
             self.excluded.update(BridgeheadAtoms(mol, ringInfo, 7))
