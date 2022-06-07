@@ -14,6 +14,7 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -89,7 +90,7 @@
            <div itemprop="articleBody">
              
   <section id="amsr">
-<h1>AMSR<a class="headerlink" href="#amsr" title="Permalink to this headline"></a></h1>
+<h1>AMSR<a class="headerlink" href="#amsr" title="Permalink to this heading"></a></h1>
 <p><strong>A</strong>nother <strong>M</strong>olecular <strong>S</strong>tring <strong>R</strong>epresentation,
 inspired by</p>
 <ul class="simple">
@@ -100,13 +101,13 @@ inspired by</p>
 <li><p><a class="reference external" href="https://github.com/aspuru-guzik-group/selfies">SELFIES</a></p></li>
 </ul>
 <section id="installing">
-<h2>Installing<a class="headerlink" href="#installing" title="Permalink to this headline"></a></h2>
+<h2>Installing<a class="headerlink" href="#installing" title="Permalink to this heading"></a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">amsr</span>
 </pre></div>
 </div>
 </section>
 <section id="usage">
-<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline"></a></h2>
+<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this heading"></a></h2>
 <div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">amsr</span>
 
 <span class="n">amsr</span><span class="o">.</span><span class="n">ToMol</span><span class="p">(</span><span class="s2">&quot;CNcncc5cNcN6C.oC.o&quot;</span><span class="p">)</span> <span class="c1"># caffeine</span>
@@ -124,11 +125,11 @@ inspired by</p>
 </div>
 </section>
 <section id="description">
-<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline"></a></h2>
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this heading"></a></h2>
 <p>A molecular string representation in which every sequence of tokens generates a “reasonable” molecule.
 You may have different ideas about what constitutes a reasonable molecule than this string representation.</p>
 <section id="atoms">
-<h3>Atoms<a class="headerlink" href="#atoms" title="Permalink to this headline"></a></h3>
+<h3>Atoms<a class="headerlink" href="#atoms" title="Permalink to this heading"></a></h3>
 <p>Atoms are represented by their symbol
 enclosed in square brackets, as in SMILES.
 For a one-letter symbol,
@@ -328,7 +329,7 @@ L 78.2 64.8
 </div>
 </section>
 <section id="chains">
-<h3>Chains<a class="headerlink" href="#chains" title="Permalink to this headline"></a></h3>
+<h3>Chains<a class="headerlink" href="#chains" title="Permalink to this heading"></a></h3>
 <p>Each atom in a chain is bonded to the most recently added atom that
 can still make bonds, according to its valence. Hydrogens may be added
 explicitly like any other atom.  In the first
@@ -501,7 +502,7 @@ L 74.6 134.7
 </div>
 </section>
 <section id="branches">
-<h3>Branches<a class="headerlink" href="#branches" title="Permalink to this headline"></a></h3>
+<h3>Branches<a class="headerlink" href="#branches" title="Permalink to this heading"></a></h3>
 <p>Branches are formed automatically when atoms can no longer
 make bonds.  They can also be made by “capping” or
 “saturating” an atom with hydrogens, using a period <code class="docutils literal notranslate"><span class="pre">.</span></code>
@@ -557,7 +558,7 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 </div>
 </section>
 <section id="rings">
-<h3>Rings<a class="headerlink" href="#rings" title="Permalink to this headline"></a></h3>
+<h3>Rings<a class="headerlink" href="#rings" title="Permalink to this heading"></a></h3>
 <p>Rings are denoted by a single digit
 (or two or more digits enclosed in square brackets)
 giving the size of the ring.
@@ -661,7 +662,7 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 </div>
 </section>
 <section id="double-bonds-sp-sup-2-sup-centers">
-<h3>Double bonds (sp<sup>2</sup> centers)<a class="headerlink" href="#double-bonds-sp-sup-2-sup-centers" title="Permalink to this headline"></a></h3>
+<h3>Double bonds (sp<sup>2</sup> centers)<a class="headerlink" href="#double-bonds-sp-sup-2-sup-centers" title="Permalink to this heading"></a></h3>
 <p>Atoms making a double bond are indicated by changing
 the symbol to lowercase (note that lowercase
 does not mean “aromatic”; merely, “atom having one
@@ -892,7 +893,7 @@ L 85.0 132.8
 </div>
 </section>
 <section id="ring-selection">
-<h3>Ring selection<a class="headerlink" href="#ring-selection" title="Permalink to this headline"></a></h3>
+<h3>Ring selection<a class="headerlink" href="#ring-selection" title="Permalink to this heading"></a></h3>
 <p>When more than one ring of a given size can be formed, one or more single quote marks <code class="docutils literal notranslate"><span class="pre">'</span></code> immediately after
 the digit will make ring-forming bonds with atoms appearing earlier in the
 string, rather than the most recent.</p>
@@ -1007,7 +1008,7 @@ Q 11.0 84.9, 12.8 84.9
 </div>
 </section>
 <section id="triple-bonds-sp-centers">
-<h3>Triple bonds (sp centers)<a class="headerlink" href="#triple-bonds-sp-centers" title="Permalink to this headline"></a></h3>
+<h3>Triple bonds (sp centers)<a class="headerlink" href="#triple-bonds-sp-centers" title="Permalink to this heading"></a></h3>
 <p>Atoms with two fewer neighbors than their valence are designated by a trailing colon <code class="docutils literal notranslate"><span class="pre">:</span></code>
 can make triple bonds (or more than one double bond).</p>
 <table class="colwidths-auto docutils align-default">
@@ -1136,7 +1137,7 @@ Q 12.9 87.4, 15.6 87.4
 </div>
 </section>
 <section id="hypervalent-atoms">
-<h3>Hypervalent atoms<a class="headerlink" href="#hypervalent-atoms" title="Permalink to this headline"></a></h3>
+<h3>Hypervalent atoms<a class="headerlink" href="#hypervalent-atoms" title="Permalink to this heading"></a></h3>
 <p>Atoms denoted by their symbol alone are assumed to have their lowest possible valence
 (for instance, two for sulfur).  Higher valences are denoted by one or more exclamation points <code class="docutils literal notranslate"><span class="pre">!</span></code>.</p>
 <table class="colwidths-auto docutils align-default">
@@ -1402,7 +1403,7 @@ L 19.5 39.1
 </div>
 </section>
 <section id="formal-charges-radical-electrons-isotopes">
-<h3>Formal charges, radical electrons, isotopes<a class="headerlink" href="#formal-charges-radical-electrons-isotopes" title="Permalink to this headline"></a></h3>
+<h3>Formal charges, radical electrons, isotopes<a class="headerlink" href="#formal-charges-radical-electrons-isotopes" title="Permalink to this heading"></a></h3>
 <p>Positive/negative formal charges are designated by one or more of <code class="docutils literal notranslate"><span class="pre">+</span></code>/<code class="docutils literal notranslate"><span class="pre">-</span></code>.
 Radical electrons are denoted by one or more asterisks <code class="docutils literal notranslate"><span class="pre">*</span></code>.  An isotopic mass is denoted by a number prefix
 before the atomic symbol (in which case square brackets must be used even for a one-letter symbol).</p>
@@ -1679,7 +1680,7 @@ L 18.3 54.5
 </div>
 </section>
 <section id="tetrahedral-stereochemistry">
-<h3>Tetrahedral stereochemistry<a class="headerlink" href="#tetrahedral-stereochemistry" title="Permalink to this headline"></a></h3>
+<h3>Tetrahedral stereochemistry<a class="headerlink" href="#tetrahedral-stereochemistry" title="Permalink to this heading"></a></h3>
 <p>Tetrahedral stereochemistry is denoted by a left parenthesis <code class="docutils literal notranslate"><span class="pre">(</span></code> meaning “counterclockwise”
 or a right parenthesis <code class="docutils literal notranslate"><span class="pre">)</span></code> meaning “clockwise,” referring to the first three neighbors of
 a stereocenter atoms as they appear in the string, with the last neighbor (or implicit hydrogen)
@@ -1830,7 +1831,7 @@ L 137.5 121.7
 </div>
 </section>
 <section id="e-z-stereochemistry">
-<h3><em>E/Z</em> stereochemistry<a class="headerlink" href="#e-z-stereochemistry" title="Permalink to this headline"></a></h3>
+<h3><em>E/Z</em> stereochemistry<a class="headerlink" href="#e-z-stereochemistry" title="Permalink to this heading"></a></h3>
 <p>Stereochemistry for a double bond is denoted by an underscore <code class="docutils literal notranslate"><span class="pre">_</span></code> meaning “trans” or <em>E</em>,
 or caret <code class="docutils literal notranslate"><span class="pre">^</span></code> meaning “cis” or <em>Z</em>, between the two atoms making the bond,
 where the reference neighboring atoms are those that appear earliest in the string.</p>
@@ -2063,7 +2064,7 @@ L 19.3 84.4
 </div>
 </section>
 <section id="groups">
-<h3>Groups<a class="headerlink" href="#groups" title="Permalink to this headline"></a></h3>
+<h3>Groups<a class="headerlink" href="#groups" title="Permalink to this heading"></a></h3>
 <p>The following abbreviations may be used to represent various functional groups:</p>
 <div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">Ac</span><span class="p">],</span> <span class="p">[</span><span class="n">Bn</span><span class="p">],</span> <span class="p">[</span><span class="n">Boc</span><span class="p">],</span> <span class="p">[</span><span class="n">Bz</span><span class="p">],</span> <span class="p">[</span><span class="n">CCl3</span><span class="p">],</span> <span class="p">[</span><span class="n">CF3</span><span class="p">],</span> <span class="p">[</span><span class="n">CHO</span><span class="p">],</span> <span class="p">[</span><span class="n">CN</span><span class="p">],</span> <span class="p">[</span><span class="n">COO</span><span class="o">-</span><span class="p">],</span> <span class="p">[</span><span class="n">COOEt</span><span class="p">],</span> <span class="p">[</span><span class="n">COOH</span><span class="p">],</span> <span class="p">[</span><span class="n">COOMe</span><span class="p">],</span> <span class="p">[</span><span class="n">Cbz</span><span class="p">],</span> <span class="p">[</span><span class="n">Et</span><span class="p">],</span> <span class="p">[</span><span class="n">Ms</span><span class="p">],</span> <span class="p">[</span><span class="n">NHAc</span><span class="p">],</span> <span class="p">[</span><span class="n">NHMe</span><span class="p">],</span> <span class="p">[</span><span class="n">NMe2</span><span class="p">],</span> <span class="p">[</span><span class="n">NO2</span><span class="p">],</span> <span class="p">[</span><span class="n">OAc</span><span class="p">],</span> <span class="p">[</span><span class="n">OEt</span><span class="p">],</span> <span class="p">[</span><span class="n">OMe</span><span class="p">],</span> <span class="p">[</span><span class="n">Ph</span><span class="p">],</span> <span class="p">[</span><span class="n">Piv</span><span class="p">],</span> <span class="p">[</span><span class="n">Tf</span><span class="p">],</span> <span class="p">[</span><span class="n">Tol</span><span class="p">],</span> <span class="p">[</span><span class="n">Ts</span><span class="p">],</span> <span class="p">[</span><span class="n">benzene</span><span class="p">],</span> <span class="p">[</span><span class="n">iBu</span><span class="p">],</span> <span class="p">[</span><span class="n">iPr</span><span class="p">],</span> <span class="p">[</span><span class="n">nBu</span><span class="p">],</span> <span class="p">[</span><span class="n">nPr</span><span class="p">],</span> <span class="p">[</span><span class="n">sBu</span><span class="p">],</span> <span class="p">[</span><span class="n">tBu</span><span class="p">]</span>
 </pre></div>
@@ -2489,7 +2490,7 @@ Q 55.4 124.5, 56.5 124.5
 </div>
 </section>
 <section id="multiple-molecules">
-<h3>Multiple molecules<a class="headerlink" href="#multiple-molecules" title="Permalink to this headline"></a></h3>
+<h3>Multiple molecules<a class="headerlink" href="#multiple-molecules" title="Permalink to this heading"></a></h3>
 <p>More than one molecule may be specified by separating with <code class="docutils literal notranslate"><span class="pre">;</span></code>.</p>
 <table class="colwidths-auto docutils align-default">
 <thead>
@@ -2736,7 +2737,7 @@ L 139.6 21.2
 </section>
 </section>
 <section id="developing">
-<h2>Developing<a class="headerlink" href="#developing" title="Permalink to this headline"></a></h2>
+<h2>Developing<a class="headerlink" href="#developing" title="Permalink to this heading"></a></h2>
 <p>This repo uses pre-commit, so after cloning run <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-r</span> <span class="pre">requirements.txt</span></code> and <code class="docutils literal notranslate"><span class="pre">pre-commit</span> <span class="pre">install</span></code> prior to committing.</p>
 </section>
 </section>
