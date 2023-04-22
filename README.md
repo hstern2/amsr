@@ -229,16 +229,13 @@ L 78.2 64.8
 ### Chains
 Each atom in a chain is bonded to the most recently added atom that
 can still make bonds, according to its valence. Hydrogens may be added
-explicitly like any other atom.  In the first
+explicitly like any other atom.  In the
 example below, the fluorines are added to the second carbon; the chlorine
 is then added to the first carbon, since the second can no longer bond.
-In the second example, after four fluorines are added, the carbon can
-no longer bond, so a new molecule is formed.
 
 | AMSR | molecule |
 | --- | --- |
 CCFFF[Cl] | [2-chloro-1,1,1-trifluoroethane](https://pubchem.ncbi.nlm.nih.gov/compound/2-Chloro-1_1_1-trifluoroethane)
-CFFFFCO | [carbon tetrafluoride](https://en.wikipedia.org/wiki/Carbon_tetrafluoride) and [methanol](https://en.wikipedia.org/wiki/Methanol)
 
 
 <div>
@@ -319,73 +316,6 @@ L 21.5 87.5
 L 19.7 87.5
 L 19.7 72.5
 ' fill='#00CC00'/>
-</svg>
-</span>
-<span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
-<svg version='1.1' baseProfile='full'
-              xmlns='http://www.w3.org/2000/svg'
-                      xmlns:rdkit='http://www.rdkit.org/xml'
-                      xmlns:xlink='http://www.w3.org/1999/xlink'
-                  xml:space='preserve'
-width='160px' height='160px' viewBox='0 0 160 160'>
-<!-- END OF HEADER -->
-<rect style='opacity:1.0;fill:#FFFFFF;stroke:none' width='160.0' height='160.0' x='0.0' y='0.0'> </rect>
-<path class='bond-0 atom-0 atom-1' d='M 80.0,80.0 L 108.4,80.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-0 atom-0 atom-1' d='M 108.4,80.0 L 136.7,80.0' style='fill:none;fill-rule:evenodd;stroke:#33CCCC;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-1 atom-0 atom-2' d='M 80.0,80.0 L 51.6,80.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-1 atom-0 atom-2' d='M 51.6,80.0 L 23.3,80.0' style='fill:none;fill-rule:evenodd;stroke:#33CCCC;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-2 atom-0 atom-3' d='M 80.0,80.0 L 80.0,53.5' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-2 atom-0 atom-3' d='M 80.0,53.5 L 80.0,26.9' style='fill:none;fill-rule:evenodd;stroke:#33CCCC;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-3 atom-0 atom-4' d='M 80.0,80.0 L 80.0,106.5' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-3 atom-0 atom-4' d='M 80.0,106.5 L 80.0,133.1' style='fill:none;fill-rule:evenodd;stroke:#33CCCC;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path  class='atom-1' d='M 138.3 71.0
-L 149.1 71.0
-L 149.1 73.0
-L 140.8 73.0
-L 140.8 78.5
-L 148.2 78.5
-L 148.2 80.6
-L 140.8 80.6
-L 140.8 89.0
-L 138.3 89.0
-L 138.3 71.0
-' fill='#33CCCC'/>
-<path  class='atom-2' d='M 10.9 71.0
-L 21.7 71.0
-L 21.7 73.0
-L 13.4 73.0
-L 13.4 78.5
-L 20.7 78.5
-L 20.7 80.6
-L 13.4 80.6
-L 13.4 89.0
-L 10.9 89.0
-L 10.9 71.0
-' fill='#33CCCC'/>
-<path  class='atom-3' d='M 74.6 7.3
-L 85.4 7.3
-L 85.4 9.3
-L 77.1 9.3
-L 77.1 14.8
-L 84.4 14.8
-L 84.4 16.9
-L 77.1 16.9
-L 77.1 25.3
-L 74.6 25.3
-L 74.6 7.3
-' fill='#33CCCC'/>
-<path  class='atom-4' d='M 74.6 134.7
-L 85.4 134.7
-L 85.4 136.7
-L 77.1 136.7
-L 77.1 142.2
-L 84.4 142.2
-L 84.4 144.3
-L 77.1 144.3
-L 77.1 152.7
-L 74.6 152.7
-L 74.6 134.7
-' fill='#33CCCC'/>
 </svg>
 </span>
 </div>
