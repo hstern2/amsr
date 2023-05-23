@@ -4,6 +4,10 @@ from typing import Iterator, List
 DOT = "."
 E = "_"
 Z = "^"
+GAUCHE_CW = ">"
+GAUCHE_CCW = "<"
+SKEW_CW = "\\"
+SKEW_CCW = "/"
 CW = ")"
 CCW = "("
 PLUS = "+"
@@ -13,11 +17,19 @@ BANG = "!"
 RADICAL = "*"
 L_BRACKET = "["
 R_BRACKET = "]"
-PERCENT = "%"
 SKIP = "'"
 MOLSEP = ";"
 
-_pbond = f"(?P<bond>[{escape(E)}{escape(Z)}])"
+DIHEDRAL_FOR_BOND_SYMBOL = {
+    Z: 0,
+    GAUCHE_CW: -60,
+    SKEW_CW: -120,
+    E: 180,
+    SKEW_CCW: 120,
+    GAUCHE_CCW: 60,
+}
+
+_pbond = f"(?P<bond>[{escape(E)}{escape(Z)}{escape(GAUCHE_CW)}{escape(GAUCHE_CCW)}{escape(SKEW_CW)}{escape(SKEW_CCW)}])"
 _c = f"[{escape(PLUS+MINUS+RADICAL+EXTRA_PI+BANG+CW+CCW)}]*"
 _patom = (
     f"(?P<atom>{escape(L_BRACKET)}[0-9]*[A-Za-z]+{_c}{escape(R_BRACKET)}|[A-Za-z]{_c})"

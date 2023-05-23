@@ -1,5 +1,5 @@
 from rdkit import Chem
-from typing import Optional, List
+from typing import Tuple, Optional, List, Dict
 from re import match, escape
 from .atom import Atom
 from .bond import Bond
@@ -7,15 +7,17 @@ from .pibonds import PiBonds
 from .bfs import BFSTree
 from .parity import IsEvenParity
 from .groups import DecodeGroups
-from .tokens import RegExp, SKIP, L_BRACKET, R_BRACKET
+from .tokens import RegExp, SKIP, L_BRACKET, R_BRACKET, DIHEDRAL_FOR_BOND_SYMBOL
 
 
-def _addBond(mol, atom, i, j, bond):
+def _addBond(mol, atom, i, j, bond, dihedral_for_bond):
     atom[i].addBondTo(atom[j])
     n = mol.AddBond(i, j, Chem.BondType.SINGLE)
     s = bond.rdStereo()
     if s is not None:
         mol.GetBondWithIdx(n - 1).SetStereo(s)
+    if bond.sym:
+        dihedral_for_bond[i] = DIHEDRAL_FOR_BOND_SYMBOL[bond.sym]
 
 
 def _addAtom(mol, atom, a):
@@ -23,21 +25,21 @@ def _addAtom(mol, atom, a):
     mol.AddAtom(a.asRDAtom())
 
 
-def _bondAtom(mol, atom, a, bond, makeBond, useFilters):
+def _bondAtom(mol, atom, a, bond, makeBond, useFilters, dihedral_for_bond):
     if not makeBond or not a.canBond():
         _addAtom(mol, atom, a)
         return
     for i in reversed(range(len(atom))):
         if atom[i].canBond() and atom[i].canBondWith(a, useFilters):
             _addAtom(mol, atom, a)
-            _addBond(mol, atom, i, len(atom) - 1, bond)
+            _addBond(mol, atom, i, len(atom) - 1, bond, dihedral_for_bond)
             return
     for i in reversed(range(len(atom))):
         if atom[i].nNeighbors < atom[i].maxNeighbors and atom[i].canBondWith(
             a, useFilters
         ):
             _addAtom(mol, atom, a)
-            _addBond(mol, atom, i, len(atom) - 1, bond)
+            _addBond(mol, atom, i, len(atom) - 1, bond, dihedral_for_bond)
             return
 
 
@@ -48,7 +50,7 @@ def _saturate(atom):
             return
 
 
-def _ring(mol, atom, ringStr, bond, useFilters):
+def _ring(mol, atom, ringStr, bond, useFilters, dihedral_for_bond):
     m = match(
         f"{escape(L_BRACKET)}?([0-9]+){escape(R_BRACKET)}?({escape(SKIP)}*)", ringStr
     )
@@ -64,25 +66,38 @@ def _ring(mol, atom, ringStr, bond, useFilters):
             if not atom[j].canBond() or not atom[i].canBondWith(atom[j], useFilters):
                 continue
             if nSkip == 0:
-                _addBond(mol, atom, i, j, bond)
+                _addBond(mol, atom, i, j, bond, dihedral_for_bond)
                 return
             else:
                 nSkip -= 1
 
 
-def ToMol(s: str, useFilters: Optional[bool] = True) -> Chem.Mol:
+def ToMol(
+    s: str,
+    useFilters: Optional[bool] = True,
+    dihedral: Optional[Dict[Tuple[int, int, int, int], int]] = None,
+) -> Chem.Mol:
     """Convert AMSR to an RDKit Mol
 
     :param s: AMSR
     :param useFilters: apply filters to exclude unstable or synthetically inaccessible molecules
+    :param dihedral: return dictionary of dihedral angles, where keys are indices and values are angles in degrees
     :return: RDKit Mol
     """
     mol = Chem.RWMol()
     atom: List[Atom] = []
+    dihedral_for_bond: Dict[int] = {}
     makeBond = False
     for m in RegExp.finditer(DecodeGroups(s)):
         if m.group("ring"):
-            _ring(mol, atom, m.group("ring"), Bond(m.group("bond")), useFilters)
+            _ring(
+                mol,
+                atom,
+                m.group("ring"),
+                Bond(m.group("bond")),
+                useFilters,
+                dihedral_for_bond,
+            )
         elif m.group("atom"):
             _bondAtom(
                 mol,
@@ -91,13 +106,13 @@ def ToMol(s: str, useFilters: Optional[bool] = True) -> Chem.Mol:
                 Bond(m.group("bond")),
                 makeBond,
                 useFilters,
+                dihedral_for_bond,
             )
             makeBond = True
         elif m.group("saturate"):
             _saturate(atom)
         elif m.group("molsep"):
             makeBond = False
-
     for a in mol.GetAtoms():
         if a.GetChiralTag() != Chem.ChiralType.CHI_UNSPECIFIED:
             n = len(a.GetBonds())
@@ -106,7 +121,10 @@ def ToMol(s: str, useFilters: Optional[bool] = True) -> Chem.Mol:
             elif not IsEvenParity([b.GetIdx() for b in a.GetNeighbors()]):
                 a.InvertChirality()
     for b in mol.GetBonds():
-        if b.GetStereo() in (Chem.BondStereo.STEREOZ, Chem.BondStereo.STEREOE):
+        k = b.GetIdx()
+        is_EZ = b.GetStereo() in (Chem.BondStereo.STEREOZ, Chem.BondStereo.STEREOE)
+        is_dihedral = dihedral is not None and k in dihedral_for_bond
+        if is_EZ or is_dihedral:
             ai, aj = b.GetBeginAtom(), b.GetEndAtom()
             i, j = ai.GetIdx(), aj.GetIdx()
             ni = [c.GetIdx() for c in ai.GetNeighbors() if c.GetIdx() != j]
@@ -114,7 +132,12 @@ def ToMol(s: str, useFilters: Optional[bool] = True) -> Chem.Mol:
             if len(ni) == 0 or len(nj) == 0:
                 b.SetStereo(Chem.BondStereo.STEREONONE)
             else:
-                b.SetStereoAtoms(min(ni), min(nj))
+                mi = min(ni)
+                mj = min(nj)
+                if is_EZ:
+                    b.SetStereoAtoms(mi, mj)
+                if is_dihedral:
+                    dihedral[mi, i, j, mj] = dihedral_for_bond[k]
     PiBonds(mol, atom, useFilters)
     for i, a in enumerate(atom):
         if a.bangs > 0 and a.canBond():
@@ -126,7 +149,6 @@ def ToMol(s: str, useFilters: Optional[bool] = True) -> Chem.Mol:
         if atom[a.GetIdx()].canBond():
             a.SetBoolProp("_active", True)
             break
-
     return mol
 
 
