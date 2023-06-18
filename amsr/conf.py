@@ -14,4 +14,4 @@ def GetConformer(mol, dihedral=None):
         for (i, j, k, l), v in dihedral.items():
             ff.MMFFAddTorsionConstraint(i, j, k, l, False, v, v, 4e5)
     ff.Minimize(maxIts=10000)
-    return mol
+    return Chem.RemoveHs(mol)
