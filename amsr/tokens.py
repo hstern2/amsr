@@ -29,6 +29,16 @@ DIHEDRAL_FOR_BOND_SYMBOL = {
     GAUCHE_CCW: 60,
 }
 
+BOND_SYMBOL_FOR_DIHEDRAL = {
+    0: Z,
+    -60: GAUCHE_CW,
+    -120: SKEW_CW,
+    180: E,
+    -180: E,
+    120: SKEW_CCW,
+    60: GAUCHE_CCW,
+}
+
 _pbond = f"(?P<bond>[{escape(E)}{escape(Z)}{escape(GAUCHE_CW)}{escape(GAUCHE_CCW)}{escape(SKEW_CW)}{escape(SKEW_CCW)}])"
 _c = f"[{escape(PLUS+MINUS+RADICAL+EXTRA_PI+BANG+CW+CCW)}]*"
 _patom = (

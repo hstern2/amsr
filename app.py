@@ -35,7 +35,9 @@ template = """
 </head>
 <body>
     <table>
-    <tr><td>AMSR:</td>
+    <tr><td>AMSR:
+
+    </td>
     <td><input
             placeholder="enter AMSR"
             id="amsr"
@@ -46,8 +48,8 @@ template = """
             autocorrect="off"
             autocomplete="on"
             onkeyup="amsr_changed()"
-        ></input>
-    </td></tr>
+        ></input></td>
+    </tr>
     <tr><td>SMILES:</td>
     <td><input
             placeholder="enter SMILES"
@@ -60,6 +62,15 @@ template = """
             autocomplete="on"
             onkeyup="smiles_changed()"
         ></input>
+    </td></tr>
+    <tr><td>
+    <input
+            type="checkbox"
+            id="threeD"
+            name="threeD"
+            checked
+            onclick="smiles_changed()"
+            >3D
     </td></tr>
     </table>
 
@@ -92,10 +103,15 @@ template = """
     }
 
     function smiles_changed() {
+        if (element('threeD').checked) {
+           element('viewer3d').style.display = 'block';
+        } else {
+           element('viewer3d').style.display = 'none';
+        }
         if (pending)
             pending.abort();
         pending = $.post('/smiles_changed',
-            {'smiles': element('smiles').value},
+            {'smiles': element('smiles').value, 'threeD': element('threeD').checked},
             function(response) {
                 var data = JSON.parse(response);
                 refresh_viewer2d(data.svg);
@@ -133,10 +149,6 @@ def get_svg(mol):
     return d.GetDrawingText()
 
 
-def get_sdf(mol, dihedral=None):
-    return Chem.MolToMolBlock(amsr.GetConformer(mol, dihedral))
-
-
 def mol_isOK(mol):
     return mol and mol.GetNumAtoms() > 0
 
@@ -151,12 +163,16 @@ def index():
 
 @app.route("/smiles_changed", methods=["GET", "POST"])
 def smiles_changed():
-    smiles, svg, sdf, a = request.form.get("smiles"), "", "", ""
+    smiles = request.form.get("smiles")
+    threeD = request.form.get("threeD")
+    svg, sdf, a = "", "", ""
     mol = Chem.MolFromSmiles(smiles)
     if mol_isOK(mol):
-        a = amsr.FromMol(mol)
         svg = get_svg(mol)
-        sdf = get_sdf(mol)
+        if threeD == "true":
+            mol = amsr.GetConformer(mol)
+        a = amsr.FromMol(mol)
+        sdf = Chem.MolToMolBlock(mol)
     return json.dumps({"svg": svg, "sdf": sdf, "amsr": a})
 
 
@@ -168,7 +184,8 @@ def amsr_changed():
     if mol_isOK(mol):
         smiles = Chem.MolToSmiles(mol)
         svg = get_svg(mol)
-        sdf = get_sdf(mol, dihedral)
+        mol = amsr.GetConformer(mol, dihedral)
+        sdf = Chem.MolToMolBlock(amsr.GetConformer(mol, dihedral))
     return json.dumps({"svg": svg, "sdf": sdf, "smiles": smiles})
 
 

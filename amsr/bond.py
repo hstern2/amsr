@@ -1,11 +1,43 @@
 from rdkit import Chem
 from .atom import GetSeenIndex
-from .tokens import E, Z
+from .tokens import E, Z, BOND_SYMBOL_FOR_DIHEDRAL
+from .conf import GetRoundedDihedral
+
+
+def _is_rotatable(b):
+    m = b.GetOwningMol()
+    if m.GetNumConformers() == 0:
+        return False
+    if b.GetBondType() != Chem.rdchem.BondType.SINGLE:
+        return False
+    if b.GetIsAromatic():
+        return False
+    if b.GetBeginAtom().GetDegree() == 1 or b.GetEndAtom().GetDegree() == 1:
+        return False
+    bond_rings = [ring for ring in m.GetRingInfo().BondRings() if b.GetIdx() in ring]
+    if any(len(ring) == 3 for ring in bond_rings):
+        return False
+    return True
+
+
+def _earliestSeenNotIncluding(a, bi):
+    qi = None
+    qSeenIndex = None
+    for c in a.GetNeighbors():
+        ci = c.GetIdx()
+        if ci == bi:
+            continue
+        cSeenIndex = GetSeenIndex(c)
+        if qi is None or cSeenIndex < qSeenIndex:
+            qi = ci
+            qSeenIndex = cSeenIndex
+    return qi
 
 
 class Bond:
-    def __init__(self, sym=None):
+    def __init__(self, sym=None, isRotatable=False):
         self.sym = sym
+        self.isRotatable = isRotatable
 
     def rdStereo(self):
         if self.sym == E:
@@ -16,15 +48,20 @@ class Bond:
             return None
 
     def asToken(self, b):
+        m = b.GetOwningMol()
         a1 = b.GetBeginAtom()
         i1 = a1.GetIdx()
         a2 = b.GetEndAtom()
         i2 = a2.GetIdx()
+        if self.isRotatable:
+            j1 = _earliestSeenNotIncluding(a1, i2)
+            j2 = _earliestSeenNotIncluding(a2, i1)
+            return BOND_SYMBOL_FOR_DIHEDRAL[GetRoundedDihedral(m, (j1, i1, i2, j2))]
         n1 = [GetSeenIndex(c) for c in a1.GetNeighbors() if c.GetIdx() != i2]
         n2 = [GetSeenIndex(c) for c in a2.GetNeighbors() if c.GetIdx() != i1]
         flip = False
         for a in b.GetStereoAtoms():
-            i = GetSeenIndex(b.GetOwningMol().GetAtomWithIdx(a))
+            i = GetSeenIndex(m.GetAtomWithIdx(a))
             if i in n1 and i != min(n1):
                 flip = not flip
             elif i in n2 and i != min(n2):
@@ -41,4 +78,6 @@ class Bond:
             return cls(E)
         if s == Chem.BondStereo.STEREOZ:
             return cls(Z)
+        if _is_rotatable(b):
+            return cls(isRotatable=True)
         return None
