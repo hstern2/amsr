@@ -107,10 +107,7 @@ def FromMolToTokens(
                 yield from _search(a)
                 _ = True
 
-    t = [
-        t[1].asToken(t[0], mol) if type(t) == tuple else t
-        for t in list(_getPreTokens())
-    ]
+    t = [t[1].asToken(t[0]) if type(t) == tuple else t for t in list(_getPreTokens())]
 
     if useGroups:
         t = EncodeGroups(t)

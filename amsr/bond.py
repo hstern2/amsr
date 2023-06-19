@@ -15,7 +15,7 @@ class Bond:
         else:
             return None
 
-    def asToken(self, b, mol):
+    def asToken(self, b):
         a1 = b.GetBeginAtom()
         i1 = a1.GetIdx()
         a2 = b.GetEndAtom()
@@ -24,7 +24,7 @@ class Bond:
         n2 = [GetSeenIndex(c) for c in a2.GetNeighbors() if c.GetIdx() != i1]
         flip = False
         for a in b.GetStereoAtoms():
-            i = GetSeenIndex(mol.GetAtomWithIdx(a))
+            i = GetSeenIndex(b.GetOwningMol().GetAtomWithIdx(a))
             if i in n1 and i != min(n1):
                 flip = not flip
             elif i in n2 and i != min(n2):

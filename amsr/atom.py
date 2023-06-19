@@ -115,7 +115,7 @@ class Atom:
         else:
             return sym + s
 
-    def asToken(self, a, mol):
+    def asToken(self, a):
         ct = a.GetChiralTag()
         isEven = IsEvenParity([GetSeenIndex(b) for b in a.GetNeighbors()])
         if ct == Chem.ChiralType.CHI_TETRAHEDRAL_CCW:
