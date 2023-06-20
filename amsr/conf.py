@@ -16,14 +16,16 @@ def GetConformer(
     Chem.AllChem.EmbedMolecule(mol)
     if dihedral is not None:
         for (i, j, k, l), v in dihedral.items():
-            Chem.rdMolTransforms.SetDihedralDeg(mol.GetConformer(0), i, j, k, l, v)
+            if not mol.GetBondBetweenAtoms(j, k).IsInRing():
+                Chem.rdMolTransforms.SetDihedralDeg(mol.GetConformer(0), i, j, k, l, v)
     mp = Chem.AllChem.MMFFGetMoleculeProperties(mol, mmffVariant="MMFF94")
     if mp is not None:
         ff = Chem.AllChem.MMFFGetMoleculeForceField(mol, mp)
         if ff is not None:
             if dihedral is not None:
                 for (i, j, k, l), v in dihedral.items():
-                    ff.MMFFAddTorsionConstraint(i, j, k, l, False, v, v, 4e5)
+                    if not mol.GetBondBetweenAtoms(j, k).IsInRing():
+                        ff.MMFFAddTorsionConstraint(i, j, k, l, False, v, v, 4e5)
             ff.Minimize(maxIts=10000)
     return Chem.RemoveHs(mol)
 
