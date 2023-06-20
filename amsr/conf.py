@@ -16,8 +16,7 @@ def GetConformer(
     Chem.AllChem.EmbedMolecule(mol)
     if dihedral is not None:
         for (i, j, k, l), v in dihedral.items():
-            if not mol.GetBondBetweenAtoms(j, k).IsInRing():
-                Chem.rdMolTransforms.SetDihedralDeg(mol.GetConformer(0), i, j, k, l, v)
+            Chem.rdMolTransforms.SetDihedralDeg(mol.GetConformer(0), i, j, k, l, v)
     mp = Chem.AllChem.MMFFGetMoleculeProperties(mol, mmffVariant="MMFF94")
     if mp is not None:
         ff = Chem.AllChem.MMFFGetMoleculeForceField(mol, mp)

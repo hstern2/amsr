@@ -125,7 +125,7 @@ template = """
         if (pending)
             pending.abort();
         pending = $.post('/amsr_changed',
-            {'amsr': element('amsr').value},
+            {'amsr': element('amsr').value, 'threeD': element('threeD').checked},
             function(response) {
                 var data = JSON.parse(response);
                 refresh_viewer2d(data.svg);
@@ -164,28 +164,31 @@ def index():
 @app.route("/smiles_changed", methods=["GET", "POST"])
 def smiles_changed():
     smiles = request.form.get("smiles")
-    threeD = request.form.get("threeD")
+    threeD = request.form.get("threeD") == "true"
     svg, sdf, a = "", "", ""
     mol = Chem.MolFromSmiles(smiles)
     if mol_isOK(mol):
         svg = get_svg(mol)
-        if threeD == "true":
+        if threeD:
             mol = amsr.GetConformer(mol)
+            sdf = Chem.MolToMolBlock(mol)
         a = amsr.FromMol(mol)
-        sdf = Chem.MolToMolBlock(mol)
     return json.dumps({"svg": svg, "sdf": sdf, "amsr": a})
 
 
 @app.route("/amsr_changed", methods=["GET", "POST"])
 def amsr_changed():
-    smiles, svg, sdf, a = "", "", "", request.form.get("amsr")
+    a = request.form.get("amsr")
+    threeD = request.form.get("threeD") == "true"
+    smiles, svg, sdf = "", "", ""
     dihedral = dict()
     mol = amsr.ToMol(a, dihedral=dihedral)
     if mol_isOK(mol):
         smiles = Chem.MolToSmiles(mol)
         svg = get_svg(mol)
-        mol = amsr.GetConformer(mol, dihedral)
-        sdf = Chem.MolToMolBlock(amsr.GetConformer(mol, dihedral))
+        if threeD:
+            mol = amsr.GetConformer(mol, dihedral)
+            sdf = Chem.MolToMolBlock(mol)
     return json.dumps({"svg": svg, "sdf": sdf, "smiles": smiles})
 
 

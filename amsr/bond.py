@@ -5,17 +5,13 @@ from .conf import GetRoundedDihedral
 
 
 def _is_rotatable(b):
-    m = b.GetOwningMol()
-    if m.GetNumConformers() == 0:
-        return False
     if b.GetBondType() != Chem.rdchem.BondType.SINGLE:
         return False
     if b.GetIsAromatic():
         return False
     if b.GetBeginAtom().GetDegree() == 1 or b.GetEndAtom().GetDegree() == 1:
         return False
-    bond_rings = [ring for ring in m.GetRingInfo().BondRings() if b.GetIdx() in ring]
-    if any(len(ring) == 3 for ring in bond_rings):
+    if b.IsInRing():
         return False
     return True
 
@@ -78,6 +74,6 @@ class Bond:
             return cls(E)
         if s == Chem.BondStereo.STEREOZ:
             return cls(Z)
-        if _is_rotatable(b):
+        if b.GetOwningMol().GetNumConformers() > 0 and _is_rotatable(b):
             return cls(isRotatable=True)
         return None

@@ -12,12 +12,12 @@ from .tokens import RegExp, SKIP, L_BRACKET, R_BRACKET, DIHEDRAL_FOR_BOND_SYMBOL
 
 def _addBond(mol, atom, i, j, bond, dihedral_for_bond):
     atom[i].addBondTo(atom[j])
-    n = mol.AddBond(i, j, Chem.BondType.SINGLE)
+    n = mol.AddBond(i, j, Chem.BondType.SINGLE) - 1
     s = bond.rdStereo()
     if s is not None:
-        mol.GetBondWithIdx(n - 1).SetStereo(s)
+        mol.GetBondWithIdx(n).SetStereo(s)
     if bond.sym:
-        dihedral_for_bond[i] = DIHEDRAL_FOR_BOND_SYMBOL[bond.sym]
+        dihedral_for_bond[n] = DIHEDRAL_FOR_BOND_SYMBOL[bond.sym]
 
 
 def _addAtom(mol, atom, a):

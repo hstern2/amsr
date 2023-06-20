@@ -58,8 +58,6 @@ def FromMolToTokens(
     atom = [Atom.fromRDAtom(a) for a in mol.GetAtoms()]
     seenBonds: Set[FrozenSet[int]] = set()
     nSeenAtoms = 0
-    if mol.GetNumConformers() > 0:
-        Chem.GetSSSR(mol)
 
     def _search(a):
         nonlocal nSeenAtoms
