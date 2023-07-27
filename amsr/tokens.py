@@ -1,7 +1,7 @@
 from re import compile, escape, Match
 from typing import Iterator, List
 
-# tmp comment
+# tmp
 
 DOT = "."
 E = "_"
