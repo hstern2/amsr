@@ -30,14 +30,19 @@ def GetConformer(
     return Chem.RemoveHs(mol)
 
 
-def GetRoundedDihedral(mol: Chem.Mol, dihedral: Tuple[int, int, int, int]) -> int:
-    """Return dihedral angle rounded to nearest 60 degrees
+def GetRoundedDihedral(
+    mol: Chem.Mol, dihedral: Tuple[int, int, int, int], ndeg: int
+) -> int:
+    """Return dihedral angle rounded to nearest ndeg degrees
 
     :param mol: RDKit Mol
     :param dihedral: tuple of four atom indices
+    :param ndeg: int
     :return: rounded dihedral angle
     """
     return (
-        round(Chem.rdMolTransforms.GetDihedralDeg(mol.GetConformer(0), *dihedral) / 60)
-        * 60
+        round(
+            Chem.rdMolTransforms.GetDihedralDeg(mol.GetConformer(0), *dihedral) / ndeg
+        )
+        * ndeg
     )

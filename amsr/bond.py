@@ -52,7 +52,7 @@ class Bond:
         if self.isRotatable:
             j1 = _earliestSeenNotIncluding(a1, i2)
             j2 = _earliestSeenNotIncluding(a2, i1)
-            return BOND_SYMBOL_FOR_DIHEDRAL[GetRoundedDihedral(m, (j1, i1, i2, j2))]
+            return BOND_SYMBOL_FOR_DIHEDRAL[GetRoundedDihedral(m, (j1, i1, i2, j2), 30)]
         n1 = [GetSeenIndex(c) for c in a1.GetNeighbors() if c.GetIdx() != i2]
         n2 = [GetSeenIndex(c) for c in a2.GetNeighbors() if c.GetIdx() != i1]
         flip = False

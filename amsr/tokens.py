@@ -1,19 +1,12 @@
 from re import compile, escape, Match
 from typing import Iterator, List
 
-# tmp2
-
-TMPTMP = 'aa'
-
 DOT = "."
-E = "_"
-Z = "^"
-GAUCHE_CW = ">"
-GAUCHE_CCW = "<"
-SKEW_CW = "\\"
-SKEW_CCW = "/"
-CW = ")"
-CCW = "("
+DIHEDRALS = ["^", "<^", "^<", "<", "_<", "<_", "_", "_>", ">_", ">", ">^", "^>"]
+Z = DIHEDRALS[0]
+E = DIHEDRALS[6]
+CW = "'"
+CCW = "`"
 PLUS = "+"
 MINUS = "-"
 EXTRA_PI = ":"
@@ -21,29 +14,17 @@ BANG = "!"
 RADICAL = "*"
 L_BRACKET = "["
 R_BRACKET = "]"
-SKIP = "'"
+SKIP = "@"
 MOLSEP = ";"
 
 DIHEDRAL_FOR_BOND_SYMBOL = {
-    Z: 0,
-    GAUCHE_CW: -60,
-    SKEW_CW: -120,
-    E: 180,
-    SKEW_CCW: 120,
-    GAUCHE_CCW: 60,
+    s: 30 * (i - 12 if i > 6 else i) for i, s in enumerate(DIHEDRALS)
 }
+BOND_SYMBOL_FOR_DIHEDRAL = {v: k for k, v in DIHEDRAL_FOR_BOND_SYMBOL.items()}
+BOND_SYMBOL_FOR_DIHEDRAL[-180] = E
 
-BOND_SYMBOL_FOR_DIHEDRAL = {
-    0: Z,
-    -60: GAUCHE_CW,
-    -120: SKEW_CW,
-    180: E,
-    -180: E,
-    120: SKEW_CCW,
-    60: GAUCHE_CCW,
-}
-
-_pbond = f"(?P<bond>[{escape(E)}{escape(Z)}{escape(GAUCHE_CW)}{escape(GAUCHE_CCW)}{escape(SKEW_CW)}{escape(SKEW_CCW)}])"
+_pbond = f"(?P<bond>{'|'.join(map(escape, sorted(DIHEDRALS, key=len, reverse=True)))})"
+# _pbond = f"(?P<bond>[{escape(E)}{escape(Z)}{escape(GAUCHE_CW)}{escape(GAUCHE_CCW)}{escape(SKEW_CW)}{escape(SKEW_CCW)}])"
 _c = f"[{escape(PLUS+MINUS+RADICAL+EXTRA_PI+BANG+CW+CCW)}]*"
 _patom = (
     f"(?P<atom>{escape(L_BRACKET)}[0-9]*[A-Za-z]+{_c}{escape(R_BRACKET)}|[A-Za-z]{_c})"
