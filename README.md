@@ -25,10 +25,10 @@ amsr.ToMol("CNcncc5cNcN6C.oC.o") # caffeine
 taxol_smi = "CC1=C2[C@@]([C@]([C@H]([C@@H]3[C@]4([C@H](OC4)C[C@@H]([C@]3(C(=O)[C@@H]2OC(=O)C)C)O)OC(=O)C)OC(=O)c5ccccc5)(C[C@@H]1OC(=O)[C@H](O)[C@@H](NC(=O)c6ccccc6)c7ccccc7)O)(C)C"
 
 amsr.FromSmiles(taxol_smi)
-# CccCC(C(C(C)C(OC4.CC)C)6coC(8[OAc].C.O....[OAc].O[Bz].CC(6OcoC(O.C)N[Bz].[Ph]....O.C.C
+# CccCC`C`C`C'C`OC4.CC'C'6coC`8[OAc].C.O....[OAc].O[Bz].CC`6OcoC`O.C'N[Bz].[Ph]....O.C.C
 
 amsr.FromSmiles(taxol_smi, useGroups=False)
-# CccCC(C(C(C)C(OC4.CC)C)6coC(8OcoC..C.O....OcoC..Ococccccc6......CC(6OcoC(O.C)Ncocccccc6......cccccc6.........O.C.C
+# CccCC`C`C`C'C`OC4.CC'C'6coC`8OcoC..C.O....OcoC..Ococccccc6......CC`6OcoC`O.C'Ncocccccc6......cccccc6.........O.C.C
 ```
 
 ## Description
@@ -679,14 +679,14 @@ L 85.0 132.8
 
 
 ### Ring selection
-When more than one ring of a given size can be formed, one or more single quote marks `'` immediately after
+When more than one ring of a given size can be formed, one or more `@` signs immediately after
 the digit will make ring-forming bonds with atoms appearing earlier in the
 string, rather than the most recent.
 
 | AMSR | molecule |
 | --- | --- |
 ccOcc5cccc6 | [benzofuran](https://en.wikipedia.org/wiki/Benzofuran)
-ccOcc5cccc6' | [isobenzofuran](https://en.wikipedia.org/wiki/Isobenzofuran)
+ccOcc5cccc6@ | [isobenzofuran](https://en.wikipedia.org/wiki/Isobenzofuran)
 
 
 <div>
@@ -1430,15 +1430,15 @@ L 18.3 54.5
 
 
 ### Tetrahedral stereochemistry
-Tetrahedral stereochemistry is denoted by a left parenthesis `(` meaning "counterclockwise"
-or a right parenthesis `)` meaning "clockwise," referring to the first three neighbors of
+Tetrahedral stereochemistry is denoted by a single quote `'` meaning "clockwise"
+or a backtick `` ` `` meaning "counterclockwise," referring to the first three neighbors of
 a stereocenter atoms as they appear in the string, with the last neighbor (or implicit hydrogen)
 in back.
 
 | AMSR | molecule |
 | --- | --- |
-C(C.FO | [(1*S*)-1-fluoroethanol](https://pubchem.ncbi.nlm.nih.gov/compound/57518764)
-C)C.FO | [(1*R*)-1-fluoroethanol](https://pubchem.ncbi.nlm.nih.gov/compound/60205193)
+C`C.FO | [(1*S*)-1-fluoroethanol](https://pubchem.ncbi.nlm.nih.gov/compound/57518764)
+C'C.FO | [(1*R*)-1-fluoroethanol](https://pubchem.ncbi.nlm.nih.gov/compound/60205193)
 
 
 <div>
@@ -1820,9 +1820,8 @@ C[Ph][Et]coNcoNco6 | [phenobarbital](https://en.wikipedia.org/wiki/Phenobarbital
 width='160px' height='160px' viewBox='0 0 160 160'>
 <!-- END OF HEADER -->
 <rect style='opacity:1.0;fill:#FFFFFF;stroke:none' width='160.0' height='160.0' x='0.0' y='0.0'> </rect>
-<path class='bond-0 atom-1 atom-0' d='M 55.8,76.4 L 59.9,66.0 L 57.3,65.3 Z' style='fill:#000000;fill-rule:evenodd;fill-opacity:1;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path class='bond-0 atom-1 atom-0' d='M 59.9,66.0 L 58.8,54.2 L 64.1,55.5 Z' style='fill:#0000FF;fill-rule:evenodd;fill-opacity:1;stroke:#0000FF;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path class='bond-0 atom-1 atom-0' d='M 59.9,66.0 L 57.3,65.3 L 58.8,54.2 Z' style='fill:#0000FF;fill-rule:evenodd;fill-opacity:1;stroke:#0000FF;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
+<path class='bond-0 atom-0 atom-1' d='M 61.4,54.8 L 58.6,65.6' style='fill:none;fill-rule:evenodd;stroke:#0000FF;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-0 atom-0 atom-1' d='M 58.6,65.6 L 55.8,76.4' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-1 atom-1 atom-2' d='M 55.8,76.4 L 74.9,95.3' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-9 atom-1 atom-9' d='M 55.8,76.4 L 29.9,83.5' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-2 atom-2 atom-3' d='M 74.9,95.3 L 100.9,88.2' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
@@ -1835,12 +1834,12 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 <path class='bond-6 atom-6 atom-7' d='M 152.7,73.9 L 145.9,99.9' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-7 atom-7 atom-8' d='M 145.9,99.9 L 120.0,107.1' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-7 atom-7 atom-8' d='M 140.6,95.8 L 122.5,100.8' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-10 atom-9 atom-10' d='M 27.3,82.8 L 24.5,93.6' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-10 atom-9 atom-10' d='M 24.5,93.6 L 21.7,104.3' style='fill:none;fill-rule:evenodd;stroke:#FF0000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-10 atom-9 atom-10' d='M 32.5,84.2 L 29.7,94.9' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-10 atom-9 atom-10' d='M 29.7,94.9 L 26.9,105.7' style='fill:none;fill-rule:evenodd;stroke:#FF0000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-11 atom-9 atom-11' d='M 29.9,83.5 L 22.4,76.1' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-11 atom-9 atom-11' d='M 22.4,76.1 L 14.9,68.7' style='fill:none;fill-rule:evenodd;stroke:#FF0000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-10 atom-9 atom-10' d='M 31.8,81.6 L 24.3,74.2' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-10 atom-9 atom-10' d='M 24.3,74.2 L 16.8,66.8' style='fill:none;fill-rule:evenodd;stroke:#FF0000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-10 atom-9 atom-10' d='M 28.0,85.4 L 20.5,78.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-10 atom-9 atom-10' d='M 20.5,78.0 L 13.0,70.6' style='fill:none;fill-rule:evenodd;stroke:#FF0000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-11 atom-9 atom-11' d='M 29.9,83.5 L 27.1,94.2' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-11 atom-9 atom-11' d='M 27.1,94.2 L 24.3,105.0' style='fill:none;fill-rule:evenodd;stroke:#FF0000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path  class='atom-0' d='M 60.9 46.6
 L 63.4 50.6
 Q 63.7 51.0, 64.1 51.7
@@ -1917,26 +1916,7 @@ L 74.4 48.4
 L 73.0 48.4
 L 73.0 47.9
 ' fill='#0000FF'/>
-<path  class='atom-10' d='M 19.6 109.5
-Q 19.6 107.7, 20.5 106.7
-Q 21.4 105.7, 23.1 105.7
-Q 24.8 105.7, 25.7 106.7
-Q 26.6 107.7, 26.6 109.5
-Q 26.6 111.4, 25.7 112.4
-Q 24.8 113.5, 23.1 113.5
-Q 21.4 113.5, 20.5 112.4
-Q 19.6 111.4, 19.6 109.5
-M 23.1 112.6
-Q 24.3 112.6, 24.9 111.8
-Q 25.5 111.1, 25.5 109.5
-Q 25.5 108.0, 24.9 107.3
-Q 24.3 106.5, 23.1 106.5
-Q 21.9 106.5, 21.3 107.3
-Q 20.7 108.0, 20.7 109.5
-Q 20.7 111.1, 21.3 111.8
-Q 21.9 112.6, 23.1 112.6
-' fill='#FF0000'/>
-<path  class='atom-11' d='M 7.3 64.6
+<path  class='atom-10' d='M 7.3 64.6
 Q 7.3 62.8, 8.2 61.8
 Q 9.1 60.8, 10.8 60.8
 Q 12.5 60.8, 13.4 61.8
@@ -1955,11 +1935,30 @@ Q 8.3 63.1, 8.3 64.6
 Q 8.3 66.2, 9.0 66.9
 Q 9.6 67.7, 10.8 67.7
 ' fill='#FF0000'/>
-<path  class='atom-11' d='M 14.6 62.0
-L 17.2 62.0
-L 17.2 62.6
-L 14.6 62.6
-L 14.6 62.0
+<path  class='atom-11' d='M 19.6 109.5
+Q 19.6 107.7, 20.5 106.7
+Q 21.4 105.7, 23.1 105.7
+Q 24.8 105.7, 25.7 106.7
+Q 26.6 107.7, 26.6 109.5
+Q 26.6 111.4, 25.7 112.4
+Q 24.8 113.5, 23.1 113.5
+Q 21.4 113.5, 20.5 112.4
+Q 19.6 111.4, 19.6 109.5
+M 23.1 112.6
+Q 24.3 112.6, 24.9 111.8
+Q 25.5 111.1, 25.5 109.5
+Q 25.5 108.0, 24.9 107.3
+Q 24.3 106.5, 23.1 106.5
+Q 21.9 106.5, 21.3 107.3
+Q 20.7 108.0, 20.7 109.5
+Q 20.7 111.1, 21.3 111.8
+Q 21.9 112.6, 23.1 112.6
+' fill='#FF0000'/>
+<path  class='atom-11' d='M 26.9 106.9
+L 29.6 106.9
+L 29.6 107.5
+L 26.9 107.5
+L 26.9 106.9
 ' fill='#FF0000'/>
 </svg>
 </span>
