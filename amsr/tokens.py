@@ -3,6 +3,8 @@ from typing import Iterator, List
 
 # tmp
 
+TMPTMP = 'aa'
+
 DOT = "."
 E = "_"
 Z = "^"
