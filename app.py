@@ -144,7 +144,8 @@ template = """
 
 def get_svg(mol):
     d = Chem.Draw.rdMolDraw2D.MolDraw2DSVG(396, 396)
-    d.DrawMolecule(mol)
+    actives = [a.GetIdx() for a in mol.GetAtoms() if a.HasProp("_active")]
+    d.DrawMolecule(mol, highlightAtoms=actives)
     d.FinishDrawing()
     return d.GetDrawingText()
 
