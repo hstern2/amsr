@@ -2,7 +2,7 @@ from re import compile, escape, Match
 from typing import Iterator, List
 
 DOT = "."
-DIHEDRALS = ["^", "<^", "^<", "<", "_<", "<_", "_", "_>", ">_", ">", ">^", "^>"]
+DIHEDRALS = ["^", "^\\", "<\\", "<", "</", "_/", "_", "\\_", "\\>", ">", "/>", "/^"]
 Z = DIHEDRALS[0]
 E = DIHEDRALS[6]
 CW = "'"
