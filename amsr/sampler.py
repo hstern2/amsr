@@ -1,7 +1,9 @@
-from .encode import FromMolToTokens
-from numpy import mean, std
-from random import choices, gauss
+from .encode import FromMol, FromMolToTokens
+from .decode import ToMol
+from random import choices, gauss, shuffle
 from .count import Count
+import numpy
+from rdkit import Chem
 
 
 class Sampler:
@@ -15,15 +17,25 @@ class Sampler:
                 Count(d, t)
         self.tokens = list(d.keys())
         self.weights = list(d.values())
-        self.navg = mean(n)
-        self.nstddev = std(n)
+        self.navg = numpy.mean(n)
+        self.nstddev = numpy.std(n)
 
-    def sampleTokens(self):
+    def sampleTokens(self, navg=None, nstddev=None):
+        if navg is None:
+            navg = self.navg
+        if nstddev is None:
+            nstddev = self.nstddev
         return choices(
             population=self.tokens,
             weights=self.weights,
-            k=max(round(gauss(self.navg, self.nstddev)), 1),
+            k=max(round(gauss(navg, nstddev)), 1),
         )
 
-    def sample(self):
-        return "".join(self.sampleTokens())
+    def sample(self, navg=None, nstddev=None):
+        return "".join(self.sampleTokens(navg, nstddev))
+
+    def decorate(self, mol, navg=10, nstddev=2):
+        n = mol.GetNumAtoms()
+        i = list(range(n))
+        shuffle(i)
+        return ToMol(FromMol(Chem.RenumberAtoms(mol, i)) + self.sample(navg, nstddev))
