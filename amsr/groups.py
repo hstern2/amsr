@@ -33,7 +33,7 @@ _groups: Dict[str, List[str]] = {
     "[sBu]": ["CC.CC...", "CCC..C.."],
     "[iBu]": ["CCC.C..."],
     "[nPr]": ["CCC..."],
-    "[iPr]": ["CC.C."],
+    "[iPr]": ["CC.C.."],
     "[Et]": ["CC.."],
     "[CN]": ["C:N:"],
     "[CF3]": ["CFFF"],
