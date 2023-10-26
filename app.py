@@ -63,7 +63,19 @@ template = """
             onkeyup="smiles_changed()"
         ></input>
     </td></tr>
-    <tr><td>
+    <tr>
+    <td><input
+            type="checkbox"
+            id="flipX"
+            name="flipX"
+            onclick="smiles_changed()"
+            >flipX
+    <input
+            type="checkbox"
+            id="flipY"
+            name="flipY"
+            onclick="smiles_changed()"
+            >flipY
     <input
             type="checkbox"
             id="threeD"
@@ -111,7 +123,10 @@ template = """
         if (pending)
             pending.abort();
         pending = $.post('/smiles_changed',
-            {'smiles': element('smiles').value, 'threeD': element('threeD').checked},
+            {'smiles': element('smiles').value,
+            'flipX': element('flipX').checked,
+            'flipY': element('flipY').checked,
+            'threeD': element('threeD').checked},
             function(response) {
                 var data = JSON.parse(response);
                 refresh_viewer2d(data.svg);
@@ -125,7 +140,10 @@ template = """
         if (pending)
             pending.abort();
         pending = $.post('/amsr_changed',
-            {'amsr': element('amsr').value, 'threeD': element('threeD').checked},
+            {'amsr': element('amsr').value,
+            'flipX': element('flipX').checked,
+            'flipY': element('flipY').checked,
+            'threeD': element('threeD').checked},
             function(response) {
                 var data = JSON.parse(response);
                 refresh_viewer2d(data.svg);
@@ -142,7 +160,24 @@ template = """
 """
 
 
-def get_svg(mol):
+def flip_mol(m, axis):
+    conf = m.GetConformer()
+    for a in m.GetAtoms():
+        i = a.GetIdx()
+        pos = conf.GetAtomPosition(i)
+        if axis == "X":
+            conf.SetAtomPosition(i, (-pos.x, pos.y, pos.z))
+        elif axis == "Y":
+            conf.SetAtomPosition(i, (pos.x, -pos.y, pos.z))
+    Chem.AssignStereochemistry(m, force=True, cleanIt=True)
+
+
+def get_svg(mol, flipX, flipY):
+    rdkit.Chem.AllChem.Compute2DCoords(mol)
+    if flipX:
+        flip_mol(mol, "X")
+    if flipY:
+        flip_mol(mol, "Y")
     d = Chem.Draw.rdMolDraw2D.MolDraw2DSVG(396, 396)
     actives = [a.GetIdx() for a in mol.GetAtoms() if a.HasProp("_active")]
     d.DrawMolecule(mol, highlightAtoms=actives)
@@ -166,10 +201,12 @@ def index():
 def smiles_changed():
     smiles = request.form.get("smiles")
     threeD = request.form.get("threeD") == "true"
+    flipX = request.form.get("flipX") == "true"
+    flipY = request.form.get("flipY") == "true"
     svg, sdf, a = "", "", ""
     mol = Chem.MolFromSmiles(smiles)
     if mol_isOK(mol):
-        svg = get_svg(mol)
+        svg = get_svg(mol, flipX, flipY)
         if threeD:
             mol = amsr.GetConformer(mol)
             sdf = Chem.MolToMolBlock(mol)
@@ -181,12 +218,14 @@ def smiles_changed():
 def amsr_changed():
     a = request.form.get("amsr")
     threeD = request.form.get("threeD") == "true"
+    flipX = request.form.get("flipX") == "true"
+    flipY = request.form.get("flipY") == "true"
     smiles, svg, sdf = "", "", ""
     dihedral = dict()
     mol = amsr.ToMol(a, dihedral=dihedral)
     if mol_isOK(mol):
         smiles = Chem.MolToSmiles(mol)
-        svg = get_svg(mol)
+        svg = get_svg(mol, flipX, flipY)
         if threeD:
             mol = amsr.GetConformer(mol, dihedral)
             sdf = Chem.MolToMolBlock(mol)

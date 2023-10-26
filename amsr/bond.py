@@ -74,6 +74,7 @@ class Bond:
             return cls(E)
         if s == Chem.BondStereo.STEREOZ:
             return cls(Z)
-        if b.GetOwningMol().GetNumConformers() > 0 and _is_rotatable(b):
+        m = b.GetOwningMol()
+        if m.GetNumConformers() > 0 and m.GetConformer().Is3D() and _is_rotatable(b):
             return cls(isRotatable=True)
         return None
