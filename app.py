@@ -68,13 +68,13 @@ template = """
             type="checkbox"
             id="flipX"
             name="flipX"
-            onclick="smiles_changed()"
+            onclick="amsr_changed()"
             >flipX
     <input
             type="checkbox"
             id="flipY"
             name="flipY"
-            onclick="smiles_changed()"
+            onclick="amsr_changed()"
             >flipY
     <input
             type="checkbox"
