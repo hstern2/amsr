@@ -30,7 +30,7 @@ jobs:
     - name: Install
       run: |
         pip install .
-    - name: List contents of the test directory
+    - name: List contents of the tests directory
       run: ls -la tests/
     - name: Run Test
       run: |
