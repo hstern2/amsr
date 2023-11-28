@@ -1800,7 +1800,7 @@ L 19.3 84.4
 ### Groups
 The following abbreviations may be used to represent various functional groups:
 ```py
-[Ac], [Bn], [Boc], [Bz], [CCl3], [CF3], [CHO], [CN], [COO-], [COOEt], [COOH], [COOMe], [Cbz], [Et], [Ms], [NHAc], [NHMe], [NMe2], [NO2], [OAc], [OEt], [OMe], [Ph], [Piv], [Tf], [Tol], [Ts], [benzene], [iBu], [iPr], [nBu], [nPr], [sBu], [tBu]
+[@], [Ac], [Bn], [Boc], [Bz], [CCl3], [CF3], [CHO], [CN], [COO-], [COOEt], [COOH], [COOMe], [Cbz], [Et], [Ms], [NHAc], [NHMe], [NMe2], [NO2], [OAc], [OEt], [OMe], [Ph], [Piv], [Tf], [Tol], [Ts], [iBu], [iPr], [nBu], [nPr], [sBu], [tBu]
 ```
 
 | AMSR | molecule |
@@ -2217,7 +2217,7 @@ More than one molecule may be specified by separating with `;`.
 
 | AMSR | molecule |
 | --- | --- |
-ocC.O[benzene][COOH];CcoN[benzene]..O | [aspirin](https://en.wikipedia.org/wiki/Aspirin) and [acetaminophen](https://en.wikipedia.org/wiki/Paracetamol)
+ocC.O[@][COOH];CcoN[@]..O | [aspirin](https://en.wikipedia.org/wiki/Aspirin) and [acetaminophen](https://en.wikipedia.org/wiki/Paracetamol)
 
 
 <div>
