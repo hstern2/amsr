@@ -20,11 +20,17 @@ def test_taxol():
     )
 
 
-def test_some_FDA_approved_structures():
+def _test_csv(csv_file):
     assert (
-        pd.read_csv(
-            os.path.join(os.path.dirname(__file__), "some_FDA_approved_structures.csv")
-        )
+        pd.read_csv(os.path.join(os.path.dirname(__file__), csv_file))
         .apply(lambda m: amsr.CheckSmiles(m.SMILES), axis=1)
         .all()
     )
+
+
+def test_FDA():
+    _test_csv("some_FDA_approved_structures.csv")
+
+
+def test_NP():
+    _test_csv("natural_products.csv")

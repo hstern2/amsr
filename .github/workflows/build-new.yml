@@ -1,18 +1,17 @@
-name: test
+name: publish
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  release:
+    types:
+      - created
+  workflow_dispatch:
 
 jobs:
-  test:
-
+  publish:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7, 3.8, 3.9, 3.10]
+        python-version: [3.8, 3.9, 3.10]
 
     steps:
     - uses: actions/checkout@v2
@@ -30,8 +29,14 @@ jobs:
     - name: Install
       run: |
         pip install .
-    - name: List contents of the tests directory
-      run: ls -la tests/
     - name: Run Test
       run: |
          pytest tests --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report=xml --cov-report=html
+    - name: Build a binary wheel and a source tarball
+      run: |
+        python -m build --sdist --wheel --outdir dist/ .
+    - name: Publish distribution 📦 to PyPI
+      if: github.event_name == 'release'
+      uses: pypa/gh-action-pypi-publish@master
+      with:
+        password: ${{ secrets.PYPI_API_TOKEN }}
