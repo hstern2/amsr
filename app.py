@@ -1,6 +1,6 @@
 from flask import Flask, render_template_string, request
 from rdkit import Chem
-import rdkit.Chem.Draw, rdkit.Chem.AllChem, json, amsr
+import rdkit.Chem.Draw, rdkit.Chem.AllChem, json, amsr, math
 
 
 template = """
@@ -11,6 +11,7 @@ template = """
     <title>AMSR demo</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://3Dmol.csb.pitt.edu/build/3Dmol-min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         body {
             font-family: Arial;
@@ -76,6 +77,18 @@ template = """
             name="flipY"
             onclick="amsr_changed()"
             >flipY
+    <button
+            id="counterClockwise"
+            name="counterClockwise"
+            onclick="rotateCounterClockwise()"
+            <i class="fas fa-rotate-left"></i>
+    </button>
+    <button
+            id="clockwise"
+            name="clockwise"
+            onclick="rotateClockwise()"
+            <i class="fas fa-rotate-right"></i>
+    </button>
     <input
             type="checkbox"
             id="threeD"
@@ -100,6 +113,8 @@ template = """
     let viewer3d = $3Dmol.createViewer("viewer3d", {border: 'solid', backgroundColor: 'gainsboro'});
     let viewer2d = element("viewer2d");
     let pending = null;
+    let rotationValue = 0;
+    const rotationIncrement = 30; // degrees
 
     function refresh_viewer3d(sdf) {
         viewer3d.removeAllModels();
@@ -114,6 +129,16 @@ template = """
         viewer2d.innerHTML = svg;
     }
 
+    function rotateClockwise() {
+        rotationValue -= rotationIncrement
+        amsr_changed();
+    }
+
+    function rotateCounterClockwise() {
+        rotationValue += rotationIncrement
+        amsr_changed();
+    }
+
     function smiles_changed() {
         if (element('threeD').checked) {
            element('viewer3d').style.display = 'block';
@@ -126,7 +151,8 @@ template = """
             {'smiles': element('smiles').value,
             'flipX': element('flipX').checked,
             'flipY': element('flipY').checked,
-            'threeD': element('threeD').checked},
+            'threeD': element('threeD').checked,
+            'rotationValue': rotationValue},
             function(response) {
                 var data = JSON.parse(response);
                 refresh_viewer2d(data.svg);
@@ -143,7 +169,8 @@ template = """
             {'amsr': element('amsr').value,
             'flipX': element('flipX').checked,
             'flipY': element('flipY').checked,
-            'threeD': element('threeD').checked},
+            'threeD': element('threeD').checked,
+            'rotationValue': rotationValue},
             function(response) {
                 var data = JSON.parse(response);
                 refresh_viewer2d(data.svg);
@@ -172,12 +199,25 @@ def flip_mol(m, axis):
     Chem.AssignStereochemistry(m, force=True, cleanIt=True)
 
 
-def get_svg(mol, flipX, flipY):
+def rotate_mol(m, rotationValue: int):
+    # rotationValue in degrees
+    conf = m.GetConformer()
+    radians = math.radians(rotationValue)
+    for a in m.GetAtoms():
+        i = a.GetIdx()
+        pos = conf.GetAtomPosition(i)
+        newX = pos.x * math.cos(radians) - pos.y * math.sin(radians)
+        newY = pos.x * math.sin(radians) + pos.y * math.cos(radians)
+        conf.SetAtomPosition(i, (newX, newY, pos.z))
+
+
+def get_svg(mol, flipX: bool, flipY: bool, rotationValue: int):
     rdkit.Chem.AllChem.Compute2DCoords(mol)
     if flipX:
         flip_mol(mol, "X")
     if flipY:
         flip_mol(mol, "Y")
+    rotate_mol(mol, rotationValue)
     d = Chem.Draw.rdMolDraw2D.MolDraw2DSVG(396, 396)
     actives = [a.GetIdx() for a in mol.GetAtoms() if a.HasProp("_active")]
     d.DrawMolecule(mol, highlightAtoms=actives)
@@ -203,10 +243,11 @@ def smiles_changed():
     threeD = request.form.get("threeD") == "true"
     flipX = request.form.get("flipX") == "true"
     flipY = request.form.get("flipY") == "true"
+    rotationValue = int(request.form.get("rotationValue"))  # degrees
     svg, sdf, a = "", "", ""
     mol = Chem.MolFromSmiles(smiles)
     if mol_isOK(mol):
-        svg = get_svg(mol, flipX, flipY)
+        svg = get_svg(mol, flipX, flipY, rotationValue)
         if threeD:
             mol = amsr.GetConformer(mol)
             sdf = Chem.MolToMolBlock(mol)
@@ -220,12 +261,13 @@ def amsr_changed():
     threeD = request.form.get("threeD") == "true"
     flipX = request.form.get("flipX") == "true"
     flipY = request.form.get("flipY") == "true"
+    rotationValue = int(request.form.get("rotationValue"))  # degrees
     smiles, svg, sdf = "", "", ""
     dihedral = dict()
     mol = amsr.ToMol(a, dihedral=dihedral)
     if mol_isOK(mol):
         smiles = Chem.MolToSmiles(mol)
-        svg = get_svg(mol, flipX, flipY)
+        svg = get_svg(mol, flipX, flipY, rotationValue)
         if threeD:
             mol = amsr.GetConformer(mol, dihedral)
             sdf = Chem.MolToMolBlock(mol)
