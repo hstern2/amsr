@@ -45,7 +45,7 @@ class Atom:
         self.nNeighbors = 0
         self.isSaturated = False
         self.isBondedToHnH = False  # Heteroatom not Halogen
-        self.isBondedToOxygen = False
+        self.isBondedTo_sp3_Nitrogen = False
 
     def addBondTo(self, a):
         self.nNeighbors += 1
@@ -54,10 +54,10 @@ class Atom:
             a.isBondedToHnH = True
         if a.isHnH():
             self.isBondedToHnH = True
-        if self.isOxygen():
-            a.isBondedToOxygen = True
-        if a.isOxygen():
-            self.isBondedToOxygen = True
+        if self.is_sp3_Nitrogen():
+            a.isBondedTo_sp3_Nitrogen = True
+        if a.is_sp3_Nitrogen():
+            self.isBondedTo_sp3_Nitrogen = True
 
     def canBond(self):
         return (not self.isSaturated) and self.nNeighbors < self.maxNeighbors
@@ -66,16 +66,22 @@ class Atom:
         if useFilters:
             if self.isOxygen() and a.isOxygen():
                 return False
-            if self.is_sp3_Carbon():
-                if self.isBondedToHnH and a.isOxygen():
-                    return False
-                if self.isBondedToOxygen and a.isHnH():
-                    return False
-            if a.is_sp3_Carbon():
-                if a.isBondedToHnH and self.isOxygen():
-                    return False
-                if a.isBondedToOxygen and self.isHnH():
-                    return False
+            if (
+                self.is_sp3_Nitrogen()
+                and self.isBondedTo_sp3_Nitrogen
+                and a.is_sp3_Nitrogen()
+            ):
+                return False
+            if (
+                a.is_sp3_Nitrogen()
+                and a.isBondedTo_sp3_Nitrogen
+                and self.is_sp3_Nitrogen()
+            ):
+                return False
+            if self.is_sp3_Carbon() and self.isBondedToHnH and a.isHnH():
+                return False
+            if a.is_sp3_Carbon() and a.isBondedToHnH and self.isHnH():
+                return False
         return True
 
     def nAvailablePiBonds(self):
@@ -98,6 +104,12 @@ class Atom:
 
     def isOxygen(self):
         return self.atomSym == "O"
+
+    def isNitrogen(self):
+        return self.atomSym == "N"
+
+    def is_sp3_Nitrogen(self):
+        return self.isNitrogen() and self.maxPiBonds == 0
 
     def isHetero(self):
         return not self.isCarbon()
