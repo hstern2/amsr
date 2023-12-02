@@ -46,6 +46,8 @@ class Atom:
         self.isSaturated = False
         self.isBondedToHnH = False  # Heteroatom not Halogen
         self.isBondedTo_sp3_Nitrogen = False
+        self.isBondedToOxygen = False
+        self.isBondedToHalogen = False
 
     def _addBondTo(self, a):
         self.nNeighbors += 1
@@ -53,6 +55,10 @@ class Atom:
             a.isBondedToHnH = True
         if self.is_sp3_Nitrogen():
             a.isBondedTo_sp3_Nitrogen = True
+        if self.isOxygen():
+            a.isBondedToOxygen = True
+        if self.isHalogen():
+            a.isBondedToHalogen = True
 
     def addBondTo(self, a):
         self._addBondTo(a)
@@ -70,8 +76,13 @@ class Atom:
             and a.is_sp3_Nitrogen()
         ):
             return False
-        if self.is_sp3_Carbon() and self.isBondedToHnH and a.isHnH():
-            return False
+        if self.is_sp3_Carbon():
+            if self.isBondedToHnH and a.isHnH():
+                return False
+            if self.isBondedToOxygen and a.isHalogen():
+                return False
+            if self.isBondedToHalogen and a.isOxygen():
+                return False
         return True
 
     def canBondWith(self, a, useFilters):
