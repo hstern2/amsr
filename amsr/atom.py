@@ -68,7 +68,7 @@ class Atom:
         return (not self.isSaturated) and self.nNeighbors < self.maxNeighbors
 
     def _canBondWith(self, a):
-        if self.isOxygen() and (a.isOxygen() or a.isNitrogen()):
+        if (self.isOxygen() or self.isNitrogen()) and (a.isHalogen() or a.isOxygen()):
             return False
         if (
             self.is_sp3_Nitrogen()
