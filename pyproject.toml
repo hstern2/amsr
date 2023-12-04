@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "amsr"
+version = "0.1.2"  # Replace with your actual version
+description = "Another molecular string representation"
+authors = [{name = "Harry Stern"}]
+license = {file = "LICENSE"}
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Chemistry",
+]
+dependencies = [
+    "rdkit-pypi",
+    "networkx",
+    "anytree",
+    "Levenshtein",
+    "pandas"
+]
+
+[tool.setuptools]
+packages = ["amsr"]

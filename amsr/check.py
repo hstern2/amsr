@@ -20,6 +20,7 @@ def CheckMol(m: Chem.Mol, useFilters: Optional[bool] = False) -> bool:
     if i1 == i2:
         return True
     else:
+        print(Chem.MolToSmiles(m))
         print(i1)
         print(i2)
         return False
