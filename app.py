@@ -37,7 +37,6 @@ template = """
 <body>
     <table>
     <tr><td>AMSR:
-
     </td>
     <td><input
             placeholder="enter AMSR"
@@ -64,6 +63,8 @@ template = """
             onkeyup="smiles_changed()"
         ></input>
     </td></tr>
+    </table>
+    <table>
     <tr>
     <td><input
             type="checkbox"
