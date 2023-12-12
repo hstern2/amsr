@@ -28,9 +28,9 @@ def _test_csv(csv_file):
     )
 
 
-def test_FDA():
-    _test_csv("some_FDA_approved_structures.csv")
-
-
 def test_NP():
     _test_csv("natural_products.csv")
+
+
+def test_FDA():
+    _test_csv("some_FDA_approved_structures.csv")

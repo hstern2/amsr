@@ -45,13 +45,13 @@ def _bondTokens(b, bond):
 
 
 def FromMolToTokens(
-    mol: Chem.Mol, useGroups: Optional[bool] = True, useFilters: Optional[bool] = True
+    mol: Chem.Mol, useGroups: Optional[bool] = True, stringent: Optional[bool] = True
 ) -> List[str]:
     """Convert RDKit Mol to list of AMSR tokens
 
     :param mol: RDKit Mol
     :param useGroups: use group symbols/abbreviations
-    :param useFilters: apply filters to exclude unstable or synthetically inaccessible molecules
+    :param stringent: try to exclude unstable or synthetically inaccessible molecules
     :return: list of AMSR tokens
     """
 
@@ -83,7 +83,7 @@ def FromMolToTokens(
                         ai.addBondTo(aj)
                         break
                     elif atom[k].canBond() and ai.canBondWith(
-                        atom[k], useFilters=useFilters
+                        atom[k], stringent=stringent
                     ):
                         nSkip += 1
             else:  # new atom
@@ -116,41 +116,41 @@ def FromMolToTokens(
 
 
 def FromMol(
-    mol: Chem.Mol, useGroups: Optional[bool] = True, useFilters: Optional[bool] = True
+    mol: Chem.Mol, useGroups: Optional[bool] = True, stringent: Optional[bool] = True
 ) -> str:
     """Convert RDKit Mol to AMSR
 
     :param mol: RDKit Mol
     :param useGroups: use group symbols/abbreviations
-    :param useFilters: apply filters to exclude unstable or synthetically inaccessible molecules
+    :param stringent: try to exclude unstable or synthetically inaccessible molecules
     :return: AMSR
     """
-    return "".join(FromMolToTokens(mol, useGroups=useGroups, useFilters=useFilters))
+    return "".join(FromMolToTokens(mol, useGroups=useGroups, stringent=stringent))
 
 
 def FromSmiles(
-    s: str, useGroups: Optional[bool] = True, useFilters: Optional[bool] = True
+    s: str, useGroups: Optional[bool] = True, stringent: Optional[bool] = True
 ) -> str:
     """Convert SMILES to AMSR
 
     :param s: SMILES
     :param useGroups: use group symbols/abbreviations
-    :param useFilters: apply filters to exclude unstable or synthetically inaccessible molecules
+    :param stringent: try to exclude unstable or synthetically inaccessible molecules
     :return: AMSR
     """
-    return FromMol(Chem.MolFromSmiles(s), useGroups=useGroups, useFilters=useFilters)
+    return FromMol(Chem.MolFromSmiles(s), useGroups=useGroups, stringent=stringent)
 
 
 def FromSmilesToTokens(
-    s, useGroups: Optional[bool] = True, useFilters: Optional[bool] = True
+    s, useGroups: Optional[bool] = True, stringent: Optional[bool] = True
 ) -> List[str]:
     """Convert SMILES to list of AMSR tokens
 
     :param mol: RDKit Mol
     :param useGroups: use group symbols/abbreviations
-    :param useFilters: apply filters to exclude unstable or synthetically inaccessible molecules
+    :param stringent: try to exclude unstable or synthetically inaccessible molecules
     :return: AMSR
     """
     return FromMolToTokens(
-        Chem.MolFromSmiles(s), useGroups=useGroups, useFilters=useFilters
+        Chem.MolFromSmiles(s), useGroups=useGroups, stringent=stringent
     )

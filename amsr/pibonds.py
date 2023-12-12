@@ -51,13 +51,13 @@ class PiBonds:
     def singleCoordinate(self, i):
         return self.graph.degree[i] == 1
 
-    def __init__(self, mol, atom, useFilters):
+    def __init__(self, mol, atom, stringent):
 
         self.mol = mol
         self.atom = atom
         self.excluded = set()
 
-        if useFilters:
+        if stringent:
             Chem.SanitizeMol(self.mol)
             Chem.GetSSSR(self.mol)
             ringInfo = self.mol.GetRingInfo()

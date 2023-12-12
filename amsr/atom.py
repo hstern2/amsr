@@ -67,8 +67,10 @@ class Atom:
     def canBond(self):
         return (not self.isSaturated) and self.nNeighbors < self.maxNeighbors
 
-    def _canBondWith(self, a):
-        if (self.isOxygen() or self.isNitrogen()) and (a.isHalogen() or a.isOxygen()):
+    def _canBondWith(self, a, stringent):
+        if not stringent:
+            return True
+        if self.isOxygen() and (a.isHalogen() or a.isOxygen()):
             return False
         if (
             self.is_sp3_Nitrogen()
@@ -85,8 +87,8 @@ class Atom:
                 return False
         return True
 
-    def canBondWith(self, a, useFilters):
-        return (not useFilters) or (self._canBondWith(a) and a._canBondWith(self))
+    def canBondWith(self, a, stringent):
+        return self._canBondWith(a, stringent) and a._canBondWith(self, stringent)
 
     def nAvailablePiBonds(self):
         return self.maxPiBonds - self.nPiBonds

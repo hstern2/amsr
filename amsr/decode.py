@@ -25,18 +25,18 @@ def _addAtom(mol, atom, a):
     mol.AddAtom(a.asRDAtom())
 
 
-def _bondAtom(mol, atom, a, bond, makeBond, useFilters, dihedral_for_bond):
+def _bondAtom(mol, atom, a, bond, makeBond, stringent, dihedral_for_bond):
     if not makeBond or not a.canBond():
         _addAtom(mol, atom, a)
         return
     for i in reversed(range(len(atom))):
-        if atom[i].canBond() and atom[i].canBondWith(a, useFilters):
+        if atom[i].canBond() and atom[i].canBondWith(a, stringent):
             _addAtom(mol, atom, a)
             _addBond(mol, atom, i, len(atom) - 1, bond, dihedral_for_bond)
             return
     for i in reversed(range(len(atom))):
         if atom[i].nNeighbors < atom[i].maxNeighbors and atom[i].canBondWith(
-            a, useFilters
+            a, stringent
         ):
             _addAtom(mol, atom, a)
             _addBond(mol, atom, i, len(atom) - 1, bond, dihedral_for_bond)
@@ -50,7 +50,7 @@ def _saturate(atom):
             return
 
 
-def _ring(mol, atom, ringStr, bond, useFilters, dihedral_for_bond):
+def _ring(mol, atom, ringStr, bond, stringent, dihedral_for_bond):
     m = match(
         f"{escape(L_BRACKET)}?([0-9]+){escape(R_BRACKET)}?({escape(SKIP)}*)", ringStr
     )
@@ -63,7 +63,7 @@ def _ring(mol, atom, ringStr, bond, useFilters, dihedral_for_bond):
             continue
         for node in BFSTree(mol.GetAtomWithIdx(i), n - 1):
             j = node.name.GetIdx()
-            if not atom[j].canBond() or not atom[i].canBondWith(atom[j], useFilters):
+            if not atom[j].canBond() or not atom[i].canBondWith(atom[j], stringent):
                 continue
             if nSkip == 0:
                 _addBond(mol, atom, i, j, bond, dihedral_for_bond)
@@ -74,13 +74,13 @@ def _ring(mol, atom, ringStr, bond, useFilters, dihedral_for_bond):
 
 def ToMol(
     s: str,
-    useFilters: Optional[bool] = True,
+    stringent: Optional[bool] = True,
     dihedral: Optional[Dict[Tuple[int, int, int, int], int]] = None,
 ) -> Chem.Mol:
     """Convert AMSR to an RDKit Mol
 
     :param s: AMSR
-    :param useFilters: apply filters to exclude unstable or synthetically inaccessible molecules
+    :param stringent: try to exclude unstable or synthetically inaccessible molecules
     :param dihedral: return dictionary of dihedral angles, where keys are indices and values are angles in degrees
     :return: RDKit Mol
     """
@@ -95,7 +95,7 @@ def ToMol(
                 atom,
                 m.group("ring"),
                 Bond(m.group("bond")),
-                useFilters,
+                stringent,
                 dihedral_for_bond,
             )
         elif m.group("atom"):
@@ -105,7 +105,7 @@ def ToMol(
                 Atom(m.group("atom")),
                 Bond(m.group("bond")),
                 makeBond,
-                useFilters,
+                stringent,
                 dihedral_for_bond,
             )
             makeBond = True
@@ -138,7 +138,7 @@ def ToMol(
                     b.SetStereoAtoms(mi, mj)
                 if is_dihedral:
                     dihedral[mi, i, j, mj] = dihedral_for_bond[k]
-    PiBonds(mol, atom, useFilters)
+    PiBonds(mol, atom, stringent)
     for i, a in enumerate(atom):
         if a.bangs > 0 and a.canBond():
             mol.GetAtomWithIdx(i).SetNumExplicitHs(a.maxNeighbors - a.nNeighbors)
@@ -152,11 +152,11 @@ def ToMol(
     return mol
 
 
-def ToSmiles(s: str, useFilters: Optional[bool] = True) -> str:
+def ToSmiles(s: str, stringent: Optional[bool] = True) -> str:
     """Convert AMSR to SMILES
 
     :param s: AMSR
-    :param useFilters: apply filters to exclude unstable or synthetically inaccessible molecules
+    :param stringent: try to exclude unstable or synthetically inaccessible molecules
     :return: SMILES
     """
-    return Chem.MolToSmiles(ToMol(s, useFilters))
+    return Chem.MolToSmiles(ToMol(s, stringent))
