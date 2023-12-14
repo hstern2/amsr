@@ -38,6 +38,7 @@ _groups: Dict[str, List[str]] = {
     "[CN]": ["C:N:"],
     "[CF3]": ["CFFF"],
     "[CCl3]": ["C[Cl][Cl][Cl]"],
+    "[PO3]": ["p!oO.O.", "p!O.oO.", "p!O.O.o"],
 }
 
 

@@ -72,6 +72,8 @@ class Atom:
             return True
         if self.isOxygen() and (a.isHalogen() or a.isOxygen()):
             return False
+        if self.isOxygen() and self.isBondedToHnH and a.isHnH():
+            return False
         if (
             self.is_sp3_Nitrogen()
             and self.isBondedTo_sp3_Nitrogen

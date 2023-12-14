@@ -64,6 +64,7 @@ template = """
         ></input>
     </td></tr>
     </table>
+
     <table>
     <tr>
     <td><input
@@ -90,6 +91,13 @@ template = """
             onclick="rotateClockwise()"
             <i class="fas fa-rotate-right"></i>
     </button>
+    <input
+            type="checkbox"
+            id="stringent"
+            name="stringent"
+            checked
+            onclick="amsr_changed()"
+            >stringent
     <input
             type="checkbox"
             id="threeD"
@@ -153,6 +161,7 @@ template = """
             'flipX': element('flipX').checked,
             'flipY': element('flipY').checked,
             'threeD': element('threeD').checked,
+            'stringent': element('stringent').checked,
             'rotationValue': rotationValue},
             function(response) {
                 var data = JSON.parse(response);
@@ -171,6 +180,7 @@ template = """
             'flipX': element('flipX').checked,
             'flipY': element('flipY').checked,
             'threeD': element('threeD').checked,
+            'stringent': element('stringent').checked,
             'rotationValue': rotationValue},
             function(response) {
                 var data = JSON.parse(response);
@@ -242,6 +252,7 @@ def index():
 def smiles_changed():
     smiles = request.form.get("smiles")
     threeD = request.form.get("threeD") == "true"
+    stringent = request.form.get("stringent") == "true"
     flipX = request.form.get("flipX") == "true"
     flipY = request.form.get("flipY") == "true"
     rotationValue = int(request.form.get("rotationValue"))  # degrees
@@ -252,7 +263,7 @@ def smiles_changed():
         if threeD:
             mol = amsr.GetConformer(mol)
             sdf = Chem.MolToMolBlock(mol)
-        a = amsr.FromMol(mol)
+        a = amsr.FromMol(mol, stringent=stringent)
     return json.dumps({"svg": svg, "sdf": sdf, "amsr": a})
 
 
@@ -260,12 +271,13 @@ def smiles_changed():
 def amsr_changed():
     a = request.form.get("amsr")
     threeD = request.form.get("threeD") == "true"
+    stringent = request.form.get("stringent") == "true"
     flipX = request.form.get("flipX") == "true"
     flipY = request.form.get("flipY") == "true"
     rotationValue = int(request.form.get("rotationValue"))  # degrees
     smiles, svg, sdf = "", "", ""
     dihedral = dict()
-    mol = amsr.ToMol(a, dihedral=dihedral)
+    mol = amsr.ToMol(a, dihedral=dihedral, stringent=stringent)
     if mol_isOK(mol):
         smiles = Chem.MolToSmiles(mol)
         svg = get_svg(mol, flipX, flipY, rotationValue)
