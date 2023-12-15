@@ -155,9 +155,7 @@ class Atom:
         valence = a.GetTotalValence()
         nrad = a.GetNumRadicalElectrons()
         isotope = a.GetIsotope()
-        if atomSym == "He" or nrad > 4:  # RDKit weirdness?
-            nrad = 0
-        bangs = BANGS.get((atomSym, chg, valence), 0)
+        bangs = BANGS.get((atomSym, chg, valence + nrad), 0)
         q, r = divmod(VALENCE[(atomSym, chg, bangs)] - nrad - a.GetTotalDegree(), 2)
         c = f"{PLUS*chg if chg > 0 else ''}{MINUS*(-chg) if chg < 0 else ''}{RADICAL*nrad}{BANG*bangs}{EXTRA_PI*q}"
         sym = (f"{isotope}" if isotope else "") + (atomSym.lower() if r else atomSym)

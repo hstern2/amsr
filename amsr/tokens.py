@@ -24,7 +24,7 @@ BOND_SYMBOL_FOR_DIHEDRAL = {v: k for k, v in DIHEDRAL_FOR_BOND_SYMBOL.items()}
 BOND_SYMBOL_FOR_DIHEDRAL[-180] = E
 
 _pbond = f"(?P<bond>{'|'.join(map(escape, sorted(DIHEDRALS, key=len, reverse=True)))})"
-_c = f"[{escape(PLUS)}{escape(MINUS)}{escape(RADICAL)}{escape(EXTRA_PI)}{escape(BANG)}{escape(CW)}{escape(CCW)}]*"
+_c = f"[{''.join(map(escape, [PLUS,MINUS,RADICAL,EXTRA_PI,BANG,CW,CCW]))}]*"
 _patom = (
     f"(?P<atom>{escape(L_BRACKET)}[0-9]*[A-Za-z]+{_c}{escape(R_BRACKET)}|[A-Za-z]{_c})"
 )
