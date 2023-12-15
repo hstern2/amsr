@@ -2453,4 +2453,4 @@ L 139.6 21.2
 
 
 ## Developing
-This repo uses pre-commit, so after cloning run `pip install -r requirements.txt` and `pre-commit install` prior to committing.
+This repo uses pre-commit, so after cloning run `pip install -r requirements-dev.txt` and `pre-commit install` prior to committing.
