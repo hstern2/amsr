@@ -20,8 +20,7 @@ dependencies = [
     "rdkit-pypi",
     "networkx",
     "anytree",
-    "Levenshtein",
-    "pandas"
+    "Levenshtein"
 ]
 
 [tool.setuptools]
