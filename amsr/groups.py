@@ -5,6 +5,8 @@ from typing import Dict, List, Optional
 
 _groups: Dict[str, List[str]] = {
     "[@]": ["cccccc6"],
+    "[Cy]": ["CCCCCC6......"],
+    "[Pip]": ["NCCCCC6....."],
     "[Ts]": ["S!!:oocccccc6..C...", "S!!:occcccc6..C...o", "S!!:cccccc6..C...oo"],
     "[Tf]": ["S!!:ooCFFF", "S!!:oCFFFo", "S!!:CFFFoo"],
     "[Ms]": ["S!!:ooC.", "S!!:oC.o", "S!!:C.oo"],
