@@ -4,7 +4,7 @@ from .encode import FromMol
 from .decode import ToMol
 
 
-def CheckMol(m: Chem.Mol, stringent: Optional[bool] = False) -> bool:
+def CheckMol(m1: Chem.Mol, stringent: Optional[bool] = False) -> bool:
     """Do round trip from RDKit mol m to AMSR.
     Compare InChI strings (with -FixedH) before and after round trip.
 
@@ -12,16 +12,18 @@ def CheckMol(m: Chem.Mol, stringent: Optional[bool] = False) -> bool:
     :param stringent: try to exclude unstable or synthetically inaccessible molecules
     :return: do InChI strings match?
     """
-    i1 = Chem.MolToInchi(m, options="-FixedH")
-    i2 = Chem.MolToInchi(
-        ToMol(FromMol(m, stringent=stringent), stringent=stringent),
-        options="-FixedH",
-    )
+    i1 = Chem.MolToInchi(m1, options="-FixedH")
+    a = FromMol(m1, stringent=stringent)
+    m2 = ToMol(a, stringent=stringent)
+    i2 = Chem.MolToInchi(m2, options="-FixedH")
     if i1 == i2:
         return True
     else:
-        print(Chem.MolToSmiles(m))
+        print("CheckMol failed.")
+        print(Chem.MolToSmiles(m1))
         print(i1)
+        print(a)
+        print(Chem.MolToSmiles(m2))
         print(i2)
         return False
 
