@@ -2,6 +2,7 @@ from flask import Flask, render_template, request
 from rdkit import Chem
 import rdkit.Chem.Draw, rdkit.Chem.AllChem, json, amsr, math
 
+
 def flip_mol(m, axis):
     conf = m.GetConformer()
     for a in m.GetAtoms():
