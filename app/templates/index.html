@@ -19,12 +19,15 @@
         }
         #viewer3d {
             position: relative;
-            height: 400px;
-            width: 400px;
+            height: 402px;
+            width: 402px;
         }
         #amsr, #smiles {
             font-family: Courier;
             font-size: 16px;
+        }
+        #ener {
+            resize: none
         }
     </style>
 </head>
@@ -102,10 +105,22 @@
     </td></tr>
     </table>
 
-    <table><tr>
-        <td><div id="viewer2d"></div></td>
-        <td><div id="viewer3d"></div></td>
-    </tr></table>
+    <table>
+        <tr>
+            <td id="viewer2d"></td>
+            <td id="viewer3d"></td>
+        </tr>
+        <tr>
+            <td id="qed"></td>
+            <td id="ener"></td>
+        </tr>
+        <tr>
+            <td id="tpsa"></td>
+        </tr>
+        <tr>
+            <td id="SA"></td>
+        </tr>
+    </table>
 
     <script>
 
@@ -119,17 +134,21 @@
     let rotationValue = 0;
     const rotationIncrement = 30; // degrees
 
-    function refresh_viewer3d(sdf) {
+    function refresh_viewer3d(sdf, ener) {
         viewer3d.removeAllModels();
         viewer3d.addModel(sdf, "sdf")
         viewer3d.setStyle({}, {stick: {}});
         viewer3d.zoomTo();
         viewer3d.zoom(0.9);
         viewer3d.render();
+        element('ener').innerHTML = ener
     }
 
-    function refresh_viewer2d(svg) {
+    function refresh_viewer2d(svg, qed, tpsa, sa) {
         viewer2d.innerHTML = svg;
+        element('qed').innerHTML= qed;
+        element('tpsa').innerHTML = tpsa;
+        element('SA').innerHTML = sa;
     }
 
     function rotateClockwise() {
@@ -143,10 +162,13 @@
     }
 
     function mol_changed(smiles_to_amsr) {
-        if (element('threeD').checked) {
+        threeD = element('threeD').checked
+        if (threeD) {
            element('viewer3d').style.display = 'block';
+           element('ener').style.display = 'block';
         } else {
            element('viewer3d').style.display = 'none';
+           element('ener').style.display = 'none';
         }
         if (pending)
             pending.abort();
@@ -155,14 +177,14 @@
             'smiles_to_amsr': smiles_to_amsr,
             'flipX': element('flipX').checked,
             'flipY': element('flipY').checked,
-            'threeD': element('threeD').checked,
+            'threeD': threeD,
             'stringent': element('stringent').checked,
             'rotationValue': rotationValue},
             function(response) {
                 var data = JSON.parse(response);
-                refresh_viewer2d(data.svg);
-                refresh_viewer3d(data.sdf);
                 (smiles_to_amsr ? element('amsr') : element('smiles')).value = data.outString
+                refresh_viewer2d(data.svg, data.qed, data.tpsa, data.sa);
+                refresh_viewer3d(data.sdf, data.ener);
             }
         );
     }

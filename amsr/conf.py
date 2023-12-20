@@ -1,9 +1,9 @@
 from rdkit import Chem
-import rdkit.Chem.AllChem
 from typing import Tuple, Optional, Dict
+import numpy as np
 
 
-def GetConformer(
+def GetConformerAndProperties(
     mol: Chem.Mol, dihedral: Optional[Dict[Tuple[int, int, int, int], int]] = None
 ) -> Chem.Mol:
     """Return a conformer
@@ -20,9 +20,11 @@ def GetConformer(
         for (i, j, k, l), v in dihedral.items():
             if not mol.GetBondBetweenAtoms(j, k).IsInRing():
                 Chem.rdMolTransforms.SetDihedralDeg(mol.GetConformer(0), i, j, k, l, v)
-                ff.MMFFAddTorsionConstraint(i, j, k, l, False, v, v, 4e5)
-    ff.Minimize(maxIts=10000)
-    return Chem.RemoveHs(mol)
+                ff.MMFFAddTorsionConstraint(i, j, k, l, False, v, v, 1e3)
+    ff.Minimize(maxIts=100000)
+    Chem.rdMolTransforms.CanonicalizeConformer(mol.GetConformer())
+    ener = ff.CalcEnergy() # kcal/mol
+    return Chem.RemoveHs(mol), ener
 
 
 def GetRoundedDihedral(
