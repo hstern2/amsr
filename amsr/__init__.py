@@ -12,7 +12,7 @@ __all__ = [
     "ToTokens",
     "Morph",
     "Sampler",
-    "GetConformerAndProperties",
+    "GetConformerAndEnergy",
 ]
 
 from .version import __version__
@@ -23,4 +23,4 @@ from .groups import Groups, InitializeGroups
 from .tokens import ToTokens
 from .morph import Morph
 from .sampler import Sampler
-from .conf import GetConformerAndProperties
+from .conf import GetConformerAndEnergy

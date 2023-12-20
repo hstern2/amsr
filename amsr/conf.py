@@ -3,7 +3,7 @@ from typing import Tuple, Optional, Dict
 import numpy as np
 
 
-def GetConformerAndProperties(
+def GetConformerAndEnergy(
     mol: Chem.Mol, dihedral: Optional[Dict[Tuple[int, int, int, int], int]] = None
 ) -> Chem.Mol:
     """Return a conformer
@@ -23,7 +23,7 @@ def GetConformerAndProperties(
                 ff.MMFFAddTorsionConstraint(i, j, k, l, False, v, v, 1e3)
     ff.Minimize(maxIts=100000)
     Chem.rdMolTransforms.CanonicalizeConformer(mol.GetConformer())
-    ener = ff.CalcEnergy() # kcal/mol
+    ener = ff.CalcEnergy()  # kcal/mol
     return Chem.RemoveHs(mol), ener
 
 
