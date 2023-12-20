@@ -69,10 +69,12 @@ def mol_changed():
         if threeD:
             mol = amsr.GetConformer(mol)
             sdf = Chem.MolToMolBlock(mol)
-        outString = amsr.FromMol(mol, stringent=stringent) if smiles_to_amsr else Chem.MolToSmiles(mol)
+        outString = (
+            amsr.FromMol(mol, stringent=stringent)
+            if smiles_to_amsr
+            else Chem.MolToSmiles(mol)
+        )
     return json.dumps({"svg": svg, "sdf": sdf, "outString": outString})
-
-
 
 
 if __name__ == "__main__":
