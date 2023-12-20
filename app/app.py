@@ -53,43 +53,26 @@ def index():
     return render_template("index.html")
 
 
-@app.route("/smiles_changed", methods=["GET", "POST"])
-def smiles_changed():
-    smiles = request.form.get("smiles")
+@app.route("/mol_changed", methods=["GET", "POST"])
+def mol_changed():
+    inString = request.form.get("inString")
+    smiles_to_amsr = request.form.get("smiles_to_amsr") == "true"
     threeD = request.form.get("threeD") == "true"
     stringent = request.form.get("stringent") == "true"
     flipX = request.form.get("flipX") == "true"
     flipY = request.form.get("flipY") == "true"
     rotationValue = int(request.form.get("rotationValue"))  # degrees
-    svg, sdf, a = "", "", ""
-    mol = Chem.MolFromSmiles(smiles)
+    svg, sdf, outString = "", "", ""
+    mol = Chem.MolFromSmiles(inString) if smiles_to_amsr else amsr.ToMol(inString)
     if mol_isOK(mol):
         svg = get_svg(mol, flipX, flipY, rotationValue)
         if threeD:
             mol = amsr.GetConformer(mol)
             sdf = Chem.MolToMolBlock(mol)
-        a = amsr.FromMol(mol, stringent=stringent)
-    return json.dumps({"svg": svg, "sdf": sdf, "amsr": a})
+        outString = amsr.FromMol(mol, stringent=stringent) if smiles_to_amsr else Chem.MolToSmiles(mol)
+    return json.dumps({"svg": svg, "sdf": sdf, "outString": outString})
 
 
-@app.route("/amsr_changed", methods=["GET", "POST"])
-def amsr_changed():
-    a = request.form.get("amsr")
-    threeD = request.form.get("threeD") == "true"
-    stringent = request.form.get("stringent") == "true"
-    flipX = request.form.get("flipX") == "true"
-    flipY = request.form.get("flipY") == "true"
-    rotationValue = int(request.form.get("rotationValue"))  # degrees
-    smiles, svg, sdf = "", "", ""
-    dihedral = dict()
-    mol = amsr.ToMol(a, dihedral=dihedral, stringent=stringent)
-    if mol_isOK(mol):
-        smiles = Chem.MolToSmiles(mol)
-        svg = get_svg(mol, flipX, flipY, rotationValue)
-        if threeD:
-            mol = amsr.GetConformer(mol, dihedral)
-            sdf = Chem.MolToMolBlock(mol)
-    return json.dumps({"svg": svg, "sdf": sdf, "smiles": smiles})
 
 
 if __name__ == "__main__":

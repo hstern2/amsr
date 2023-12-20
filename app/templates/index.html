@@ -41,7 +41,7 @@
             autocapitalize="off"
             autocorrect="off"
             autocomplete="on"
-            onkeyup="amsr_changed()"
+            onkeyup="mol_changed(false)" // amsr to smiles
         ></input></td>
     </tr>
     <tr><td>SMILES:</td>
@@ -54,7 +54,7 @@
             autocapitalize="off"
             autocorrect="off"
             autocomplete="on"
-            onkeyup="smiles_changed()"
+            onkeyup="mol_changed(true)" // smiles to amsr
         ></input>
     </td></tr>
     </table>
@@ -65,13 +65,13 @@
             type="checkbox"
             id="flipX"
             name="flipX"
-            onclick="amsr_changed()"
+            onclick="mol_changed(false)"
             >flipX
     <input
             type="checkbox"
             id="flipY"
             name="flipY"
-            onclick="amsr_changed()"
+            onclick="mol_changed(false)"
             >flipY
     <button
             id="counterClockwise"
@@ -90,14 +90,14 @@
             id="stringent"
             name="stringent"
             checked
-            onclick="amsr_changed()"
+            onclick="mol_changed(false)"
             >stringent
     <input
             type="checkbox"
             id="threeD"
             name="threeD"
             checked
-            onclick="smiles_changed()"
+            onclick="mol_changed(true)"
             >3D
     </td></tr>
     </table>
@@ -134,15 +134,15 @@
 
     function rotateClockwise() {
         rotationValue -= rotationIncrement
-        amsr_changed();
+        mol_changed(false);
     }
 
     function rotateCounterClockwise() {
         rotationValue += rotationIncrement
-        amsr_changed();
+        mol_changed(false);
     }
-
-    function smiles_changed() {
+    
+    function mol_changed(smiles_to_amsr) {
         if (element('threeD').checked) {
            element('viewer3d').style.display = 'block';
         } else {
@@ -150,8 +150,9 @@
         }
         if (pending)
             pending.abort();
-        pending = $.post('/smiles_changed',
-            {'smiles': element('smiles').value,
+        pending = $.post('/mol_changed',
+            {'inString': (smiles_to_amsr ? element('smiles') : element('amsr')).value,
+            'smiles_to_amsr': smiles_to_amsr,
             'flipX': element('flipX').checked,
             'flipY': element('flipY').checked,
             'threeD': element('threeD').checked,
@@ -161,31 +162,11 @@
                 var data = JSON.parse(response);
                 refresh_viewer2d(data.svg);
                 refresh_viewer3d(data.sdf);
-                element('amsr').value = data.amsr;
-            }
-        );
-    }
-
-    function amsr_changed() {
-        if (pending)
-            pending.abort();
-        pending = $.post('/amsr_changed',
-            {'amsr': element('amsr').value,
-            'flipX': element('flipX').checked,
-            'flipY': element('flipY').checked,
-            'threeD': element('threeD').checked,
-            'stringent': element('stringent').checked,
-            'rotationValue': rotationValue},
-            function(response) {
-                var data = JSON.parse(response);
-                refresh_viewer2d(data.svg);
-                refresh_viewer3d(data.sdf);
-                element('smiles').value = data.smiles;
+                (smiles_to_amsr ? element('amsr') : element('smiles')).value = data.outString
             }
         );
     }
 
     </script>
-
 </body>
 </html>
