@@ -2,6 +2,8 @@ from rdkit import Chem
 from .atom import GetSeenIndex
 from .tokens import E, Z, BOND_SYMBOL_FOR_DIHEDRAL
 from .conf import GetRoundedDihedral
+
+
 def _is_rotatable(b):
     if b.GetBondType() != Chem.rdchem.BondType.SINGLE:
         return False
@@ -12,6 +14,8 @@ def _is_rotatable(b):
     if b.IsInRing():
         return False
     return True
+
+
 def _earliestSeenNotIncluding(a, bi):
     qi = None
     qSeenIndex = None

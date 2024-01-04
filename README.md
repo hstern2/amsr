@@ -1,5 +1,5 @@
 # AMSR
-**A**nother **M**olecular **S**tring **R**epresentation, 
+**A**nother **M**olecular **S**tring **R**epresentation,
 inspired by
 
 - [H. Hiz, "A Linearization of Chemical Graphs," *J. Chem. Doc.* **4**, 173-180 (1964)](https://pubs.acs.org/doi/10.1021/c160014a015)
@@ -16,6 +16,7 @@ pip install amsr
 ## Usage
 ```py
 import amsr
+
 amsr.ToMol("CNcncc5cNcN6C.oC.o") # caffeine
 ```
 ![caffine](https://user-images.githubusercontent.com/19351218/151638119-b1439d47-5e5a-417e-9254-c34568e2f3d1.png)
@@ -32,15 +33,15 @@ amsr.FromSmiles(taxol_smi, useGroups=False)
 
 ## Description
 
-A molecular string representation in which every sequence of tokens generates a "reasonable" molecule.  
+A molecular string representation in which every sequence of tokens generates a "reasonable" molecule.
 You may have different ideas about what constitutes a reasonable molecule than this string representation.
 
 ### Atoms
 Atoms are represented by their symbol
 enclosed in square brackets, as in SMILES.
 For a one-letter symbol,
-brackets may be omitted.  Atoms are assumed to have a fixed 
-valence that limits the number of covalently-bonded neighbors.  
+brackets may be omitted.  Atoms are assumed to have a fixed
+valence that limits the number of covalently-bonded neighbors.
 If an atom makes fewer bonds than its valence, hydrogens are assumed.
 
 | AMSR | molecule |
@@ -226,10 +227,10 @@ L 104.2 64.6
 
 
 ### Chains
-Each atom in a chain is bonded to the most recently added atom that 
+Each atom in a chain is bonded to the most recently added atom that
 can still make bonds, according to its valence. Hydrogens may be added
 explicitly like any other atom.  In the
-example below, the fluorines are added to the second carbon; the chlorine 
+example below, the fluorines are added to the second carbon; the chlorine
 is then added to the first carbon, since the second can no longer bond.
 
 | AMSR | molecule |
@@ -322,10 +323,10 @@ L 19.5 72.5
 
 
 ### Branches
-Branches are formed automatically when atoms can no longer 
-make bonds.  They can also be made by "capping" or 
+Branches are formed automatically when atoms can no longer
+make bonds.  They can also be made by "capping" or
 "saturating" an atom with hydrogens, using a period `.`
-(capping hydrogens are applied to the most 
+(capping hydrogens are applied to the most
 recently-added atom that can still make bonds).
 New atoms will then be bonded to those added earlier, forming a branch.
 
@@ -374,7 +375,7 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 Rings are denoted by a single digit
 (or two or more digits enclosed in square brackets)
 giving the size of the ring.
-A new bond is formed between 
+A new bond is formed between
 the two most recently-added atoms that
 can make bonds and when bonded will form a ring of that size.
 
@@ -485,10 +486,10 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 
 
 ### Double bonds (sp<sup>2</sup> centers)
-Atoms making a double bond are indicated by changing 
-the symbol to lowercase (note that lowercase 
-does not mean "aromatic"; merely, "atom having one 
-fewer neighbor than its valence.")  Double bonds are 
+Atoms making a double bond are indicated by changing
+the symbol to lowercase (note that lowercase
+does not mean "aromatic"; merely, "atom having one
+fewer neighbor than its valence.")  Double bonds are
 assigned by a matching algorithm.  If a perfect
 matching cannot be found (for instance, in the case
 of an odd number of contiguous lowercase symbols) a
@@ -604,7 +605,7 @@ Q 138.9 105.9, 142.4 105.9
 
 Note that an oxygen with two neighbors or a nitrogen with three in an aromatic ring
 is still denoted by a capital (not a lowercase) symbol,
-although sp<sup>2</sup>-hybridized, 
+although sp<sup>2</sup>-hybridized,
 since its coordination number is still equal to its valence.
 
 | AMSR | molecule |
@@ -716,8 +717,8 @@ L 85.0 132.8
 
 ### Ring selection
 When more than one ring of a given size can be formed, one or more `@` signs immediately after
-the digit will make ring-forming bonds with atoms appearing earlier in the 
-string, rather than the most recent. 
+the digit will make ring-forming bonds with atoms appearing earlier in the
+string, rather than the most recent.
 
 | AMSR | molecule |
 | --- | --- |
@@ -1212,7 +1213,7 @@ L 19.5 39.1
 
 ### Formal charges, radical electrons, isotopes
 Positive/negative formal charges are designated by one or more of `+`/`-`.
-Radical electrons are denoted by one or more asterisks `*`.  An isotopic mass is denoted by a number prefix 
+Radical electrons are denoted by one or more asterisks `*`.  An isotopic mass is denoted by a number prefix
 before the atomic symbol (in which case square brackets must be used even for a one-letter symbol).
 
 | AMSR | molecule |
@@ -1460,7 +1461,7 @@ Q 42.3 93.0, 46.5 93.0
 
 ### Tetrahedral stereochemistry
 Tetrahedral stereochemistry is denoted by a single quote `'` meaning "clockwise"
-or a backtick `` ` `` meaning "counterclockwise," referring to the first three neighbors of 
+or a backtick `` ` `` meaning "counterclockwise," referring to the first three neighbors of
 a stereocenter atoms as they appear in the string, with the last neighbor (or implicit hydrogen)
 in back.
 
@@ -2519,4 +2520,3 @@ L 139.7 21.2
 
 ## Developing
 This repo uses pre-commit, so after cloning run `pip install -r requirements.txt` and `pre-commit install` prior to committing.
-
