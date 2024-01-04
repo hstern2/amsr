@@ -12,8 +12,6 @@ def _is_rotatable(b):
     if b.IsInRing():
         return False
     return True
-
-
 def _earliestSeenNotIncluding(a, bi):
     qi = None
     qSeenIndex = None
