@@ -16,7 +16,6 @@ pip install amsr
 ## Usage
 ```py
 import amsr
-
 amsr.ToMol("CNcncc5cNcN6C.oC.o") # caffeine
 ```
 ![caffine](https://user-images.githubusercontent.com/19351218/151638119-b1439d47-5e5a-417e-9254-c34568e2f3d1.png)
