@@ -103,4 +103,16 @@ def mol_changed():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    from argparse import ArgumentParser
+
+    p = ArgumentParser(description="flask app to demo AMSR")
+    default_port = 5000
+    p.add_argument(
+        "-p",
+        "--port",
+        type=int,
+        help=f"server port (default={default_port})",
+        default=default_port,
+    )
+    a = p.parse_args()
+    app.run(debug=True, port=a.port)
