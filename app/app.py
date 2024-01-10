@@ -69,7 +69,7 @@ def mol_changed():
     flipX = request.form.get("flipX") == "true"
     flipY = request.form.get("flipY") == "true"
     rotationValue = int(request.form.get("rotationValue"))  # degrees
-    svg, sdf, outString, ener, QED, sa = [""] * 6
+    svg, sdf, outString, ener, QED, tpsa, sa = [""] * 7
     dih = {}
     mol = (
         Chem.MolFromSmiles(inString)
