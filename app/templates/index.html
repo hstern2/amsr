@@ -102,7 +102,18 @@
             checked
             onclick="mol_changed(true)"
             >3D
+    <button
+        id="newConformer"
+        name="newConformer"
+        onclick="mol_changed(true)"
+        >new conformer</button>
+    <button
+        id="saveAsSDF"
+        name="saveAsSDF"
+        onclick="save_as_SDF()"
+        >save as SDF</button>
     </td></tr>
+
     </table>
 
     <table>
@@ -128,13 +139,14 @@
         return document.getElementById(id);
     }
 
+    let sdf = ""
     let viewer3d = $3Dmol.createViewer("viewer3d", {border: 'solid', backgroundColor: 'gainsboro'});
     let viewer2d = element("viewer2d");
     let pending = null;
     let rotationValue = 0;
     const rotationIncrement = 30; // degrees
 
-    function refresh_viewer3d(sdf, ener) {
+    function refresh_viewer3d(ener) {
         viewer3d.removeAllModels();
         viewer3d.addModel(sdf, "sdf")
         viewer3d.setStyle({}, {stick: {}});
@@ -161,14 +173,29 @@
         mol_changed(false);
     }
 
+    function save_as_SDF() {
+        var blob = new Blob([sdf], { type: 'text/plain' });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'Untitled.sdf';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(a.href);
+    }
+
     function mol_changed(smiles_to_amsr) {
         threeD = element('threeD').checked
         if (threeD) {
            element('viewer3d').style.display = 'block';
            element('ener').style.display = 'block';
+           element('newConformer').style.display = 'inline';
+           element('saveAsSDF').style.display = 'inline';
         } else {
            element('viewer3d').style.display = 'none';
            element('ener').style.display = 'none';
+           element('newConformer').style.display = 'none';
+           element('saveAsSDF').style.display = 'none';
         }
         if (pending)
             pending.abort();
@@ -184,7 +211,8 @@
                 var data = JSON.parse(response);
                 (smiles_to_amsr ? element('amsr') : element('smiles')).value = data.outString
                 refresh_viewer2d(data.svg, data.qed, data.tpsa, data.sa);
-                refresh_viewer3d(data.sdf, data.ener);
+                sdf = data.sdf
+                refresh_viewer3d(data.ener);
             }
         );
     }
