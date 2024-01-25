@@ -64,17 +64,24 @@
 
     <table>
     <tr>
-    <td><input
+    <td>
+    <button
+        id="randomMol"
+        name="randomMol"
+        onclick="random_mol()"
+        >random mol
+    </button>
+    <input
             type="checkbox"
             id="flipX"
             name="flipX"
-            onclick="mol_changed(false)"
+            onclick="mol_changed(false)" // amsr to smiles
             >flipX
     <input
             type="checkbox"
             id="flipY"
             name="flipY"
-            onclick="mol_changed(false)"
+            onclick="mol_changed(false)" // amsr to smiles
             >flipY
     <button
             id="counterClockwise"
@@ -182,6 +189,19 @@
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(a.href);
+    }
+
+    function random_mol() {
+        if (pending)
+            pending.abort();
+        pending = $.post('/random_mol',
+            { },
+            function(response) {
+                var data = JSON.parse(response);
+                element('amsr').value = data.amsr;
+                mol_changed(false); // amsr to smiles
+            }
+        );
     }
 
     function mol_changed(smiles_to_amsr) {

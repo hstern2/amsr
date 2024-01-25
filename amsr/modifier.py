@@ -1,5 +1,5 @@
 from rdkit import Chem
-from typing import List, Optional
+from typing import Iterable, Optional
 from .encode import FromMolToTokens
 from .decode import ToMol
 from .sampler import Sampler
@@ -9,7 +9,7 @@ from random import expovariate, shuffle
 class Modifier:
     def __init__(
         self,
-        mols: List[Chem.Mol],
+        mols: Iterable[Chem.Mol],
         nDeleteAvg: Optional[int] = 2,
         nAddAvg: Optional[int] = 5,
     ):

@@ -1,8 +1,10 @@
 from flask import Flask, render_template, request
 from rdkit import Chem
-import rdkit.Chem.Draw, rdkit.Chem.AllChem, json, amsr, math, sys, os
+import rdkit.Chem.Draw, rdkit.Chem.AllChem
+import pandas, json, amsr, math, sys, os
 from rdkit.Chem.QED import qed
 from rdkit.Chem.Descriptors import TPSA
+from random import expovariate
 
 # synthetic accessibility score; smaller means more accessible
 # Ertl & Schuffenhauer, J. Cheminf. 2009, 1 (8)
@@ -53,14 +55,24 @@ def mol_isOK(mol):
 
 
 app = Flask(__name__)
+methods = ["GET", "POST"]
+url = "https://raw.githubusercontent.com/hstern2/amsr/main/tests/some_FDA_approved_structures.csv"
+df = pandas.read_csv(url)
+sampler = amsr.Sampler((Chem.MolFromSmiles(s) for s in df["SMILES"]))
 
 
-@app.route("/", methods=["GET", "POST"])
+@app.route("/", methods=methods)
 def index():
     return render_template("index.html")
 
 
-@app.route("/mol_changed", methods=["GET", "POST"])
+@app.route("/random_mol", methods=methods)
+def random_mol():
+    k = max(round(expovariate(1 / 20)), 1)
+    return json.dumps({"amsr": sampler.sample(k)})
+
+
+@app.route("/mol_changed", methods=methods)
 def mol_changed():
     inString = request.form.get("inString")
     smiles_to_amsr = request.form.get("smiles_to_amsr") == "true"
