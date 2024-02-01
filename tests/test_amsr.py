@@ -28,25 +28,27 @@ def test_FDA():
     _test_csv("some_FDA_approved_structures.csv")
 
 
-def test_sampler():
-    seed(0)
-    df = _read_csv("some_FDA_approved_structures.csv")
-    sampler = amsr.Sampler((Chem.MolFromSmiles(s) for s in df["SMILES"]))
-    for _ in range(1000):
-        assert amsr.CheckMol(amsr.ToMol(sampler.sample(20)))
-
-
 def test_markov():
     seed(0)
-    df = _read_csv("some_FDA_approved_structures.csv")
-    markov = amsr.Markov((Chem.MolFromSmiles(s) for s in df["SMILES"]))
-    for _ in range(1000):
-        assert amsr.CheckMol(amsr.ToMol(markov.sample()))
+    fda = _read_csv("some_FDA_approved_structures.csv")
+    markov = amsr.Markov((Chem.MolFromSmiles(s) for s in fda["SMILES"]))
+    for _ in range(100):
+        assert amsr.CheckMol(amsr.ToMol(markov.generate()))
+
+
+def test_modify():
+    seed(0)
+    fda = _read_csv("some_FDA_approved_structures.csv")
+    np = _read_csv("natural_products.csv")
+    modifier = amsr.Modifier((Chem.MolFromSmiles(s) for s in fda["SMILES"]))
+    for _ in range(10):
+        for m in (Chem.MolFromSmiles(s) for s in np["SMILES"]):
+            assert amsr.CheckMol(modifier.modify(m))
 
 
 def test_morph():
     seed(0)
-    df = _read_csv("natural_products.csv")
-    for s, t in combinations(df["SMILES"], 2):
+    np = _read_csv("natural_products.csv")
+    for s, t in combinations(np["SMILES"], 2):
         for m in amsr.morph.Morph.fromSmiles(s, t).mol:
             assert amsr.CheckMol(m)

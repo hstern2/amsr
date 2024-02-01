@@ -11,8 +11,8 @@ __all__ = [
     "InitializeGroups",
     "ToTokens",
     "Morph",
-    "Sampler",
     "Markov",
+    "Modifier",
     "GetConformerAndEnergy",
 ]
 
@@ -23,6 +23,6 @@ from .check import CheckMol, CheckSmiles
 from .groups import Groups, InitializeGroups
 from .tokens import ToTokens
 from .morph import Morph
-from .sampler import Sampler
 from .markov import Markov
+from .modifier import Modifier
 from .conf import GetConformerAndEnergy

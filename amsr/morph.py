@@ -8,15 +8,12 @@ from rdkit import Chem
 class Morph:
     """morph between two molecules, by taking the minimum-edit pathway
     between their string representations
+
+    :param s: list of AMSR tokens
+    :param t: list of AMSR tokens
     """
 
     def __init__(self, s: List[str], t: List[str]):
-        """create morph from two lists of AMSR tokens
-
-        :param s: list of AMSR tokens
-        :param t: list of AMSR tokens
-        :return: Morph object
-        """
         s = list(s)[:]
         self.amsr = ["".join(s)]
         k = 0

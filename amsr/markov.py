@@ -9,7 +9,13 @@ END_TOKEN = "[END]"
 
 
 class Markov:
+    """generate molecules using a simple Markov model
+
+    :param mols: rdkit Mols, from which to draw token frequencies
+    """
+
     def __init__(self, mols: Iterable[Chem.Mol]):
+
         self.p = dict()
         self.p[START_TOKEN] = dict()
         for m in mols:
@@ -31,16 +37,26 @@ class Markov:
         for k, v in self.p.items():
             self.p[k] = (list(v.keys()), list(v.values()))
 
-    def nextToken(self, t0):
+    def _nextToken(self, t0):
         return choices(*self.p[t0])[0]
 
-    def sampleTokens(self, nmax: Optional[int] = -1):
-        t = self.nextToken(START_TOKEN)
+    def generateTokens(self, nmax: Optional[int] = -1):
+        """generate sequence of tokens
+
+        :param nmax: maximum number of tokens to generate
+        :return: sequence of tokens
+        """
+        t = self._nextToken(START_TOKEN)
         n = 0
         while t != END_TOKEN and (nmax < 0 or n < nmax):
             yield t
             n += 1
-            t = self.nextToken(t)
+            t = self._nextToken(t)
 
-    def sample(self, nmax: Optional[int] = -1):
-        return "".join(self.sampleTokens(nmax=nmax))
+    def generate(self, nmax: Optional[int] = -1):
+        """generate an AMSR string
+
+        :param nmax: maximum length of string
+        :return: AMSR string
+        """
+        return "".join(self.generateTokens(nmax=nmax))

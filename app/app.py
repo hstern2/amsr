@@ -69,7 +69,7 @@ def index():
 @app.route("/random_mol", methods=methods)
 def random_mol():
     k = max(round(expovariate(1 / 20)), 1)
-    return json.dumps({"amsr": markov.sample(nmax=25)})
+    return json.dumps({"amsr": markov.generate(nmax=25)})
 
 
 @app.route("/mol_changed", methods=methods)
