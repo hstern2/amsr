@@ -1,6 +1,7 @@
 import amsr, os, pandas
 from random import seed
 from rdkit import Chem
+from itertools import combinations
 
 
 def test_version():
@@ -33,3 +34,19 @@ def test_sampler():
     sampler = amsr.Sampler((Chem.MolFromSmiles(s) for s in df["SMILES"]))
     for _ in range(1000):
         assert amsr.CheckMol(amsr.ToMol(sampler.sample(20)))
+
+
+def test_markov():
+    seed(0)
+    df = _read_csv("some_FDA_approved_structures.csv")
+    markov = amsr.Markov((Chem.MolFromSmiles(s) for s in df["SMILES"]))
+    for _ in range(1000):
+        assert amsr.CheckMol(amsr.ToMol(markov.sample()))
+
+
+def test_morph():
+    seed(0)
+    df = _read_csv("natural_products.csv")
+    for s, t in combinations(df["SMILES"], 2):
+        for m in amsr.morph.Morph.fromSmiles(s, t).mol:
+            assert amsr.CheckMol(m)

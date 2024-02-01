@@ -1,11 +1,17 @@
 from Levenshtein import editops
 from .encode import FromSmilesToTokens
 from .decode import ToMol
+from typing import List
 from rdkit import Chem
 
 
 class Morph:
-    def __init__(self, s, t):
+    """morph between two molecules, by taking the minimum-edit pathway
+    between their string representations
+    """
+
+    def __init__(self, s: List[str], t: List[str]):
+        """initialize from two lists of tokens"""
         s = list(s)[:]
         self.amsr = ["".join(s)]
         k = 0
@@ -30,8 +36,10 @@ class Morph:
 
     @classmethod
     def fromSmiles(cls, s, t):
+        """initialize from two SMILES strings"""
         return cls(FromSmilesToTokens(s), FromSmilesToTokens(t))
 
     def showAsSmiles(self):
+        """display each mol in the morph as SMILES"""
         for m in self.mol:
             print(Chem.MolToSmiles(m))

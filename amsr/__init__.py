@@ -12,6 +12,7 @@ __all__ = [
     "ToTokens",
     "Morph",
     "Sampler",
+    "Markov",
     "GetConformerAndEnergy",
 ]
 
@@ -23,4 +24,5 @@ from .groups import Groups, InitializeGroups
 from .tokens import ToTokens
 from .morph import Morph
 from .sampler import Sampler
+from .markov import Markov
 from .conf import GetConformerAndEnergy

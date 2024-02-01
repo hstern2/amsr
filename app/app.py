@@ -58,7 +58,7 @@ app = Flask(__name__)
 methods = ["GET", "POST"]
 url = "https://raw.githubusercontent.com/hstern2/amsr/main/tests/some_FDA_approved_structures.csv"
 df = pandas.read_csv(url)
-sampler = amsr.Sampler((Chem.MolFromSmiles(s) for s in df["SMILES"]))
+markov = amsr.Markov((Chem.MolFromSmiles(s) for s in df["SMILES"]))
 
 
 @app.route("/", methods=methods)
@@ -69,7 +69,7 @@ def index():
 @app.route("/random_mol", methods=methods)
 def random_mol():
     k = max(round(expovariate(1 / 20)), 1)
-    return json.dumps({"amsr": sampler.sample(k)})
+    return json.dumps({"amsr": markov.sample(nmax=25)})
 
 
 @app.route("/mol_changed", methods=methods)
