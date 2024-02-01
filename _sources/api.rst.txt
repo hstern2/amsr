@@ -12,3 +12,7 @@ API
     :members:
 .. automodule:: amsr.morph
     :members:
+.. automodule:: amsr.markov
+    :members:
+.. automodule:: amsr.modifier
+    :members:

@@ -63,6 +63,15 @@
 <li class="toctree-l3"><a class="reference internal" href="#amsr.morph.Morph.showAsSmiles"><code class="docutils literal notranslate"><span class="pre">Morph.showAsSmiles()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="#amsr.markov.Markov"><code class="docutils literal notranslate"><span class="pre">Markov</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#amsr.markov.Markov.generate"><code class="docutils literal notranslate"><span class="pre">Markov.generate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#amsr.markov.Markov.generateTokens"><code class="docutils literal notranslate"><span class="pre">Markov.generateTokens()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#amsr.modifier.Modifier"><code class="docutils literal notranslate"><span class="pre">Modifier</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#amsr.modifier.Modifier.modify"><code class="docutils literal notranslate"><span class="pre">Modifier.modify()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -311,6 +320,14 @@ group abbreviations and tokens.  Must be called after modification of
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Morph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amsr.morph.Morph" title="Permalink to this definition"></a></dt>
 <dd><p>morph between two molecules, by taking the minimum-edit pathway
 between their string representations</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>s</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]</span>) – list of AMSR tokens</p></li>
+<li><p><strong>t</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]</span>) – list of AMSR tokens</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="amsr.morph.Morph.fromSmiles">
 <em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fromSmiles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amsr.morph.Morph.fromSmiles" title="Permalink to this definition"></a></dt>
@@ -332,6 +349,78 @@ between their string representations</p>
 <dt class="sig sig-object py" id="amsr.morph.Morph.showAsSmiles">
 <span class="sig-name descname"><span class="pre">showAsSmiles</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#amsr.morph.Morph.showAsSmiles" title="Permalink to this definition"></a></dt>
 <dd><p>display each mol in the morph as SMILES</p>
+</dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-amsr.markov"></span><dl class="py class">
+<dt class="sig sig-object py" id="amsr.markov.Markov">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Markov</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mols</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amsr.markov.Markov" title="Permalink to this definition"></a></dt>
+<dd><p>generate molecules using a simple Markov model</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>mols</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Mol</span></code>]</span>) – rdkit Mols, from which to draw token frequencies</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="amsr.markov.Markov.generate">
+<span class="sig-name descname"><span class="pre">generate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amsr.markov.Markov.generate" title="Permalink to this definition"></a></dt>
+<dd><p>generate an AMSR string</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>nmax</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]</span>) – maximum length of string</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>AMSR string</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="amsr.markov.Markov.generateTokens">
+<span class="sig-name descname"><span class="pre">generateTokens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amsr.markov.Markov.generateTokens" title="Permalink to this definition"></a></dt>
+<dd><p>generate sequence of tokens</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>nmax</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]</span>) – maximum number of tokens to generate</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>sequence of tokens</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-amsr.modifier"></span><dl class="py class">
+<dt class="sig sig-object py" id="amsr.modifier.Modifier">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Modifier</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mols</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nDeleteAvg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nAddMax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amsr.modifier.Modifier" title="Permalink to this definition"></a></dt>
+<dd><p>modify a molecule by shuffling atom order, deleting tokens,
+then adding tokens</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mols</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Mol</span></code>]</span>) – rdkit Mols, from which to draw token frequencies</p></li>
+<li><p><strong>nDeleteAvg</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]</span>) – average number of tokens to delete</p></li>
+<li><p><strong>nAddMax</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]</span>) – maximum number of tokens ato add</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="amsr.modifier.Modifier.modify">
+<span class="sig-name descname"><span class="pre">modify</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mol</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amsr.modifier.Modifier.modify" title="Permalink to this definition"></a></dt>
+<dd><p>modify given molecule</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>mol</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Mol</span></code></span>) – molecule to modify</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Mol</span></code></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>modified molecule</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
