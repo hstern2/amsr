@@ -11,7 +11,12 @@ class Morph:
     """
 
     def __init__(self, s: List[str], t: List[str]):
-        """initialize from two lists of tokens"""
+        """create morph from two lists of AMSR tokens
+
+        :param s: list of AMSR tokens
+        :param t: list of AMSR tokens
+        :return: Morph object
+        """
         s = list(s)[:]
         self.amsr = ["".join(s)]
         k = 0
@@ -35,8 +40,13 @@ class Morph:
                 i0 = i
 
     @classmethod
-    def fromSmiles(cls, s, t):
-        """initialize from two SMILES strings"""
+    def fromSmiles(cls, s: str, t: str):
+        """create morph from two SMILES strings
+
+        :param s: SMILES
+        :param t: SMILES
+        :return: Morph object
+        """
         return cls(FromSmilesToTokens(s), FromSmilesToTokens(t))
 
     def showAsSmiles(self):
