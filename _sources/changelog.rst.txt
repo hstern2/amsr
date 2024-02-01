@@ -1,5 +1,12 @@
 Change Log
 ==========
+v0.1.3 (2024-1-25)
+------------------
+encode conformers
+
+v.0.1.2 (2022-6-6)
+------------------
+apply filters to exclude unstable or synthetically inaccessible molecules
 
 v0.1.1 (2022-3-20)
 ------------------

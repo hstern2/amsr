@@ -10,3 +10,5 @@ API
     :members:
 .. automodule:: amsr.tokens
     :members:
+.. automodule:: amsr.morph
+    :members:

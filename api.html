@@ -58,6 +58,11 @@
 <li class="toctree-l2"><a class="reference internal" href="#amsr.groups.Groups"><code class="docutils literal notranslate"><span class="pre">Groups()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#amsr.groups.InitializeGroups"><code class="docutils literal notranslate"><span class="pre">InitializeGroups()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#amsr.tokens.ToTokens"><code class="docutils literal notranslate"><span class="pre">ToTokens()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#amsr.morph.Morph"><code class="docutils literal notranslate"><span class="pre">Morph</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#amsr.morph.Morph.fromSmiles"><code class="docutils literal notranslate"><span class="pre">Morph.fromSmiles()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#amsr.morph.Morph.showAsSmiles"><code class="docutils literal notranslate"><span class="pre">Morph.showAsSmiles()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -299,6 +304,36 @@ group abbreviations and tokens.  Must be called after modification of
 <dd class="field-odd"><p>list of tokens</p>
 </dd>
 </dl>
+</dd></dl>
+
+<span class="target" id="module-amsr.morph"></span><dl class="py class">
+<dt class="sig sig-object py" id="amsr.morph.Morph">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Morph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amsr.morph.Morph" title="Permalink to this definition"></a></dt>
+<dd><p>morph between two molecules, by taking the minimum-edit pathway
+between their string representations</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="amsr.morph.Morph.fromSmiles">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fromSmiles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amsr.morph.Morph.fromSmiles" title="Permalink to this definition"></a></dt>
+<dd><p>create morph from two SMILES strings</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>s</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – SMILES</p></li>
+<li><p><strong>t</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – SMILES</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Morph object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="amsr.morph.Morph.showAsSmiles">
+<span class="sig-name descname"><span class="pre">showAsSmiles</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#amsr.morph.Morph.showAsSmiles" title="Permalink to this definition"></a></dt>
+<dd><p>display each mol in the morph as SMILES</p>
+</dd></dl>
+
 </dd></dl>
 
 </section>
