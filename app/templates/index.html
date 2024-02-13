@@ -44,7 +44,7 @@
             autocapitalize="off"
             autocorrect="off"
             autocomplete="on"
-            onkeyup="mol_changed(false)" // amsr to smiles
+            onkeyup="mol_changed(false, true, true)" // amsr to smiles
         ></input></td>
     </tr>
     <tr><td>SMILES:</td>
@@ -57,7 +57,7 @@
             autocapitalize="off"
             autocorrect="off"
             autocomplete="on"
-            onkeyup="mol_changed(true)" // smiles to amsr
+            onkeyup="mol_changed(true, true, true)" // smiles to amsr
         ></input>
     </td></tr>
     </table>
@@ -71,18 +71,12 @@
         onclick="random_mol()"
         >random mol
     </button>
-    <input
-            type="checkbox"
-            id="flipX"
-            name="flipX"
-            onclick="mol_changed(false)" // amsr to smiles
-            >flipX
-    <input
-            type="checkbox"
-            id="flipY"
-            name="flipY"
-            onclick="mol_changed(false)" // amsr to smiles
-            >flipY
+    <button
+            id="invertView"
+            name="invertView"
+            onclick="invertView()"
+            <i class="fas fa-camera-rotate"></i>
+    </button>
     <button
             id="counterClockwise"
             name="counterClockwise"
@@ -94,25 +88,28 @@
             name="clockwise"
             onclick="rotateClockwise()"
             <i class="fas fa-rotate-right"></i>
+
     </button>
     <input
             type="checkbox"
             id="stringent"
             name="stringent"
             checked
-            onclick="mol_changed(false)"
+            onclick="mol_changed(false, true, true)"
             >stringent
     <input
             type="checkbox"
             id="threeD"
             name="threeD"
             checked
-            onclick="mol_changed(true)"
+            onclick="mol_changed(true, false, true)"
             >3D
+    </td>
+    <td>
     <button
         id="newConformer"
         name="newConformer"
-        onclick="mol_changed(true)"
+        onclick="mol_changed(true, false, true)"
         >new conformer</button>
     <button
         id="saveAsSDF"
@@ -121,9 +118,11 @@
         >save as SDF</button>
     </td></tr>
 
+    <!--
     </table>
-
     <table>
+    -->
+
         <tr>
             <td id="viewer2d"></td>
             <td id="viewer3d"></td>
@@ -151,6 +150,7 @@
     let viewer2d = element("viewer2d");
     let pending = null;
     let rotationValue = 0;
+    let flipMol = false;
     const rotationIncrement = 30; // degrees
 
     function refresh_viewer3d(ener) {
@@ -170,14 +170,19 @@
         element('SA').innerHTML = sa;
     }
 
+    function invertView() {
+        flipMol = !flipMol;
+        mol_changed(false, true, false);
+    }
+
     function rotateClockwise() {
         rotationValue -= rotationIncrement
-        mol_changed(false);
+        mol_changed(false, true, false);
     }
 
     function rotateCounterClockwise() {
         rotationValue += rotationIncrement
-        mol_changed(false);
+        mol_changed(false, true, false);
     }
 
     function save_as_SDF() {
@@ -199,14 +204,13 @@
             function(response) {
                 var data = JSON.parse(response);
                 element('amsr').value = data.amsr;
-                mol_changed(false); // amsr to smiles
+                mol_changed(false, true, true); // amsr to smiles
             }
         );
     }
 
-    function mol_changed(smiles_to_amsr) {
-        threeD = element('threeD').checked
-        if (threeD) {
+    function mol_changed(smiles_to_amsr, update2D, update3D) {
+        if (element('threeD').checked) {
            element('viewer3d').style.display = 'block';
            element('ener').style.display = 'block';
            element('newConformer').style.display = 'inline';
@@ -219,20 +223,24 @@
         }
         if (pending)
             pending.abort();
+        threeD = element('threeD').checked && update3D;
         pending = $.post('/mol_changed',
             {'inString': (smiles_to_amsr ? element('smiles') : element('amsr')).value,
             'smiles_to_amsr': smiles_to_amsr,
-            'flipX': element('flipX').checked,
-            'flipY': element('flipY').checked,
+            'flipMol': flipMol,
             'threeD': threeD,
             'stringent': element('stringent').checked,
             'rotationValue': rotationValue},
             function(response) {
                 var data = JSON.parse(response);
                 (smiles_to_amsr ? element('amsr') : element('smiles')).value = data.outString
-                refresh_viewer2d(data.svg, data.qed, data.tpsa, data.sa);
-                sdf = data.sdf
-                refresh_viewer3d(data.ener);
+                if (update2D) {
+                    refresh_viewer2d(data.svg, data.qed, data.tpsa, data.sa);
+                }
+                if (threeD) {
+                    sdf = data.sdf
+                    refresh_viewer3d(data.ener);
+                }
             }
         );
     }

@@ -12,20 +12,18 @@ sys.path.append(os.path.join(Chem.RDConfig.RDContribDir, "SA_Score"))
 import sascorer
 
 
-def flip_mol(m, axis):
+def flip_mol(m):
+    "flip a molecule i.e. 180 degree rotation around vertical axis"
     conf = m.GetConformer()
     for a in m.GetAtoms():
         i = a.GetIdx()
         pos = conf.GetAtomPosition(i)
-        if axis == "X":
-            conf.SetAtomPosition(i, (-pos.x, pos.y, pos.z))
-        elif axis == "Y":
-            conf.SetAtomPosition(i, (pos.x, -pos.y, pos.z))
+        conf.SetAtomPosition(i, (-pos.x, pos.y, pos.z))
     Chem.AssignStereochemistry(m, force=True, cleanIt=True)
 
 
 def rotate_mol(m, rotationValue: int):
-    # rotationValue in degrees
+    "rotate molecule in XY plane"
     conf = m.GetConformer()
     radians = math.radians(rotationValue)
     for a in m.GetAtoms():
@@ -36,12 +34,10 @@ def rotate_mol(m, rotationValue: int):
         conf.SetAtomPosition(i, (newX, newY, pos.z))
 
 
-def get_svg(mol, flipX: bool, flipY: bool, rotationValue: int):
+def get_svg(mol, flip: bool, rotationValue: int):
     rdkit.Chem.AllChem.Compute2DCoords(mol)
-    if flipX:
-        flip_mol(mol, "X")
-    if flipY:
-        flip_mol(mol, "Y")
+    if flip:
+        flip_mol(mol)
     rotate_mol(mol, rotationValue)
     d = Chem.Draw.rdMolDraw2D.MolDraw2DSVG(396, 396)
     actives = [a.GetIdx() for a in mol.GetAtoms() if a.HasProp("_active")]
@@ -78,8 +74,7 @@ def mol_changed():
     smiles_to_amsr = request.form.get("smiles_to_amsr") == "true"
     threeD = request.form.get("threeD") == "true"
     stringent = request.form.get("stringent") == "true"
-    flipX = request.form.get("flipX") == "true"
-    flipY = request.form.get("flipY") == "true"
+    flipMol = request.form.get("flipMol") == "true"
     rotationValue = int(request.form.get("rotationValue"))  # degrees
     svg, sdf, outString, ener, QED, tpsa, sa = [""] * 7
     dih = {}
@@ -89,7 +84,7 @@ def mol_changed():
         else amsr.ToMol(inString, dihedral=dih)
     )
     if mol_isOK(mol):
-        svg = get_svg(mol, flipX, flipY, rotationValue)
+        svg = get_svg(mol, flipMol, rotationValue)
         QED = f"QED score: {qed(mol):.3f}"
         tpsa = f"TPSA: {TPSA(mol):.3f} &#8491;<sup>2</sup>"
         sa = f"SA score: {sascorer.calculateScore(mol):.3f}"
