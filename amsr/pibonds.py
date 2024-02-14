@@ -77,7 +77,6 @@ class PiBonds:
 
         # subgraph of atoms that can make pi bonds
         self.graph = Graph(self.possiblePiBonds(stringent))
-        print(self.graph)
 
         # single coordinate - heteroatoms first
         done = False
