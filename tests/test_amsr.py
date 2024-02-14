@@ -28,6 +28,10 @@ def test_FDA():
     _test_csv("some_FDA_approved_structures.csv")
 
 
+def test_ertl():
+    _test_csv("ertl_npsubstituents.csv")
+
+
 def test_markov():
     seed(0)
     fda = _read_csv("some_FDA_approved_structures.csv")

@@ -34,14 +34,28 @@ class PiBonds:
     def canBeTriple(self, i, j):
         return self.canMultiplePiBond(i) and self.canMultiplePiBond(j)
 
-    def possiblePiBonds(self):
+    def possiblePiBonds(self, stringent):
         for b in self.mol.GetBonds():
             i, j = b.GetBeginAtomIdx(), b.GetEndAtomIdx()
+            if (
+                stringent
+                and self.isNotInRing(i)
+                and self.is_C_or_N(i)
+                and self.isNotInRing(j)
+                and self.is_C_or_N(j)
+            ):
+                continue
             if self.canBePi(i, j):
                 yield i, j
 
     def isCarbon(self, i):
         return self.atom[i].isCarbon()
+
+    def is_C_or_N(self, i):
+        return self.atom[i].isCarbon() or self.atom[i].isNitrogen()
+
+    def isNotInRing(self, i):
+        return not self.mol.GetAtomWithIdx(i).IsInRing()
 
     def reduceGraph(self):
         self.graph = self.graph.subgraph(
@@ -65,7 +79,7 @@ class PiBonds:
             self.excluded.update(RingAtoms(ringInfo, 3))
 
         # subgraph of atoms that can make pi bonds
-        self.graph = Graph(self.possiblePiBonds())
+        self.graph = Graph(self.possiblePiBonds(stringent))
 
         # single coordinate - heteroatoms first
         done = False

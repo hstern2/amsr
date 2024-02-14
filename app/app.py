@@ -81,7 +81,7 @@ def mol_changed():
     mol = (
         Chem.MolFromSmiles(inString)
         if smiles_to_amsr
-        else amsr.ToMol(inString, dihedral=dih)
+        else amsr.ToMol(inString, stringent=stringent, dihedral=dih)
     )
     if mol_isOK(mol):
         svg = get_svg(mol, flipMol, rotationValue)
