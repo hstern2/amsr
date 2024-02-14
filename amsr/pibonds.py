@@ -37,12 +37,9 @@ class PiBonds:
     def possiblePiBonds(self, stringent):
         for b in self.mol.GetBonds():
             i, j = b.GetBeginAtomIdx(), b.GetEndAtomIdx()
-            if (
-                stringent
-                and self.isNotInRing(i)
-                and self.is_C_or_N(i)
-                and self.isNotInRing(j)
-                and self.is_C_or_N(j)
+            if stringent and (
+                (self.isNotInRing(i) and self.is_C_or_N(i))
+                or (self.isNotInRing(j) and self.is_C_or_N(j))
             ):
                 continue
             if self.canBePi(i, j):
@@ -80,6 +77,7 @@ class PiBonds:
 
         # subgraph of atoms that can make pi bonds
         self.graph = Graph(self.possiblePiBonds(stringent))
+        print(self.graph)
 
         # single coordinate - heteroatoms first
         done = False
