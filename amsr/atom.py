@@ -85,11 +85,9 @@ class Atom:
         ):
             return False
         if self.is_sp3_Carbon():
-            if self.isBondedToHnH and a.isHnH():
+            if self.isBondedToHnH and a.isOxygen():
                 return False
-            if self.isBondedToOxygen and a.isHalogen():
-                return False
-            if self.isBondedToHalogen and a.isOxygen():
+            if self.isBondedToOxygen and a.isHnH():
                 return False
         return True
 
