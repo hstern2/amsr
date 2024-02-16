@@ -17,6 +17,10 @@ def IsSeen(a):
     return a.HasProp("_seenIndex")
 
 
+def UnSee(a):
+    a.ClearProp("_seenIndex")
+
+
 class Atom:
     def __init__(self, sym):
         self.sym = sym

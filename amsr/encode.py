@@ -1,6 +1,6 @@
 from rdkit import Chem
 from typing import Optional, List, Set, FrozenSet
-from .atom import Atom, GetSeenIndex, SetSeenIndex, IsSeen
+from .atom import Atom, GetSeenIndex, SetSeenIndex, IsSeen, UnSee
 from .bfs import BFSFind
 from .bond import Bond
 from .groups import EncodeGroups
@@ -108,6 +108,9 @@ def FromMolToTokens(
                 _ = True
 
     t = [t[1].asToken(t[0]) if type(t) == tuple else t for t in list(_getPreTokens())]
+
+    for a in mol.GetAtoms():
+        UnSee(a)
 
     if useGroups:
         t = EncodeGroups(t)
