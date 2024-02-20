@@ -4,7 +4,7 @@ from .encode import FromMol
 from .decode import ToMol
 
 
-def CheckMol(m1: Chem.Mol, stringent: Optional[bool] = False) -> bool:
+def CheckMol(m1: Chem.Mol, stringent: Optional[bool] = True) -> bool:
     """Do round trip from RDKit mol m to AMSR.
     Compare InChI strings (with -FixedH) before and after round trip.
 
@@ -28,7 +28,7 @@ def CheckMol(m1: Chem.Mol, stringent: Optional[bool] = False) -> bool:
         return False
 
 
-def CheckSmiles(s: str, stringent: Optional[bool] = False) -> bool:
+def CheckSmiles(s: str, stringent: Optional[bool] = True) -> bool:
     """Convert SMILES s to RDKit Mol, then do round trip to AMSR.
     Compare InChI strings (with -FixedH) before and after round trip.
 

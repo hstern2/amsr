@@ -74,6 +74,8 @@ class Atom:
     def _canBondWith(self, a, stringent):
         if not stringent:
             return True
+        if self.isNitrogen() and a.isHalogen():
+            return False
         if self.isOxygen() and (a.isHalogen() or a.isOxygen()):
             return False
         if self.isOxygen() and self.isBondedToHnH and a.isHnH():
