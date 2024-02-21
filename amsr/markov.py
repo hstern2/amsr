@@ -1,6 +1,6 @@
 from .encode import FromMolToTokens
 from rdkit import Chem
-from typing import Optional, Iterable
+from typing import Optional, List
 from random import choices
 from .count import Count
 
@@ -14,7 +14,7 @@ class Markov:
     :param mols: rdkit Mols, from which to draw token frequencies
     """
 
-    def __init__(self, mols: Iterable[Chem.Mol]):
+    def __init__(self, mols: List[Chem.Mol]):
 
         self.p = dict()
         self.p[START_TOKEN] = dict()

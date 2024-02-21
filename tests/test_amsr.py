@@ -47,7 +47,7 @@ def test_ertl():
 def test_markov():
     seed(0)
     fda = _read_csv("some_FDA_approved_structures.csv")
-    markov = amsr.Markov((Chem.MolFromSmiles(s) for s in fda["SMILES"]))
+    markov = amsr.Markov([Chem.MolFromSmiles(s) for s in fda["SMILES"]])
     for _ in range(100):
         assert amsr.CheckMol(amsr.ToMol(markov.generate()), stringent=False)
 
@@ -56,7 +56,7 @@ def test_modify():
     seed(0)
     fda = _read_csv("some_FDA_approved_structures.csv")
     np = _read_csv("natural_products.csv")
-    modifier = amsr.Modifier((Chem.MolFromSmiles(s) for s in fda["SMILES"]))
+    modifier = amsr.Modifier([Chem.MolFromSmiles(s) for s in fda["SMILES"]])
     for _ in range(10):
         for m in (Chem.MolFromSmiles(s) for s in np["SMILES"]):
             assert amsr.CheckMol(modifier.modify(m), stringent=False)
