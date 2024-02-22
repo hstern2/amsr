@@ -37,13 +37,21 @@ class PiBonds:
     def possiblePiBonds(self, stringent):
         for b in self.mol.GetBonds():
             i, j = b.GetBeginAtomIdx(), b.GetEndAtomIdx()
-            if stringent and self.isCarbon(i) and self.isCarbon(j) and not b.IsInRing():
-                continue
+            if stringent:
+                if self.isCarbon(i) and self.isCarbon(j) and not b.IsInRing():
+                    continue
+                if self.isCarbon(i) and self.isSulfur(j):
+                    continue
+                if self.isSulfur(j) and self.isCarbon(j):
+                    continue
             if self.canBePi(i, j):
                 yield i, j
 
     def isCarbon(self, i):
         return self.atom[i].isCarbon()
+
+    def isSulfur(self, i):
+        return self.atom[i].isSulfur()
 
     def isNotInRing(self, i):
         return not self.mol.GetAtomWithIdx(i).IsInRing()

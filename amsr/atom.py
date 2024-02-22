@@ -114,6 +114,9 @@ class Atom:
     def isCarbon(self):
         return self.atomSym == "C"
 
+    def isSulfur(self):
+        return self.atomSym == "S"
+
     def is_sp3_Carbon(self):
         return self.isCarbon() and self.is_sp3()
 

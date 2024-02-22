@@ -44,6 +44,10 @@ def test_ertl():
     _test_csv("ertl_npsubstituents.csv", stringent=False)
 
 
+def test_DEL():
+    _test_csv("DEL_compounds.csv", stringent=True)
+
+
 def test_markov():
     seed(0)
     fda = _read_csv("some_FDA_approved_structures.csv")
