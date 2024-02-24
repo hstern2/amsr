@@ -52,9 +52,11 @@ def mol_isOK(mol):
 
 app = Flask(__name__)
 methods = ["GET", "POST"]
-url = "https://raw.githubusercontent.com/hstern2/amsr/main/data/some_ertl_npsubs.csv"
-df = pandas.read_csv(url)
-markov = amsr.Markov((Chem.MolFromSmiles(s) for s in df["SMILES"]))
+base_url = "https://raw.githubusercontent.com/hstern2/amsr/main/data/"
+ertl_nps = pandas.read_csv(base_url + "some_ertl_npsubs.csv")
+fda = pandas.read_csv(base_url + "some_FDA_approved_structures.csv")
+corpus = pandas.concat([ertl_nps, fda])
+markov = amsr.Markov((Chem.MolFromSmiles(s) for s in corpus["SMILES"]))
 
 
 @app.route("/", methods=methods)
