@@ -76,7 +76,7 @@ class Atom:
             return True
         if self.isNitrogen() and a.isHalogen():
             return False
-        if self.isOxygen() and (a.isHalogen() or a.isOxygen()):
+        if self.isOxygen() and (a.isHalogen() or a.is_sp3_Oxygen()):
             return False
         if self.isOxygen() and self.isBondedToHnH and a.isHnH() and a.is_sp3():
             return False
@@ -123,6 +123,9 @@ class Atom:
 
     def is_sp3_Nitrogen(self):
         return self.isNitrogen() and self.is_sp3()
+
+    def is_sp3_Oxygen(self):
+        return self.isOxygen() and self.is_sp3()
 
     def isHetero(self):
         return not self.isCarbon()

@@ -4,6 +4,10 @@ from rdkit import Chem
 from itertools import combinations
 
 
+def test_bad():
+    amsr.CheckSmiles("C=CNNNC", stringent=True)
+
+
 def test_version():
     assert amsr.__version__
 
@@ -35,11 +39,11 @@ def test_Mg_compounds():
 
 
 def test_NP():
-    _test_csv("natural_products.csv", stringent=False)
+    _test_csv("natural_products.csv", stringent=True)
 
 
 def test_FDA():
-    _test_csv("some_FDA_approved_structures.csv", stringent=False)
+    _test_csv("some_FDA_approved_structures.csv", stringent=True)
 
 
 def test_ertl():
@@ -55,7 +59,9 @@ def test_markov():
     fda = _read_csv("some_FDA_approved_structures.csv")
     markov = amsr.Markov([Chem.MolFromSmiles(s) for s in fda["SMILES"]])
     for _ in range(100):
-        assert amsr.CheckMol(amsr.ToMol(markov.generate()), stringent=False)
+        a = markov.generate()
+        print(a)
+        assert amsr.CheckMol(amsr.ToMol(a), stringent=False)
 
 
 def test_modify():

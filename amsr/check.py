@@ -38,7 +38,10 @@ def CheckSmiles(s: str, stringent: Optional[bool] = True) -> bool:
     try:
         m = Chem.MolFromSmiles(s)
         if m is not None:
-            return CheckMol(m, stringent=stringent)
+            if CheckMol(m, stringent=stringent):
+                return True
+            else:
+                print(f"CheckSmiles failed: {s}")
     except Exception:
         pass
     print(f"rdkit couldn't handle SMILES {s}")
