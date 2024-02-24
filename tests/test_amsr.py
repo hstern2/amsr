@@ -17,7 +17,9 @@ def test_caffeine():
 
 
 def _read_csv(csv_file):
-    return pandas.read_csv(os.path.join(os.path.dirname(__file__), csv_file))
+    return pandas.read_csv(
+        os.path.join(os.path.dirname(__file__), "..", "data", csv_file)
+    )
 
 
 def _test_csv(csv_file, stringent):
