@@ -1,7 +1,7 @@
 from rdkit import Chem
 from networkx import Graph
 from networkx.algorithms import max_weight_matching
-from .ringinfo import BridgeheadAtoms, RingAtoms
+from .bridgehead import BridgeheadAtoms
 
 
 class PiBonds:
@@ -23,10 +23,10 @@ class PiBonds:
         self.atom[j].nPiBonds += 1
 
     def canPiBond(self, i):
-        return self.atom[i].nAvailablePiBonds() >= 1 and i not in self.excluded
+        return self.atom[i].nAvailablePiBonds() >= 1
 
     def canMultiplePiBond(self, i):
-        return self.atom[i].nAvailablePiBonds() >= 2 and i not in self.excluded
+        return self.atom[i].nAvailablePiBonds() >= 2
 
     def canBePi(self, i, j):
         return self.canPiBond(i) and self.canPiBond(j)
@@ -35,14 +35,18 @@ class PiBonds:
         return self.canMultiplePiBond(i) and self.canMultiplePiBond(j)
 
     def possiblePiBonds(self, stringent):
+        if stringent:
+            bridgehead_atoms = set(BridgeheadAtoms(self.mol, 7))
         for b in self.mol.GetBonds():
             i, j = b.GetBeginAtomIdx(), b.GetEndAtomIdx()
             if stringent:
-                if self.isCarbon(i) and self.isCarbon(j) and not b.IsInRing():
+                if b.IsInRingSize(3):
                     continue
                 if self.isCarbon(i) and self.isSulfur(j):
                     continue
                 if self.isSulfur(j) and self.isCarbon(j):
+                    continue
+                if i in bridgehead_atoms or j in bridgehead_atoms:
                     continue
             if self.canBePi(i, j):
                 yield i, j
@@ -68,14 +72,6 @@ class PiBonds:
 
         self.mol = mol
         self.atom = atom
-        self.excluded = set()
-
-        if stringent:
-            Chem.SanitizeMol(self.mol)
-            Chem.GetSSSR(self.mol)
-            ringInfo = self.mol.GetRingInfo()
-            self.excluded.update(BridgeheadAtoms(mol, ringInfo, 7))
-            self.excluded.update(RingAtoms(ringInfo, 3))
 
         # subgraph of atoms that can make pi bonds
         self.graph = Graph(self.possiblePiBonds(stringent))

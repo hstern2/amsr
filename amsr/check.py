@@ -19,8 +19,7 @@ def CheckMol(m1: Chem.Mol, stringent: Optional[bool] = True) -> bool:
     if i1 == i2:
         return True
     else:
-        print("CheckMol failed.")
-        print(Chem.MolToSmiles(m1))
+        print(f"CheckMol failed: {Chem.MolToSmiles(m1)}")
         print(i1)
         print(a)
         print(Chem.MolToSmiles(m2))
@@ -36,4 +35,11 @@ def CheckSmiles(s: str, stringent: Optional[bool] = True) -> bool:
     :param stringent: try to exclude unstable or synthetically inaccessible molecules
     :return: do InChI strings match?
     """
-    return CheckMol(Chem.MolFromSmiles(s), stringent=stringent)
+    try:
+        m = Chem.MolFromSmiles(s)
+        if m is not None:
+            return CheckMol(m, stringent=stringent)
+    except Exception:
+        pass
+    print(f"rdkit couldn't handle SMILES {s}")
+    return False

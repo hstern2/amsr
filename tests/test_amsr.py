@@ -41,7 +41,7 @@ def test_FDA():
 
 
 def test_ertl():
-    _test_csv("ertl_npsubstituents.csv", stringent=False)
+    _test_csv("some_ertl_npsubs.csv", stringent=True)
 
 
 def test_DEL():

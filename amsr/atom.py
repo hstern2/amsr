@@ -78,7 +78,7 @@ class Atom:
             return False
         if self.isOxygen() and (a.isHalogen() or a.isOxygen()):
             return False
-        if self.isOxygen() and self.isBondedToHnH and a.isHnH():
+        if self.isOxygen() and self.isBondedToHnH and a.isHnH() and a.is_sp3():
             return False
         if (
             self.is_sp3_Nitrogen()
@@ -86,11 +86,6 @@ class Atom:
             and a.is_sp3_Nitrogen()
         ):
             return False
-        if self.is_sp3_Carbon():
-            if self.isBondedToHnH and a.isOxygen():
-                return False
-            if self.isBondedToOxygen and a.isHnH():
-                return False
         return True
 
     def canBondWith(self, a, stringent):
