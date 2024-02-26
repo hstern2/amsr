@@ -53,6 +53,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#amsr.encode.FromSmilesToTokens"><code class="docutils literal notranslate"><span class="pre">FromSmilesToTokens()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#amsr.decode.ToMol"><code class="docutils literal notranslate"><span class="pre">ToMol()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#amsr.decode.ToSmiles"><code class="docutils literal notranslate"><span class="pre">ToSmiles()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#amsr.check.CheckAMSR"><code class="docutils literal notranslate"><span class="pre">CheckAMSR()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#amsr.check.CheckMol"><code class="docutils literal notranslate"><span class="pre">CheckMol()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#amsr.check.CheckSmiles"><code class="docutils literal notranslate"><span class="pre">CheckSmiles()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#amsr.groups.Groups"><code class="docutils literal notranslate"><span class="pre">Groups()</span></code></a></li>
@@ -228,6 +229,26 @@
 </dd></dl>
 
 <span class="target" id="module-amsr.check"></span><dl class="py function">
+<dt class="sig sig-object py" id="amsr.check.CheckAMSR">
+<span class="sig-name descname"><span class="pre">CheckAMSR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stringent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amsr.check.CheckAMSR" title="Permalink to this definition"></a></dt>
+<dd><p>Decode AMSR and check for valid molecule</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>s</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – AMSR</p></li>
+<li><p><strong>stringent</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>]</span>) – try to exclude unstable or synthetically inaccessible molecules</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>valid molecule?</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="amsr.check.CheckMol">
 <span class="sig-name descname"><span class="pre">CheckMol</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">m1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stringent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amsr.check.CheckMol" title="Permalink to this definition"></a></dt>
 <dd><p>Do round trip from RDKit mol m to AMSR.
