@@ -830,7 +830,6 @@ Iocetamic acid,CC(CN(C(C)=O)C1=C(I)C=C(I)C(N)=C1I)C(O)=O
 Iodide,[I-]
 Iodide I-123,[123I-]
 Iodide I-131,[131I-]
-Iodine,II
 Iodipamide,OC(=O)C1=C(I)C(NC(=O)CCCCC(=O)NC2=C(I)C=C(I)C(C(O)=O)=C2I)=C(I)C=C1I
 Iodixanol,CC(=O)N(CC(O)CN(C(C)=O)C1=C(I)C(C(=O)NCC(O)CO)=C(I)C(C(=O)NCC(O)CO)=C1I)C1=C(I)C(C(=O)NCC(O)CO)=C(I)C(C(=O)NCC(O)CO)=C1I
 Iofetamine I-123,CC(C)NC(C)CC1=CC=C([123I])C=C1
@@ -856,7 +855,6 @@ Isoconazole,ClC1=CC(Cl)=C(C=C1)C(CN1C=CN=C1)OCC1=C(Cl)C=CC=C1Cl
 Isoetharine,CCC(NC(C)C)C(O)C1=CC(O)=C(O)C=C1
 Isoeugenol,COC1=CC(C=CC)=CC=C1O
 Isoflurane,FC(F)OC(Cl)C(F)(F)F
-Isoflurophate,CC(C)OP(F)(=O)OC(C)C
 Isometheptene,CNC(C)CCC=C(C)C
 Isoniazid,NNC(=O)C1=CC=NC=C1
 Isoprenaline,CC(C)NCC(O)C1=CC(O)=C(O)C=C1
@@ -1227,7 +1225,6 @@ Oxybenzone,COC1=CC(O)=C(C=C1)C(=O)C1=CC=CC=C1
 Oxybuprocaine,CCCCOC1=CC(=CC=C1N)C(=O)OCCN(CC)CC
 Oxybutynin,CCN(CC)CC#CCOC(=O)C(O)(C1CCCCC1)C1=CC=CC=C1
 Oxycodone,COC1=C2O[C@H]3C(=O)CC[C@@]4(O)[C@H]5CC(C=C1)=C2[C@@]34CCN5C
-Oxygen,O=O
 Oxymetazoline,CC1=CC(=C(O)C(C)=C1CC1=NCCN1)C(C)(C)C
 Oxyphenbutazone,CCCCC1C(=O)N(N(C1=O)C1=CC=C(O)C=C1)C1=CC=CC=C1
 Oxyphencyclimine,CN1CCCN=C1COC(=O)C(O)(C1CCCCC1)C1=CC=CC=C1
@@ -1582,7 +1579,6 @@ Sulfathiazole,NC1=CC=C(C=C1)S(=O)(=O)NC1=NC=CS1
 Sulfinpyrazone,O=C1C(CCS(=O)C2=CC=CC=C2)C(=O)N(N1C1=CC=CC=C1)C1=CC=CC=C1
 Sulfisoxazole,CC1=NOC(NS(=O)(=O)C2=CC=C(N)C=C2)=C1C
 Sulfoxone,OS(=O)CNC1=CC=C(C=C1)S(=O)(=O)C1=CC=C(NCS(O)=O)C=C1
-Sulfur hexafluoride,FS(F)(F)(F)(F)F
 Sulindac,CC1=C(CC(O)=O)C2=CC(F)=CC=C2\C1=C/C1=CC=C(C=C1)S(C)=O
 Sulpiride,CCN1CCCC1CNC(=O)C1=C(OC)C=CC(=C1)S(N)(=O)=O
 Sulthiame,NS(=O)(=O)C1=CC=C(C=C1)N1CCCCS1(=O)=O

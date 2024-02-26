@@ -4,16 +4,16 @@ from rdkit import Chem
 from itertools import combinations
 
 
-def test_bad():
-    amsr.CheckSmiles("C=CNNNC", stringent=True)
-
-
 def test_version():
     assert amsr.__version__
 
 
 def test_methane():
     assert amsr.CheckSmiles("C")
+
+
+def test_cage():
+    assert amsr.CheckAMSR("CCccCccc6oC..CCCC6C6.6")
 
 
 def test_caffeine():
@@ -26,7 +26,7 @@ def _read_csv(csv_file):
     )
 
 
-def _test_csv(csv_file, stringent):
+def _test_csv(csv_file, stringent=True):
     assert (
         _read_csv(csv_file)
         .apply(lambda m: amsr.CheckSmiles(m.SMILES, stringent), axis=1)
@@ -39,19 +39,19 @@ def test_Mg_compounds():
 
 
 def test_NP():
-    _test_csv("natural_products.csv", stringent=True)
+    _test_csv("natural_products.csv")
 
 
 def test_FDA():
-    _test_csv("some_FDA_approved_structures.csv", stringent=True)
+    _test_csv("some_FDA_approved_structures.csv")
 
 
 def test_ertl():
-    _test_csv("some_ertl_npsubs.csv", stringent=True)
+    _test_csv("some_ertl_npsubs.csv")
 
 
 def test_DEL():
-    _test_csv("DEL_compounds.csv", stringent=True)
+    _test_csv("DEL_compounds.csv")
 
 
 def test_markov():
@@ -59,9 +59,7 @@ def test_markov():
     fda = _read_csv("some_FDA_approved_structures.csv")
     markov = amsr.Markov([Chem.MolFromSmiles(s) for s in fda["SMILES"]])
     for _ in range(100):
-        a = markov.generate()
-        print(a)
-        assert amsr.CheckMol(amsr.ToMol(a), stringent=False)
+        assert amsr.CheckAMSR(markov.generate())
 
 
 def test_modify():
@@ -71,12 +69,12 @@ def test_modify():
     modifier = amsr.Modifier([Chem.MolFromSmiles(s) for s in fda["SMILES"]])
     for _ in range(10):
         for m in (Chem.MolFromSmiles(s) for s in np["SMILES"]):
-            assert amsr.CheckMol(modifier.modify(m), stringent=False)
+            assert amsr.CheckMol(modifier.modify(m))
 
 
 def test_morph():
     seed(0)
     np = _read_csv("natural_products.csv")
     for s, t in combinations(np["SMILES"], 2):
-        for m in amsr.morph.Morph.fromSmiles(s, t).mol:
-            assert amsr.CheckMol(m, stringent=False)
+        for a in amsr.morph.Morph.fromSmiles(s, t).amsr:
+            assert amsr.CheckAMSR(a)

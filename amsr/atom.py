@@ -48,21 +48,9 @@ class Atom:
         )
         self.nNeighbors = 0
         self.isSaturated = False
-        self.isBondedToHnH = False  # Heteroatom not Halogen
-        self.isBondedTo_sp3_Nitrogen = False
-        self.isBondedToOxygen = False
-        self.isBondedToHalogen = False
 
     def _addBondTo(self, a):
         self.nNeighbors += 1
-        if self.isHnH():
-            a.isBondedToHnH = True
-        if self.is_sp3_Nitrogen():
-            a.isBondedTo_sp3_Nitrogen = True
-        if self.isOxygen():
-            a.isBondedToOxygen = True
-        if self.isHalogen():
-            a.isBondedToHalogen = True
 
     def addBondTo(self, a):
         self._addBondTo(a)
@@ -74,17 +62,9 @@ class Atom:
     def _canBondWith(self, a, stringent):
         if not stringent:
             return True
-        if self.isNitrogen() and a.isHalogen():
+        if self.isOxygen() and a.isOxygen():
             return False
-        if self.isOxygen() and (a.isHalogen() or a.is_sp3_Oxygen()):
-            return False
-        if self.isOxygen() and self.isBondedToHnH and a.isHnH() and a.is_sp3():
-            return False
-        if (
-            self.is_sp3_Nitrogen()
-            and self.isBondedTo_sp3_Nitrogen
-            and a.is_sp3_Nitrogen()
-        ):
+        if self.isHalogen() and a.isHetero():
             return False
         return True
 
@@ -103,29 +83,14 @@ class Atom:
             a.SetIsotope(self.isotope)
         return a
 
-    def is_sp3(self):
-        return self.maxPiBonds == 0
-
     def isCarbon(self):
         return self.atomSym == "C"
 
     def isSulfur(self):
         return self.atomSym == "S"
 
-    def is_sp3_Carbon(self):
-        return self.isCarbon() and self.is_sp3()
-
     def isOxygen(self):
         return self.atomSym == "O"
-
-    def isNitrogen(self):
-        return self.atomSym == "N"
-
-    def is_sp3_Nitrogen(self):
-        return self.isNitrogen() and self.is_sp3()
-
-    def is_sp3_Oxygen(self):
-        return self.isOxygen() and self.is_sp3()
 
     def isHetero(self):
         return not self.isCarbon()

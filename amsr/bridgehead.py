@@ -4,7 +4,7 @@ from .count import Count
 
 
 def BridgeheadAtoms(mol, n):
-    Chem.GetSSSR(mol)
+    Chem.GetSymmSSSR(mol)
     ringInfo = mol.GetRingInfo()
     for i, j in combinations([r for r in ringInfo.BondRings() if len(r) <= n], 2):
         bridge = set(i) & set(j)

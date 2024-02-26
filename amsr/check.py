@@ -19,11 +19,12 @@ def CheckMol(m1: Chem.Mol, stringent: Optional[bool] = True) -> bool:
     if i1 == i2:
         return True
     else:
-        print(f"CheckMol failed: {Chem.MolToSmiles(m1)}")
-        print(i1)
-        print(a)
-        print(Chem.MolToSmiles(m2))
-        print(i2)
+        print(f"CheckMol failed. stringent: {stringent}")
+        print(f"AMSR: {a}")
+        print(f"original InChI: {i1}")
+        print(f"final    InChI: {i2}")
+        print(f"original SMILES: {Chem.MolToSmiles(m1)}")
+        print(f"final    SMILES: {Chem.MolToSmiles(m2)}")
         return False
 
 
@@ -35,14 +36,25 @@ def CheckSmiles(s: str, stringent: Optional[bool] = True) -> bool:
     :param stringent: try to exclude unstable or synthetically inaccessible molecules
     :return: do InChI strings match?
     """
-    try:
-        m = Chem.MolFromSmiles(s)
-        if m is not None:
-            if CheckMol(m, stringent=stringent):
-                return True
-            else:
-                print(f"CheckSmiles failed: {s}")
-    except Exception:
-        pass
-    print(f"rdkit couldn't handle SMILES {s}")
+    m = Chem.MolFromSmiles(s)
+    if m is None:
+        print(f"rdkit returned None for {s}")
+        return False
+    if CheckMol(m, stringent=stringent):
+        return True
+    print(f"CheckSmiles (stringent: {stringent}) failed for {s}")
+    return False
+
+
+def CheckAMSR(s: str, stringent: Optional[bool] = True) -> bool:
+    """Decode AMSR and check for valid molecule
+
+    :param s: AMSR
+    :param stringent: try to exclude unstable or synthetically inaccessible molecules
+    :return: valid molecule?
+    """
+    m = ToMol(s, stringent=stringent)
+    if CheckMol(m, stringent=stringent):
+        return True
+    print(f"CheckAMSR failed for {s}")
     return False
