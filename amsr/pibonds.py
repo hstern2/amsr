@@ -40,7 +40,9 @@ class PiBonds:
         for b in self.mol.GetBonds():
             i, j = b.GetBeginAtomIdx(), b.GetEndAtomIdx()
             if stringent:
-                if b.IsInRingSize(3):
+                if b.GetBeginAtom().IsInRingSize(3):
+                    continue
+                if b.GetEndAtom().IsInRingSize(3):
                     continue
                 if self.isCarbon(i) and self.isSulfur(j):
                     continue
