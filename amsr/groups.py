@@ -1,10 +1,10 @@
+from typing import Dict, List, Optional
 from re import compile, escape, Pattern
 from .mreplace import MultipleReplace
 from .tokens import ToTokens
-from typing import Dict, List, Optional
+from .aromatics import AddAromatics
 
 _groups: Dict[str, List[str]] = {
-    "[@]": ["cccccc6"],
     "[Cy]": ["CCCCCC6......"],
     "[Ts]": ["S!!:oocccccc6..C...", "S!!:occcccc6..C...o", "S!!:cccccc6..C...oo"],
     "[Tf]": ["S!!:ooCFFF", "S!!:oCFFFo", "S!!:CFFFoo"],
@@ -77,6 +77,7 @@ def InitializeGroups() -> None:
     _pattern = compile("(" + "|".join([escape(k) for k in _groups.keys()]) + ")")
 
 
+AddAromatics(_groups)
 InitializeGroups()
 
 
