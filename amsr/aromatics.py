@@ -14,8 +14,7 @@ def AddAromatics(g: Dict[str, List[str]]) -> None:
             ring = list("ccccc5")
             ring[j] = c
             idx = _letter_index(j)
-            sym = "NH" if c == "N" else c
-            g[f"(5{idx}{sym})"] = ["".join(ring)]
+            g[f"(5{idx}{c})"] = ["".join(ring)]
 
     for j in permutations(range(5), 2):
         for c in ["O", "N", "S"]:
@@ -24,8 +23,7 @@ def AddAromatics(g: Dict[str, List[str]]) -> None:
             ring[j[1]] = c
             idx0 = _letter_index(j[0])
             idx1 = _letter_index(j[1])
-            sym = "NH" if c == "N" else c
-            g[f"(5{idx0}N{idx1}{sym})"] = ["".join(ring)]
+            g[f"(5{idx0}n{idx1}{c})"] = ["".join(ring)]
 
     # six-membered rings
     for i in range(4):
@@ -35,4 +33,4 @@ def AddAromatics(g: Dict[str, List[str]]) -> None:
             for k in j:
                 ring[k] = "n"
                 idx += _letter_index(k)
-            g[f"(6{idx}{'N' if idx else ''})"] = ["".join(ring)]
+            g[f"(6{idx}{'n' if idx else ''})"] = ["".join(ring)]
