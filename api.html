@@ -47,10 +47,6 @@
 <li class="toctree-l1"><a class="reference internal" href="index.html">AMSR</a></li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Change Log</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">API</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#amsr.encode.FromMol"><code class="docutils literal notranslate"><span class="pre">FromMol()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="#amsr.encode.FromMolToTokens"><code class="docutils literal notranslate"><span class="pre">FromMolToTokens()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="#amsr.encode.FromSmiles"><code class="docutils literal notranslate"><span class="pre">FromSmiles()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="#amsr.encode.FromSmilesToTokens"><code class="docutils literal notranslate"><span class="pre">FromSmilesToTokens()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#amsr.decode.ToMol"><code class="docutils literal notranslate"><span class="pre">ToMol()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#amsr.decode.ToSmiles"><code class="docutils literal notranslate"><span class="pre">ToSmiles()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#amsr.check.CheckAMSR"><code class="docutils literal notranslate"><span class="pre">CheckAMSR()</span></code></a></li>
@@ -101,93 +97,9 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="module-amsr.encode">
-<span id="api"></span><h1>API<a class="headerlink" href="#module-amsr.encode" title="Permalink to this heading"></a></h1>
+  <section id="module-amsr.decode">
+<span id="api"></span><h1>API<a class="headerlink" href="#module-amsr.decode" title="Permalink to this heading"></a></h1>
 <dl class="py function">
-<dt class="sig sig-object py" id="amsr.encode.FromMol">
-<span class="sig-name descname"><span class="pre">FromMol</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mol</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useGroups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stringent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amsr.encode.FromMol" title="Permalink to this definition"></a></dt>
-<dd><p>Convert RDKit Mol to AMSR</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>mol</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Mol</span></code></span>) – RDKit Mol</p></li>
-<li><p><strong>useGroups</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>]</span>) – use group symbols/abbreviations</p></li>
-<li><p><strong>stringent</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>]</span>) – try to exclude unstable or synthetically inaccessible molecules</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span></p>
-</dd>
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>AMSR</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="amsr.encode.FromMolToTokens">
-<span class="sig-name descname"><span class="pre">FromMolToTokens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mol</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useGroups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stringent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amsr.encode.FromMolToTokens" title="Permalink to this definition"></a></dt>
-<dd><p>Convert RDKit Mol to list of AMSR tokens</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>mol</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Mol</span></code></span>) – RDKit Mol</p></li>
-<li><p><strong>useGroups</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>]</span>) – use group symbols/abbreviations</p></li>
-<li><p><strong>stringent</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>]</span>) – try to exclude unstable or synthetically inaccessible molecules</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]</span></p>
-</dd>
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>list of AMSR tokens</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="amsr.encode.FromSmiles">
-<span class="sig-name descname"><span class="pre">FromSmiles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useGroups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stringent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amsr.encode.FromSmiles" title="Permalink to this definition"></a></dt>
-<dd><p>Convert SMILES to AMSR</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>s</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – SMILES</p></li>
-<li><p><strong>useGroups</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>]</span>) – use group symbols/abbreviations</p></li>
-<li><p><strong>stringent</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>]</span>) – try to exclude unstable or synthetically inaccessible molecules</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span></p>
-</dd>
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>AMSR</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="amsr.encode.FromSmilesToTokens">
-<span class="sig-name descname"><span class="pre">FromSmilesToTokens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useGroups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stringent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amsr.encode.FromSmilesToTokens" title="Permalink to this definition"></a></dt>
-<dd><p>Convert SMILES to list of AMSR tokens</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>mol</strong> – RDKit Mol</p></li>
-<li><p><strong>useGroups</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>]</span>) – use group symbols/abbreviations</p></li>
-<li><p><strong>stringent</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>]</span>) – try to exclude unstable or synthetically inaccessible molecules</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]</span></p>
-</dd>
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>AMSR</p>
-</dd>
-</dl>
-</dd></dl>
-
-<span class="target" id="module-amsr.decode"></span><dl class="py function">
 <dt class="sig sig-object py" id="amsr.decode.ToMol">
 <span class="sig-name descname"><span class="pre">ToMol</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stringent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dihedral</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amsr.decode.ToMol" title="Permalink to this definition"></a></dt>
 <dd><p>Convert AMSR to an RDKit Mol</p>
