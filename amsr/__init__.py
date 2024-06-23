@@ -15,6 +15,7 @@ __all__ = [
     "Markov",
     "Modifier",
     "GetConformerAndEnergy",
+    "LSTMModel",
 ]
 
 from .version import __version__
@@ -27,3 +28,4 @@ from .morph import Morph
 from .markov import Markov
 from .modifier import Modifier
 from .conf import GetConformerAndEnergy
+from .lstm import LSTMModel

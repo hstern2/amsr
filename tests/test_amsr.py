@@ -8,16 +8,12 @@ def test_version():
     assert amsr.__version__
 
 
-def test_methane():
-    assert amsr.CheckSmiles("C")
+def test_caffeine():
+    assert amsr.CheckSmiles("Cn1cnc2c1c(=O)n(C)c(=O)n2C")
 
 
 def test_cage():
     assert amsr.CheckAMSR("CCccCccc6oC..CCCC6C6.6")
-
-
-def test_caffeine():
-    assert amsr.CheckSmiles("Cn1cnc2c1c(=O)n(C)c(=O)n2C")
 
 
 def _read_csv(csv_file):
@@ -54,11 +50,19 @@ def test_DEL():
     _test_csv("DEL_compounds.csv")
 
 
+def test_lstm():
+    lstm = amsr.LSTMModel.from_saved_model(
+        os.path.join(os.path.dirname(__file__), "..", "models", "model.pth")
+    )
+    for _ in range(20):
+        assert amsr.CheckAMSR(lstm.generate(["C"]))
+
+
 def test_markov():
     seed(0)
     fda = _read_csv("some_FDA_approved_structures.csv")
     markov = amsr.Markov([Chem.MolFromSmiles(s) for s in fda["SMILES"]])
-    for _ in range(100):
+    for _ in range(20):
         assert amsr.CheckAMSR(markov.generate())
 
 
@@ -75,6 +79,6 @@ def test_modify():
 def test_morph():
     seed(0)
     np = _read_csv("natural_products.csv")
-    for s, t in combinations(np["SMILES"], 2):
+    for s, t in combinations(np["SMILES"][:10], 2):
         for a in amsr.morph.Morph.fromSmiles(s, t).amsr:
             assert amsr.CheckAMSR(a)

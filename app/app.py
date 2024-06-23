@@ -52,11 +52,8 @@ def mol_isOK(mol):
 
 app = Flask(__name__)
 methods = ["GET", "POST"]
-base_url = "https://raw.githubusercontent.com/hstern2/amsr/main/data/"
-ertl_nps = pandas.read_csv(base_url + "some_ertl_npsubs.csv")
-fda = pandas.read_csv(base_url + "some_FDA_approved_structures.csv")
-corpus = pandas.concat([ertl_nps, fda])
-markov = amsr.Markov((Chem.MolFromSmiles(s) for s in corpus["SMILES"]))
+model_path = os.path.join(os.path.dirname("__file__"), "..", "models", "model.pth")
+lstm = amsr.LSTMModel.from_saved_model(model_path)
 
 
 @app.route("/", methods=methods)
@@ -66,8 +63,7 @@ def index():
 
 @app.route("/random_mol", methods=methods)
 def random_mol():
-    k = max(round(expovariate(1 / 20)), 1)
-    return json.dumps({"amsr": markov.generate(nmax=25)})
+    return json.dumps({"amsr": lstm.generate(["C"])})
 
 
 @app.route("/mol_changed", methods=methods)
