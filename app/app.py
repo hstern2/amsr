@@ -4,7 +4,6 @@ import rdkit.Chem.Draw, rdkit.Chem.AllChem
 import pandas, json, amsr, math, sys, os
 from rdkit.Chem.QED import qed
 from rdkit.Chem.Descriptors import TPSA
-from random import expovariate
 
 # synthetic accessibility score; smaller means more accessible
 # Ertl & Schuffenhauer, J. Cheminf. 2009, 1 (8)
@@ -61,9 +60,12 @@ def index():
     return render_template("index.html")
 
 
-@app.route("/random_mol", methods=methods)
-def random_mol():
-    return json.dumps({"amsr": lstm.generate(["C"])})
+@app.route("/generate", methods=methods)
+def generate():
+    seed = request.form.get("seed")
+    if len(seed) == 0:
+        seed = "C"
+    return json.dumps({"amsr": lstm.generate(amsr.ToTokens(seed))})
 
 
 @app.route("/mol_changed", methods=methods)

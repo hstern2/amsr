@@ -66,10 +66,10 @@
     <tr>
     <td>
     <button
-        id="randomMol"
-        name="randomMol"
-        onclick="random_mol()"
-        >random mol
+        id="generate"
+        name="generate"
+        onclick="generate()"
+        >generate
     </button>
     <button
             id="invertView"
@@ -196,11 +196,11 @@
         URL.revokeObjectURL(a.href);
     }
 
-    function random_mol() {
+    function generate() {
         if (pending)
             pending.abort();
-        pending = $.post('/random_mol',
-            { },
+        pending = $.post('/generate',
+            { 'seed': element('amsr').value },
             function(response) {
                 var data = JSON.parse(response);
                 element('amsr').value = data.amsr;
