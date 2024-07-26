@@ -5,6 +5,7 @@ from .bfs import BFSFind
 from .bond import Bond
 from .groups import EncodeGroups
 from .tokens import DOT, SKIP, MOLSEP
+from random import shuffle
 
 
 def _ringTokens(n, nSkip):
@@ -45,16 +46,24 @@ def _bondTokens(b, bond):
 
 
 def FromMolToTokens(
-    mol: Chem.Mol, useGroups: Optional[bool] = True, stringent: Optional[bool] = True
+    mol: Chem.Mol,
+    useGroups: Optional[bool] = True,
+    stringent: Optional[bool] = True,
+    randomize: Optional[bool] = False,
 ) -> List[str]:
     """Convert RDKit Mol to list of AMSR tokens
 
     :param mol: RDKit Mol
     :param useGroups: use group symbols/abbreviations
     :param stringent: try to exclude unstable or synthetically inaccessible molecules
+    :param randomize: randomize order of graph traversal
     :return: list of AMSR tokens
     """
 
+    if randomize:
+        i = list(range(mol.GetNumAtoms()))
+        shuffle(i)
+        mol = Chem.RenumberAtoms(mol, i)
     atom = [Atom.fromRDAtom(a) for a in mol.GetAtoms()]
     seenBonds: Set[FrozenSet[int]] = set()
     nSeenAtoms = 0
@@ -119,41 +128,65 @@ def FromMolToTokens(
 
 
 def FromMol(
-    mol: Chem.Mol, useGroups: Optional[bool] = True, stringent: Optional[bool] = True
+    mol: Chem.Mol,
+    useGroups: Optional[bool] = True,
+    stringent: Optional[bool] = True,
+    randomize: Optional[bool] = False,
 ) -> str:
     """Convert RDKit Mol to AMSR
 
     :param mol: RDKit Mol
     :param useGroups: use group symbols/abbreviations
     :param stringent: try to exclude unstable or synthetically inaccessible molecules
+    :param randomize: randomize order of graph traversal
     :return: AMSR
     """
-    return "".join(FromMolToTokens(mol, useGroups=useGroups, stringent=stringent))
+    return "".join(
+        FromMolToTokens(
+            mol, useGroups=useGroups, stringent=stringent, randomize=randomize
+        )
+    )
 
 
 def FromSmiles(
-    s: str, useGroups: Optional[bool] = True, stringent: Optional[bool] = True
+    s: str,
+    useGroups: Optional[bool] = True,
+    stringent: Optional[bool] = True,
+    randomize: Optional[bool] = False,
 ) -> str:
     """Convert SMILES to AMSR
 
     :param s: SMILES
     :param useGroups: use group symbols/abbreviations
     :param stringent: try to exclude unstable or synthetically inaccessible molecules
+    :param randomize: randomize order of graph traversal
     :return: AMSR
     """
-    return FromMol(Chem.MolFromSmiles(s), useGroups=useGroups, stringent=stringent)
+    return FromMol(
+        Chem.MolFromSmiles(s),
+        useGroups=useGroups,
+        stringent=stringent,
+        randomize=randomize,
+    )
 
 
 def FromSmilesToTokens(
-    s, useGroups: Optional[bool] = True, stringent: Optional[bool] = True
+    s,
+    useGroups: Optional[bool] = True,
+    stringent: Optional[bool] = True,
+    randomize: Optional[bool] = False,
 ) -> List[str]:
     """Convert SMILES to list of AMSR tokens
 
     :param mol: RDKit Mol
     :param useGroups: use group symbols/abbreviations
     :param stringent: try to exclude unstable or synthetically inaccessible molecules
+    :param randomize: randomize order of graph traversal
     :return: AMSR
     """
     return FromMolToTokens(
-        Chem.MolFromSmiles(s), useGroups=useGroups, stringent=stringent
+        Chem.MolFromSmiles(s),
+        useGroups=useGroups,
+        stringent=stringent,
+        randomize=randomize,
     )

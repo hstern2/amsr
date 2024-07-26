@@ -181,7 +181,8 @@ class LSTMModel(nn.Module):
 
         self.eval()
         generated_sequence = torch.tensor(
-            [self.index_for_token[t] for t in start_input], device=_device()
+            [self.index_for_token.get(t, PAD_TOK) for t in start_input],
+            device=_device(),
         ).unsqueeze(0)
 
         for _ in range(max_length - 1):
@@ -201,10 +202,37 @@ class LSTMModel(nn.Module):
                     break
                 generated_sequence = torch.cat((generated_sequence, next_token), dim=1)
 
-        return [self.token_for_index[i] for i in generated_sequence.squeeze(0).tolist()]
+        n = len(start_input)
+        return [
+            start_input[_] if _ < n else self.token_for_index[i]
+            for _, i in enumerate(generated_sequence.squeeze(0).tolist())
+        ]
 
     def generate(self, start_input, max_length=20, temperature=1.0):
         return "".join(self.generate_tokens(start_input, max_length, temperature))
+
+    def replace_token(self, seq, position, temperature=1.0):
+
+        assert temperature > 0
+        assert position >= 0 and position < len(seq)
+
+        self.eval()
+        seq_tensor = torch.tensor(
+            [self.index_for_token.get(t, PAD_TOK) for t in seq], device=_device()
+        ).unsqueeze(0)
+
+        with torch.no_grad():
+            output = self(seq_tensor)
+            logits = output[:, position, :] / temperature
+            probabilities = torch.softmax(logits, dim=-1)
+            new_token_index = torch.multinomial(probabilities, num_samples=1).item()
+            while new_token_index in (PAD_TOK, EOS_TOK):
+                new_token_index = torch.multinomial(probabilities, num_samples=1).item()
+            return (
+                seq[:position]
+                + [self.token_for_index[new_token_index]]
+                + seq[position + 1 :]
+            )
 
 
 if __name__ == "__main__":
@@ -214,3 +242,4 @@ if __name__ == "__main__":
     model.train_and_save_model(seqs, pth)
     loaded_model = LSTMModel.from_saved_model(pth)
     print(loaded_model.generate(["A", "B"]))
+    print(loaded_model.replace_token(["B", "D", "D", "E"], 1))

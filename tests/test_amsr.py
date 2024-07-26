@@ -50,10 +50,11 @@ def test_DEL():
     _test_csv("DEL_compounds.csv")
 
 
+_model_path = os.path.join(os.path.dirname(__file__), "..", "models", "model.pth")
+
+
 def test_lstm():
-    lstm = amsr.LSTMModel.from_saved_model(
-        os.path.join(os.path.dirname(__file__), "..", "models", "model.pth")
-    )
+    lstm = amsr.LSTMModel.from_saved_model(_model_path)
     for _ in range(20):
         assert amsr.CheckAMSR(lstm.generate(["C"]))
 
@@ -70,7 +71,7 @@ def test_modify():
     seed(0)
     fda = _read_csv("some_FDA_approved_structures.csv")
     np = _read_csv("natural_products.csv")
-    modifier = amsr.Modifier([Chem.MolFromSmiles(s) for s in fda["SMILES"]])
+    modifier = amsr.Modifier(_model_path)
     for _ in range(10):
         for m in (Chem.MolFromSmiles(s) for s in np["SMILES"]):
             assert amsr.CheckMol(modifier.modify(m))
