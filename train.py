@@ -1,6 +1,5 @@
 import pandas
-from amsr import FromMolToTokens
-from lstm import LSTMModel
+from amsr import FromMolToTokens, LSTMModel
 from rdkit.Chem import MolFromSmiles, RenumberAtoms
 from random import shuffle
 
