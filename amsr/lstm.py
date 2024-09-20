@@ -151,7 +151,7 @@ class LSTMModel(nn.Module):
 
     @classmethod
     def from_saved_model(cls, model_path):
-        checkpoint = torch.load(model_path, map_location=_device())
+        checkpoint = torch.load(model_path, map_location=_device(), weights_only=True)
         model = cls(
             d_model=checkpoint["d_model"],
             nhid=checkpoint["nhid"],
