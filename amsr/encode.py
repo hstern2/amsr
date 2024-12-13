@@ -50,20 +50,34 @@ def FromMolToTokens(
     useGroups: Optional[bool] = True,
     stringent: Optional[bool] = True,
     randomize: Optional[bool] = False,
+    canonical: Optional[bool] = False,
+    useStereo: Optional[bool] = True,
 ) -> List[str]:
     """Convert RDKit Mol to list of AMSR tokens
 
     :param mol: RDKit Mol
-    :param useGroups: use group symbols/abbreviations
-    :param stringent: try to exclude unstable or synthetically inaccessible molecules
-    :param randomize: randomize order of graph traversal
+    :param useGroups: use group symbols/abbreviations (default: True)
+    :param stringent: try to exclude unstable or synthetically inaccessible molecules (default: True)
+    :param randomize: randomize order of graph traversal (default: False)
+    :param canonical: canonical order of graph traversal (default: False)
+    :param useStereo: encode stereochemistry (default: True)
     :return: list of AMSR tokens
     """
+
+    assert not (randomize and canonical)
+
+    if not useStereo:
+        Chem.RemoveStereochemistry(mol)
 
     if randomize:
         i = list(range(mol.GetNumAtoms()))
         shuffle(i)
         mol = Chem.RenumberAtoms(mol, i)
+    elif canonical:
+        ranks = list(Chem.CanonicalRankAtoms(mol, includeChirality=useStereo))
+        i = sorted(range(len(ranks)), key=lambda x: ranks[x])
+        mol = Chem.RenumberAtoms(mol, i)
+
     atom = [Atom.fromRDAtom(a) for a in mol.GetAtoms()]
     seenBonds: Set[FrozenSet[int]] = set()
     nSeenAtoms = 0
@@ -132,18 +146,27 @@ def FromMol(
     useGroups: Optional[bool] = True,
     stringent: Optional[bool] = True,
     randomize: Optional[bool] = False,
+    canonical: Optional[bool] = False,
+    useStereo: Optional[bool] = True,
 ) -> str:
     """Convert RDKit Mol to AMSR
 
     :param mol: RDKit Mol
-    :param useGroups: use group symbols/abbreviations
-    :param stringent: try to exclude unstable or synthetically inaccessible molecules
-    :param randomize: randomize order of graph traversal
-    :return: AMSR
+    :param useGroups: use group symbols/abbreviations (default: True)
+    :param stringent: try to exclude unstable or synthetically inaccessible molecules (default: True)
+    :param randomize: randomize order of graph traversal (default: False)
+    :param canonical: canonical order of graph traversal (default: False)
+    :param useStereo: encode stereochemistry (default: True)
+    :return: list of AMSR tokens
     """
     return "".join(
         FromMolToTokens(
-            mol, useGroups=useGroups, stringent=stringent, randomize=randomize
+            mol,
+            useGroups=useGroups,
+            stringent=stringent,
+            randomize=randomize,
+            canonical=canonical,
+            useStereo=useStereo,
         )
     )
 
@@ -153,6 +176,8 @@ def FromSmiles(
     useGroups: Optional[bool] = True,
     stringent: Optional[bool] = True,
     randomize: Optional[bool] = False,
+    canonical: Optional[bool] = False,
+    useStereo: Optional[bool] = True,
 ) -> str:
     """Convert SMILES to AMSR
 
@@ -160,6 +185,8 @@ def FromSmiles(
     :param useGroups: use group symbols/abbreviations
     :param stringent: try to exclude unstable or synthetically inaccessible molecules
     :param randomize: randomize order of graph traversal
+    :param canonical: canonical order of graph traversal (default: False)
+    :param useStereo: encode stereochemistry (default: True)
     :return: AMSR
     """
     return FromMol(
@@ -167,6 +194,8 @@ def FromSmiles(
         useGroups=useGroups,
         stringent=stringent,
         randomize=randomize,
+        canonical=canonical,
+        useStereo=useStereo,
     )
 
 
@@ -175,6 +204,8 @@ def FromSmilesToTokens(
     useGroups: Optional[bool] = True,
     stringent: Optional[bool] = True,
     randomize: Optional[bool] = False,
+    canonical: Optional[bool] = False,
+    useStereo: Optional[bool] = True,
 ) -> List[str]:
     """Convert SMILES to list of AMSR tokens
 
@@ -182,6 +213,8 @@ def FromSmilesToTokens(
     :param useGroups: use group symbols/abbreviations
     :param stringent: try to exclude unstable or synthetically inaccessible molecules
     :param randomize: randomize order of graph traversal
+    :param canonical: canonical order of graph traversal (default: False)
+    :param useStereo: encode stereochemistry (default: True)
     :return: AMSR
     """
     return FromMolToTokens(
@@ -189,4 +222,6 @@ def FromSmilesToTokens(
         useGroups=useGroups,
         stringent=stringent,
         randomize=randomize,
+        canonical=canonical,
+        useStereo=useStereo,
     )
