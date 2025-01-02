@@ -13,6 +13,12 @@ inspired by
 pip install amsr
 ```
 
+For GPU:
+
+```
+conda install pytorch torchvision torchaudio cudatoolkit=11.8 -c pytorch -c nvidia
+```
+
 ## Usage
 ```py
 import amsr
