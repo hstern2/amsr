@@ -8,6 +8,9 @@ inspired by
 - [DeepSMILES](https://github.com/baoilleach/deepsmiles)
 - [SELFIES](https://github.com/aspuru-guzik-group/selfies)
 
+## Demo
+[AMSR demo](http://155.138.219.61:8000)
+
 ## Installing
 ```
 pip install amsr
