@@ -2,55 +2,18 @@ from typing import Dict, List, Optional
 from re import compile, escape, Pattern
 from .mreplace import MultipleReplace
 from .tokens import ToTokens
-from .aromatics import AddAromatics
+import json
+from importlib.resources import files
 
-_groups: Dict[str, List[str]] = {
-    "[Cy]": ["CCCCCC6......"],
-    "[Ts]": ["S!!:oocccccc6..C...", "S!!:occcccc6..C...o", "S!!:cccccc6..C...oo"],
-    "[Tf]": ["S!!:ooCFFF", "S!!:oCFFFo", "S!!:CFFFoo"],
-    "[Ms]": ["S!!:ooC.", "S!!:oC.o", "S!!:C.oo"],
-    "[Piv]": ["coCC.C.C.", "cCC.C.C.o"],
-    "[Boc]": ["coOCC.C.C.", "cOCC.C.C.o"],
-    "[Tol]": ["cccccc6..C..."],
-    "[Cbz]": ["coOCcccccc6......", "cOCcccccc6......o"],
-    "[Bn]": ["Ccccccc6......"],
-    "[Bz]": ["cocccccc6....."],
-    "[Ph]": ["cccccc6....."],
-    "[OEt]": ["OCC.."],
-    "[OMe]": ["OC."],
-    "[SMe]": ["SC."],
-    "[NHAc]": ["NcoC..", "NcC.o."],
-    "[NHMe]": ["NC.."],
-    "[NMe2]": ["NC.C."],
-    "[OAc]": ["OcoC.", "OcC.o"],
-    "[COOEt]": ["coOCC..", "cOoCC.."],
-    "[COOMe]": ["coOC.", "cOoC."],
-    "[COO-]": ["coO-", "cO-o"],
-    "[NO2]": ["n+oO-", "n+O-o"],
-    "[Ac]": ["coC.", "cC.o"],
-    "[COOH]": ["coO.", "cO.o"],
-    "[CHO]": ["co."],
-    "[Et]": ["CC.."],
-    "[nPr]": ["CCC..."],
-    "[iPr]": ["CC.C.."],
-    "[tBu]": ["CC.C.C."],
-    "[nBu]": ["CCCC...."],
-    "[sBu]": ["CC.CC...", "CCC..C.."],
-    "[iBu]": ["CCC.C..."],
-    "[OiBu]": ["OCCC.C..."],
-    "[nPent]": ["CCCCC....."],
-    "[nHex]": ["CCCCCC......"],
-    "[nHept]": ["CCCCCCC......."],
-    "[nOct]": ["CCCCCCCC........"],
-    "[nNon]": ["CCCCCCCCC........."],
-    "[nDec]": ["CCCCCCCCCC.........."],
-    "[CN]": ["C:N:"],
-    "[NC]": ["N+:C:-"],
-    "[CF3]": ["CFFF"],
-    "[CCl3]": ["C[Cl][Cl][Cl]"],
-    "[PO3]": ["p!oO.O.", "p!O.oO.", "p!O.O.o"],
-    "[SO3]": ["S!!:O.oo", "S!!:oO.o", "S!!:ooO."],
-}
+
+def from_json(fname: str):
+    with files("amsr.data").joinpath(fname).open() as f:
+        return json.load(f)
+
+
+_groups: Dict[str, List[str]] = from_json("groups.json") | from_json(
+    "aromatic_rings.json"
+)
 
 
 def Groups() -> Dict[str, List[str]]:
@@ -77,7 +40,6 @@ def InitializeGroups() -> None:
     _pattern = compile("(" + "|".join([escape(k) for k in _groups.keys()]) + ")")
 
 
-AddAromatics(_groups)
 InitializeGroups()
 
 

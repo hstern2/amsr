@@ -1,0 +1,3149 @@
+{
+  "(1,3,5-triazine_0)": [
+    "cncncn6"
+  ],
+  "(1,3,5-triazine_1)": [
+    "ncncnc6"
+  ],
+  "(acridine_0)": [
+    "cccccc6....ccccccc6....n6"
+  ],
+  "(acridine_1)": [
+    "cccccc6....ccccccc6n6"
+  ],
+  "(acridine_2)": [
+    "cccccc6....cccn6cccc6"
+  ],
+  "(acridine_3)": [
+    "cccccc6....nccc6.cccc6"
+  ],
+  "(acridine_4)": [
+    "cccccc6....ncccccc6....c6"
+  ],
+  "(acridine_5)": [
+    "cccccc6....ncccccc6c6"
+  ],
+  "(acridine_6)": [
+    "cccccc6...ccccccc6....n6"
+  ],
+  "(acridine_7)": [
+    "cccccc6...ccccccc6n6"
+  ],
+  "(acridine_8)": [
+    "cccccc6...cccn6cccc6"
+  ],
+  "(acridine_9)": [
+    "cccccc6...nccc6.cccc6"
+  ],
+  "(acridine_10)": [
+    "cccccc6...ncccccc6....c6"
+  ],
+  "(acridine_11)": [
+    "cccccc6...ncccccc6c6"
+  ],
+  "(acridine_12)": [
+    "cccccc6..ccccccc6....n6"
+  ],
+  "(acridine_13)": [
+    "cccccc6..ccccccc6n6"
+  ],
+  "(acridine_14)": [
+    "cccccc6..cccn6cccc6"
+  ],
+  "(acridine_15)": [
+    "cccccc6..nccc6.cccc6"
+  ],
+  "(acridine_16)": [
+    "cccccc6..ncccccc6....c6"
+  ],
+  "(acridine_17)": [
+    "cccccc6..ncccccc6c6"
+  ],
+  "(acridine_18)": [
+    "cccccc6.ccccccc6....n6"
+  ],
+  "(acridine_19)": [
+    "cccccc6.ccccccc6n6"
+  ],
+  "(acridine_20)": [
+    "cccccc6.cccn6cccc6"
+  ],
+  "(acridine_21)": [
+    "cccccc6.nccc6.cccc6"
+  ],
+  "(acridine_22)": [
+    "cccccc6.ncccccc6....c6"
+  ],
+  "(acridine_23)": [
+    "cccccc6.ncccccc6c6"
+  ],
+  "(acridine_24)": [
+    "cccccc6ccccccc6....n6"
+  ],
+  "(acridine_25)": [
+    "cccccc6ccccccc6....n6@"
+  ],
+  "(acridine_26)": [
+    "cccccc6ccccccc6n6"
+  ],
+  "(acridine_27)": [
+    "cccccc6ccccccc6n6@"
+  ],
+  "(acridine_28)": [
+    "cccccc6cccn6@cccc6"
+  ],
+  "(acridine_29)": [
+    "cccccc6cccn6cccc6"
+  ],
+  "(acridine_30)": [
+    "cccccc6nccc6.cccc6"
+  ],
+  "(acridine_31)": [
+    "cccccc6nccc6@.cccc6"
+  ],
+  "(acridine_32)": [
+    "cccccc6ncccccc6....c6"
+  ],
+  "(acridine_33)": [
+    "cccccc6ncccccc6....c6@"
+  ],
+  "(acridine_34)": [
+    "cccccc6ncccccc6c6"
+  ],
+  "(acridine_35)": [
+    "cccccc6ncccccc6c6@"
+  ],
+  "(acridine_36)": [
+    "ccccccc6....ncc6cccc6"
+  ],
+  "(acridine_37)": [
+    "ccccccc6....ncccccc66"
+  ],
+  "(acridine_38)": [
+    "ccccccc6ncc6@@cccc6"
+  ],
+  "(acridine_39)": [
+    "ccccccc6ncccccc66@@"
+  ],
+  "(acridine_40)": [
+    "cccccccc6....nc6cccc6"
+  ],
+  "(acridine_41)": [
+    "cccccccc6nc6@cccc6"
+  ],
+  "(acridine_42)": [
+    "ccccccccc6....n6.cccc6"
+  ],
+  "(acridine_43)": [
+    "ccccccccc6....nc6ccc6@"
+  ],
+  "(acridine_44)": [
+    "ccccccccc6n6.....cccc6"
+  ],
+  "(acridine_45)": [
+    "ccccccccc6nc6@ccc6@"
+  ],
+  "(acridine_46)": [
+    "cccccccccc6....n6.ccc6"
+  ],
+  "(acridine_47)": [
+    "cccccccccc6....nc6cc6"
+  ],
+  "(acridine_48)": [
+    "cccccccccc6n6.....ccc6"
+  ],
+  "(acridine_49)": [
+    "cccccccccc6nc6@cc6@"
+  ],
+  "(acridine_50)": [
+    "ccccccccccc6....n6.cc6"
+  ],
+  "(acridine_51)": [
+    "ccccccccccc6....nc6c6"
+  ],
+  "(acridine_52)": [
+    "ccccccccccc6n6.....cc6"
+  ],
+  "(acridine_53)": [
+    "ccccccccccc6nc6@c6@@"
+  ],
+  "(acridine_54)": [
+    "cccccccccccc6....n6.c6"
+  ],
+  "(acridine_55)": [
+    "cccccccccccc6....nc66"
+  ],
+  "(acridine_56)": [
+    "cccccccccccc6n6.....c6"
+  ],
+  "(acridine_57)": [
+    "cccccccccccc6nc6@6@"
+  ],
+  "(acridine_58)": [
+    "ccccccccn6cccc6.....c6"
+  ],
+  "(acridine_59)": [
+    "ccccccccnc66cccc6"
+  ],
+  "(acridine_60)": [
+    "cccccccn6cccc6.....cc6"
+  ],
+  "(acridine_61)": [
+    "cccccccnc6c6.cccc6"
+  ],
+  "(acridine_62)": [
+    "ccccccn6cccc6.....ccc6"
+  ],
+  "(acridine_63)": [
+    "ccccccnc6cc6@..cccc6"
+  ],
+  "(acridine_64)": [
+    "cccccn6cccc6.....cccc6"
+  ],
+  "(acridine_65)": [
+    "cccccnc6ccc6@@...cccc6"
+  ],
+  "(acridine_66)": [
+    "cccccnccc6.cccc6....c6"
+  ],
+  "(acridine_67)": [
+    "cccccncccc66.cccc6"
+  ],
+  "(acridine_68)": [
+    "cccccncccccc6....c6.c6"
+  ],
+  "(acridine_69)": [
+    "cccccncccccc6....cc66"
+  ],
+  "(acridine_70)": [
+    "cccccncccccc6c6.....c6"
+  ],
+  "(acridine_71)": [
+    "cccccncccccc6cc6@6@"
+  ],
+  "(acridine_72)": [
+    "ccccnc6cccc6....cccc6"
+  ],
+  "(acridine_73)": [
+    "ccccnccc6.cccc6....cc6"
+  ],
+  "(acridine_74)": [
+    "ccccncccc6c6..cccc6"
+  ],
+  "(acridine_75)": [
+    "ccccncccccc6....c6.cc6"
+  ],
+  "(acridine_76)": [
+    "ccccncccccc6....cc6c6"
+  ],
+  "(acridine_77)": [
+    "ccccncccccc6c6.....cc6"
+  ],
+  "(acridine_78)": [
+    "ccccncccccc6cc6@c6@@"
+  ],
+  "(acridine_79)": [
+    "cccncc6cccc6....cccc6"
+  ],
+  "(acridine_80)": [
+    "cccnccc6.cccc6....ccc6"
+  ],
+  "(acridine_81)": [
+    "cccncccc6cc6@...cccc6"
+  ],
+  "(acridine_82)": [
+    "cccncccccc6....c6.ccc6"
+  ],
+  "(acridine_83)": [
+    "cccncccccc6....cc6cc6"
+  ],
+  "(acridine_84)": [
+    "cccncccccc66....cccc6"
+  ],
+  "(acridine_85)": [
+    "cccncccccc6c6.....ccc6"
+  ],
+  "(acridine_86)": [
+    "cccncccccc6cc6@cc6@"
+  ],
+  "(acridine_87)": [
+    "ccnccc6.cccc6....cccc6"
+  ],
+  "(acridine_88)": [
+    "ccncccc6ccc6@....cccc6"
+  ],
+  "(acridine_89)": [
+    "ccncccccc6....c6.cccc6"
+  ],
+  "(acridine_90)": [
+    "ccncccccc6....cc6ccc6"
+  ],
+  "(acridine_91)": [
+    "ccncccccc6c6.....cccc6"
+  ],
+  "(acridine_92)": [
+    "ccncccccc6cc6@ccc6"
+  ],
+  "(acridine_93)": [
+    "cncccc6cccc6@.....cccc6"
+  ],
+  "(acridine_94)": [
+    "cncccccc6....cc6cccc6@"
+  ],
+  "(acridine_95)": [
+    "cncccccc6cc6@cccc6@"
+  ],
+  "(acridine_96)": [
+    "nccccc6cccc6.....cccc6"
+  ],
+  "(acridine_97)": [
+    "ncccccc6....ccc6cccc6"
+  ],
+  "(acridine_98)": [
+    "ncccccc6....ccccccc66"
+  ],
+  "(acridine_99)": [
+    "ncccccc6ccc6@@cccc6"
+  ],
+  "(acridine_100)": [
+    "ncccccc6ccccccc66@@"
+  ],
+  "(acridine_101)": [
+    "nccccccccc66.....cccc6"
+  ],
+  "(anthracene_0)": [
+    "cccccc6....cccc6.cccc6"
+  ],
+  "(anthracene_1)": [
+    "cccccc6....ccccccc6....c6"
+  ],
+  "(anthracene_2)": [
+    "cccccc6....ccccccc6c6"
+  ],
+  "(anthracene_3)": [
+    "cccccc6...cccc6.cccc6"
+  ],
+  "(anthracene_4)": [
+    "cccccc6...ccccccc6....c6"
+  ],
+  "(anthracene_5)": [
+    "cccccc6...ccccccc6c6"
+  ],
+  "(anthracene_6)": [
+    "cccccc6..cccc6.cccc6"
+  ],
+  "(anthracene_7)": [
+    "cccccc6..ccccccc6....c6"
+  ],
+  "(anthracene_8)": [
+    "cccccc6..ccccccc6c6"
+  ],
+  "(anthracene_9)": [
+    "cccccc6.cccc6.....cccc6"
+  ],
+  "(anthracene_10)": [
+    "cccccc6.cccc6.cccc6"
+  ],
+  "(anthracene_11)": [
+    "cccccc6.ccccccc6....c6"
+  ],
+  "(anthracene_12)": [
+    "cccccc6.ccccccc6c6"
+  ],
+  "(anthracene_13)": [
+    "cccccc6cccc6.....cccc6"
+  ],
+  "(anthracene_14)": [
+    "cccccc6cccc6.cccc6"
+  ],
+  "(anthracene_15)": [
+    "cccccc6cccc6@.....cccc6"
+  ],
+  "(anthracene_16)": [
+    "cccccc6cccc6@.cccc6"
+  ],
+  "(anthracene_17)": [
+    "cccccc6ccccccc6....c6"
+  ],
+  "(anthracene_18)": [
+    "cccccc6ccccccc6....c6@"
+  ],
+  "(anthracene_19)": [
+    "cccccc6ccccccc6c6"
+  ],
+  "(anthracene_20)": [
+    "cccccc6ccccccc6c6@"
+  ],
+  "(anthracene_21)": [
+    "ccccccc6....ccc6cccc6"
+  ],
+  "(anthracene_22)": [
+    "ccccccc6....ccccccc66"
+  ],
+  "(anthracene_23)": [
+    "ccccccc6.cccc6.....ccc6"
+  ],
+  "(anthracene_24)": [
+    "ccccccc6ccc6@@....cccc6"
+  ],
+  "(anthracene_25)": [
+    "ccccccc6ccc6@@cccc6"
+  ],
+  "(anthracene_26)": [
+    "ccccccc6ccccccc66@@"
+  ],
+  "(anthracene_27)": [
+    "cccccccc6....cc6cccc6@"
+  ],
+  "(anthracene_28)": [
+    "cccccccc6.cccc6.....cc6"
+  ],
+  "(anthracene_29)": [
+    "cccccccc6cc6@...cccc6"
+  ],
+  "(anthracene_30)": [
+    "cccccccc6cc6@cccc6@"
+  ],
+  "(anthracene_31)": [
+    "ccccccccc6....c6..cccc6"
+  ],
+  "(anthracene_32)": [
+    "ccccccccc6....cc6ccc6@"
+  ],
+  "(anthracene_33)": [
+    "ccccccccc6.cccc6.....c6"
+  ],
+  "(anthracene_34)": [
+    "ccccccccc6c6......cccc6"
+  ],
+  "(anthracene_35)": [
+    "ccccccccc6c6..cccc6"
+  ],
+  "(anthracene_36)": [
+    "ccccccccc6cc6@ccc6@"
+  ],
+  "(anthracene_37)": [
+    "cccccccccc6....c6..ccc6"
+  ],
+  "(anthracene_38)": [
+    "cccccccccc6....cc6cc6"
+  ],
+  "(anthracene_39)": [
+    "cccccccccc66.....cccc6"
+  ],
+  "(anthracene_40)": [
+    "cccccccccc66.cccc6"
+  ],
+  "(anthracene_41)": [
+    "cccccccccc6c6......ccc6"
+  ],
+  "(anthracene_42)": [
+    "cccccccccc6cc6@cc6@"
+  ],
+  "(anthracene_43)": [
+    "ccccccccccc6....c6..cc6"
+  ],
+  "(anthracene_44)": [
+    "ccccccccccc6....cc6c6"
+  ],
+  "(anthracene_45)": [
+    "ccccccccccc6c6......cc6"
+  ],
+  "(anthracene_46)": [
+    "ccccccccccc6cc6@c6@@"
+  ],
+  "(anthracene_47)": [
+    "cccccccccccc6....c6..c6"
+  ],
+  "(anthracene_48)": [
+    "cccccccccccc6....cc66"
+  ],
+  "(anthracene_49)": [
+    "cccccccccccc6c6......c6"
+  ],
+  "(anthracene_50)": [
+    "cccccccccccc6cc6@6@"
+  ],
+  "(@)": [
+    "cccccc6"
+  ],
+  "(benzimidazole_0)": [
+    "Ncccccc6....nc5"
+  ],
+  "(benzimidazole_1)": [
+    "Ncccccc6nc5@@"
+  ],
+  "(benzimidazole_2)": [
+    "Nccnc5.cccc6"
+  ],
+  "(benzimidazole_3)": [
+    "Ncncc5cccc6"
+  ],
+  "(benzimidazole_4)": [
+    "Ncncccccc65"
+  ],
+  "(benzimidazole_5)": [
+    "cNcccccc6....n5"
+  ],
+  "(benzimidazole_6)": [
+    "cNcccccc6n5@"
+  ],
+  "(benzimidazole_7)": [
+    "cNccn5cccc6"
+  ],
+  "(benzimidazole_8)": [
+    "cNcnc5cccc6"
+  ],
+  "(benzimidazole_9)": [
+    "ccNcn5..cccc6"
+  ],
+  "(benzimidazole_10)": [
+    "ccNcnc5ccc6@@"
+  ],
+  "(benzimidazole_11)": [
+    "cccNcn5..ccc6"
+  ],
+  "(benzimidazole_12)": [
+    "cccNcnc5cc6"
+  ],
+  "(benzimidazole_13)": [
+    "ccccNcn5..cc6"
+  ],
+  "(benzimidazole_14)": [
+    "ccccNcnc5c6"
+  ],
+  "(benzimidazole_15)": [
+    "cccccNcn5..c6"
+  ],
+  "(benzimidazole_16)": [
+    "cccccNcnc56"
+  ],
+  "(benzimidazole_17)": [
+    "cccccc6....Ncn5"
+  ],
+  "(benzimidazole_18)": [
+    "cccccc6....ncN5"
+  ],
+  "(benzimidazole_19)": [
+    "cccccc6...Ncn5"
+  ],
+  "(benzimidazole_20)": [
+    "cccccc6...ncN5"
+  ],
+  "(benzimidazole_21)": [
+    "cccccc6..Ncn5"
+  ],
+  "(benzimidazole_22)": [
+    "cccccc6..ncN5"
+  ],
+  "(benzimidazole_23)": [
+    "cccccc6.Ncn5"
+  ],
+  "(benzimidazole_24)": [
+    "cccccc6.ncN5"
+  ],
+  "(benzimidazole_25)": [
+    "cccccc6Ncn5"
+  ],
+  "(benzimidazole_26)": [
+    "cccccc6Ncn5@"
+  ],
+  "(benzimidazole_27)": [
+    "cccccc6ncN5"
+  ],
+  "(benzimidazole_28)": [
+    "cccccc6ncN5@"
+  ],
+  "(benzimidazole_29)": [
+    "cccccncN5..c6"
+  ],
+  "(benzimidazole_30)": [
+    "cccccncNc56"
+  ],
+  "(benzimidazole_31)": [
+    "ccccncN5..cc6"
+  ],
+  "(benzimidazole_32)": [
+    "ccccncNc5c6"
+  ],
+  "(benzimidazole_33)": [
+    "cccncN5..ccc6"
+  ],
+  "(benzimidazole_34)": [
+    "cccncNc5cc6"
+  ],
+  "(benzimidazole_35)": [
+    "ccncN5..cccc6"
+  ],
+  "(benzimidazole_36)": [
+    "ccncNc5ccc6@"
+  ],
+  "(benzimidazole_37)": [
+    "cncNc5cccc6@"
+  ],
+  "(benzimidazole_38)": [
+    "cnccN5.cccc6"
+  ],
+  "(benzimidazole_39)": [
+    "cncccccc6....N5"
+  ],
+  "(benzimidazole_40)": [
+    "cncccccc6N5@"
+  ],
+  "(benzimidazole_41)": [
+    "ncNcc5cccc6"
+  ],
+  "(benzimidazole_42)": [
+    "ncNcccccc65"
+  ],
+  "(benzimidazole_43)": [
+    "nccNc5..cccc6"
+  ],
+  "(benzimidazole_44)": [
+    "ncccccc6....Nc5"
+  ],
+  "(benzimidazole_45)": [
+    "ncccccc6Nc5@@"
+  ],
+  "(benzisoxazole_0)": [
+    "Occcccc6....cn5"
+  ],
+  "(benzisoxazole_1)": [
+    "Occcccc6cn5@@"
+  ],
+  "(benzisoxazole_2)": [
+    "Occcn5.cccc6"
+  ],
+  "(benzisoxazole_3)": [
+    "Onccc5cccc6"
+  ],
+  "(benzisoxazole_4)": [
+    "Onccccccc65"
+  ],
+  "(benzisoxazole_5)": [
+    "cOncc5cccc6@"
+  ],
+  "(benzisoxazole_6)": [
+    "ccOnc5.cccc6"
+  ],
+  "(benzisoxazole_7)": [
+    "ccOncc5ccc6"
+  ],
+  "(benzisoxazole_8)": [
+    "cccOn5cccc6"
+  ],
+  "(benzisoxazole_9)": [
+    "cccOnc5.ccc6"
+  ],
+  "(benzisoxazole_10)": [
+    "cccOncc5cc6"
+  ],
+  "(benzisoxazole_11)": [
+    "ccccOnc5.cc6"
+  ],
+  "(benzisoxazole_12)": [
+    "ccccOncc5c6"
+  ],
+  "(benzisoxazole_13)": [
+    "cccccOnc5.c6"
+  ],
+  "(benzisoxazole_14)": [
+    "cccccOncc56"
+  ],
+  "(benzisoxazole_15)": [
+    "cccccc6....Onc5"
+  ],
+  "(benzisoxazole_16)": [
+    "cccccc6....cnO5"
+  ],
+  "(benzisoxazole_17)": [
+    "cccccc6...Onc5"
+  ],
+  "(benzisoxazole_18)": [
+    "cccccc6...cnO5"
+  ],
+  "(benzisoxazole_19)": [
+    "cccccc6..Onc5"
+  ],
+  "(benzisoxazole_20)": [
+    "cccccc6..cnO5"
+  ],
+  "(benzisoxazole_21)": [
+    "cccccc6.Onc5"
+  ],
+  "(benzisoxazole_22)": [
+    "cccccc6.cnO5"
+  ],
+  "(benzisoxazole_23)": [
+    "cccccc6Onc5"
+  ],
+  "(benzisoxazole_24)": [
+    "cccccc6Onc5@"
+  ],
+  "(benzisoxazole_25)": [
+    "cccccc6cnO5"
+  ],
+  "(benzisoxazole_26)": [
+    "cccccc6cnO5@"
+  ],
+  "(benzisoxazole_27)": [
+    "ccccccc6....On5"
+  ],
+  "(benzisoxazole_28)": [
+    "ccccccc6On5@@"
+  ],
+  "(benzisoxazole_29)": [
+    "ccccccnO5.c6"
+  ],
+  "(benzisoxazole_30)": [
+    "ccccccnOc56"
+  ],
+  "(benzisoxazole_31)": [
+    "cccccnO5.cc6"
+  ],
+  "(benzisoxazole_32)": [
+    "cccccnOc5c6"
+  ],
+  "(benzisoxazole_33)": [
+    "ccccnO5.ccc6"
+  ],
+  "(benzisoxazole_34)": [
+    "ccccnOc5cc6"
+  ],
+  "(benzisoxazole_35)": [
+    "cccnO5.cccc6"
+  ],
+  "(benzisoxazole_36)": [
+    "cccnOc5ccc6@"
+  ],
+  "(benzisoxazole_37)": [
+    "ccnOc5cccc6"
+  ],
+  "(benzisoxazole_38)": [
+    "cnOcc5cccc6"
+  ],
+  "(benzisoxazole_39)": [
+    "cnOcccccc65"
+  ],
+  "(benzisoxazole_40)": [
+    "nOccc5.cccc6"
+  ],
+  "(benzisoxazole_41)": [
+    "nOcccccc6....c5"
+  ],
+  "(benzisoxazole_42)": [
+    "nOcccccc6c5@"
+  ],
+  "(benzisoxazole_43)": [
+    "ncccO5cccc6"
+  ],
+  "(benzisoxazole_44)": [
+    "nccccccc6....O5"
+  ],
+  "(benzisoxazole_45)": [
+    "nccccccc6O5@"
+  ],
+  "(benzo(c)thiophene_0)": [
+    "Scccc5.cccc6"
+  ],
+  "(benzo(c)thiophene_1)": [
+    "Sccccccc6....c5"
+  ],
+  "(benzo(c)thiophene_2)": [
+    "Sccccccc6c5@"
+  ],
+  "(benzo(c)thiophene_3)": [
+    "cSccc5cccc6"
+  ],
+  "(benzo(c)thiophene_4)": [
+    "cSccccccc65"
+  ],
+  "(benzo(c)thiophene_5)": [
+    "ccScc5cccc6@"
+  ],
+  "(benzo(c)thiophene_6)": [
+    "cccSc5..cccc6"
+  ],
+  "(benzo(c)thiophene_7)": [
+    "cccScc5ccc6@"
+  ],
+  "(benzo(c)thiophene_8)": [
+    "ccccS5.cccc6"
+  ],
+  "(benzo(c)thiophene_9)": [
+    "ccccSc5..ccc6"
+  ],
+  "(benzo(c)thiophene_10)": [
+    "ccccScc5cc6"
+  ],
+  "(benzo(c)thiophene_11)": [
+    "cccccSc5..cc6"
+  ],
+  "(benzo(c)thiophene_12)": [
+    "cccccScc5c6"
+  ],
+  "(benzo(c)thiophene_13)": [
+    "cccccc6....cSc5"
+  ],
+  "(benzo(c)thiophene_14)": [
+    "cccccc6...cSc5"
+  ],
+  "(benzo(c)thiophene_15)": [
+    "cccccc6..cSc5"
+  ],
+  "(benzo(c)thiophene_16)": [
+    "cccccc6.cSc5"
+  ],
+  "(benzo(c)thiophene_17)": [
+    "cccccc6cSc5"
+  ],
+  "(benzo(c)thiophene_18)": [
+    "cccccc6cSc5@"
+  ],
+  "(benzo(c)thiophene_19)": [
+    "ccccccSc5..c6"
+  ],
+  "(benzo(c)thiophene_20)": [
+    "ccccccScc56"
+  ],
+  "(benzo(c)thiophene_21)": [
+    "ccccccc6....cS5"
+  ],
+  "(benzo(c)thiophene_22)": [
+    "ccccccc6cS5@@"
+  ],
+  "(benzofuran_0)": [
+    "Occcc5..cccc6"
+  ],
+  "(benzofuran_1)": [
+    "Occcc5cccc6"
+  ],
+  "(benzofuran_2)": [
+    "Occcccc6....cc5"
+  ],
+  "(benzofuran_3)": [
+    "Occcccc6cc5@@"
+  ],
+  "(benzofuran_4)": [
+    "Occcccccc65"
+  ],
+  "(benzofuran_5)": [
+    "cOccc5.cccc6"
+  ],
+  "(benzofuran_6)": [
+    "cOccc5cccc6@"
+  ],
+  "(benzofuran_7)": [
+    "cOcccccc6....c5"
+  ],
+  "(benzofuran_8)": [
+    "cOcccccc6c5@"
+  ],
+  "(benzofuran_9)": [
+    "ccOcc5..cccc6"
+  ],
+  "(benzofuran_10)": [
+    "ccOcc5cccc6"
+  ],
+  "(benzofuran_11)": [
+    "ccOccc5ccc6@"
+  ],
+  "(benzofuran_12)": [
+    "ccOcccccc65"
+  ],
+  "(benzofuran_13)": [
+    "cccOc5.cccc6"
+  ],
+  "(benzofuran_14)": [
+    "cccOc5cccc6"
+  ],
+  "(benzofuran_15)": [
+    "cccOcc5..ccc6"
+  ],
+  "(benzofuran_16)": [
+    "cccOccc5cc6"
+  ],
+  "(benzofuran_17)": [
+    "ccccO5..cccc6"
+  ],
+  "(benzofuran_18)": [
+    "ccccO5cccc6"
+  ],
+  "(benzofuran_19)": [
+    "ccccOc5ccc6@@"
+  ],
+  "(benzofuran_20)": [
+    "ccccOcc5..cc6"
+  ],
+  "(benzofuran_21)": [
+    "ccccOccc5c6"
+  ],
+  "(benzofuran_22)": [
+    "cccccO5..ccc6"
+  ],
+  "(benzofuran_23)": [
+    "cccccOc5cc6"
+  ],
+  "(benzofuran_24)": [
+    "cccccOcc5..c6"
+  ],
+  "(benzofuran_25)": [
+    "cccccOccc56"
+  ],
+  "(benzofuran_26)": [
+    "cccccc6....Occ5"
+  ],
+  "(benzofuran_27)": [
+    "cccccc6....ccO5"
+  ],
+  "(benzofuran_28)": [
+    "cccccc6...Occ5"
+  ],
+  "(benzofuran_29)": [
+    "cccccc6...ccO5"
+  ],
+  "(benzofuran_30)": [
+    "cccccc6..Occ5"
+  ],
+  "(benzofuran_31)": [
+    "cccccc6..ccO5"
+  ],
+  "(benzofuran_32)": [
+    "cccccc6.Occ5"
+  ],
+  "(benzofuran_33)": [
+    "cccccc6.ccO5"
+  ],
+  "(benzofuran_34)": [
+    "cccccc6Occ5"
+  ],
+  "(benzofuran_35)": [
+    "cccccc6Occ5@"
+  ],
+  "(benzofuran_36)": [
+    "cccccc6ccO5"
+  ],
+  "(benzofuran_37)": [
+    "cccccc6ccO5@"
+  ],
+  "(benzofuran_38)": [
+    "ccccccO5..cc6"
+  ],
+  "(benzofuran_39)": [
+    "ccccccOc5c6"
+  ],
+  "(benzofuran_40)": [
+    "ccccccc6....Oc5"
+  ],
+  "(benzofuran_41)": [
+    "ccccccc6Oc5@@"
+  ],
+  "(benzofuran_42)": [
+    "cccccccO5..c6"
+  ],
+  "(benzofuran_43)": [
+    "cccccccOc56"
+  ],
+  "(benzofuran_44)": [
+    "cccccccc6....O5"
+  ],
+  "(benzofuran_45)": [
+    "cccccccc6O5@"
+  ],
+  "(benzothiazole_0)": [
+    "Scccccc6....nc5"
+  ],
+  "(benzothiazole_1)": [
+    "Scccccc6nc5@@"
+  ],
+  "(benzothiazole_2)": [
+    "Sccnc5.cccc6"
+  ],
+  "(benzothiazole_3)": [
+    "Scncc5cccc6"
+  ],
+  "(benzothiazole_4)": [
+    "Scncccccc65"
+  ],
+  "(benzothiazole_5)": [
+    "cScccccc6....n5"
+  ],
+  "(benzothiazole_6)": [
+    "cScccccc6n5@"
+  ],
+  "(benzothiazole_7)": [
+    "cSccn5cccc6"
+  ],
+  "(benzothiazole_8)": [
+    "cScnc5cccc6"
+  ],
+  "(benzothiazole_9)": [
+    "ccScn5.cccc6"
+  ],
+  "(benzothiazole_10)": [
+    "ccScnc5ccc6@"
+  ],
+  "(benzothiazole_11)": [
+    "cccScn5.ccc6"
+  ],
+  "(benzothiazole_12)": [
+    "cccScnc5cc6"
+  ],
+  "(benzothiazole_13)": [
+    "ccccScn5.cc6"
+  ],
+  "(benzothiazole_14)": [
+    "ccccScnc5c6"
+  ],
+  "(benzothiazole_15)": [
+    "cccccScn5.c6"
+  ],
+  "(benzothiazole_16)": [
+    "cccccScnc56"
+  ],
+  "(benzothiazole_17)": [
+    "cccccc6....Scn5"
+  ],
+  "(benzothiazole_18)": [
+    "cccccc6....ncS5"
+  ],
+  "(benzothiazole_19)": [
+    "cccccc6...Scn5"
+  ],
+  "(benzothiazole_20)": [
+    "cccccc6...ncS5"
+  ],
+  "(benzothiazole_21)": [
+    "cccccc6..Scn5"
+  ],
+  "(benzothiazole_22)": [
+    "cccccc6..ncS5"
+  ],
+  "(benzothiazole_23)": [
+    "cccccc6.Scn5"
+  ],
+  "(benzothiazole_24)": [
+    "cccccc6.ncS5"
+  ],
+  "(benzothiazole_25)": [
+    "cccccc6Scn5"
+  ],
+  "(benzothiazole_26)": [
+    "cccccc6Scn5@"
+  ],
+  "(benzothiazole_27)": [
+    "cccccc6ncS5"
+  ],
+  "(benzothiazole_28)": [
+    "cccccc6ncS5@"
+  ],
+  "(benzothiazole_29)": [
+    "cccccncS5.c6"
+  ],
+  "(benzothiazole_30)": [
+    "cccccncSc56"
+  ],
+  "(benzothiazole_31)": [
+    "ccccncS5.cc6"
+  ],
+  "(benzothiazole_32)": [
+    "ccccncSc5c6"
+  ],
+  "(benzothiazole_33)": [
+    "cccncS5.ccc6"
+  ],
+  "(benzothiazole_34)": [
+    "cccncSc5cc6"
+  ],
+  "(benzothiazole_35)": [
+    "ccncS5.cccc6"
+  ],
+  "(benzothiazole_36)": [
+    "ccncSc5ccc6@"
+  ],
+  "(benzothiazole_37)": [
+    "cncSc5cccc6"
+  ],
+  "(benzothiazole_38)": [
+    "cnccS5cccc6"
+  ],
+  "(benzothiazole_39)": [
+    "cncccccc6....S5"
+  ],
+  "(benzothiazole_40)": [
+    "cncccccc6S5@"
+  ],
+  "(benzothiazole_41)": [
+    "ncScc5cccc6"
+  ],
+  "(benzothiazole_42)": [
+    "ncScccccc65"
+  ],
+  "(benzothiazole_43)": [
+    "nccSc5.cccc6"
+  ],
+  "(benzothiazole_44)": [
+    "ncccccc6....Sc5"
+  ],
+  "(benzothiazole_45)": [
+    "ncccccc6Sc5@@"
+  ],
+  "(benzothiophene_0)": [
+    "Scccc5..cccc6"
+  ],
+  "(benzothiophene_1)": [
+    "Scccc5cccc6"
+  ],
+  "(benzothiophene_2)": [
+    "Scccccc6....cc5"
+  ],
+  "(benzothiophene_3)": [
+    "Scccccc6cc5@@"
+  ],
+  "(benzothiophene_4)": [
+    "Scccccccc65"
+  ],
+  "(benzothiophene_5)": [
+    "cSccc5.cccc6"
+  ],
+  "(benzothiophene_6)": [
+    "cSccc5cccc6@"
+  ],
+  "(benzothiophene_7)": [
+    "cScccccc6....c5"
+  ],
+  "(benzothiophene_8)": [
+    "cScccccc6c5@"
+  ],
+  "(benzothiophene_9)": [
+    "ccScc5..cccc6"
+  ],
+  "(benzothiophene_10)": [
+    "ccScc5cccc6"
+  ],
+  "(benzothiophene_11)": [
+    "ccSccc5ccc6@"
+  ],
+  "(benzothiophene_12)": [
+    "ccScccccc65"
+  ],
+  "(benzothiophene_13)": [
+    "cccSc5.cccc6"
+  ],
+  "(benzothiophene_14)": [
+    "cccSc5cccc6"
+  ],
+  "(benzothiophene_15)": [
+    "cccScc5..ccc6"
+  ],
+  "(benzothiophene_16)": [
+    "cccSccc5cc6"
+  ],
+  "(benzothiophene_17)": [
+    "ccccS5..cccc6"
+  ],
+  "(benzothiophene_18)": [
+    "ccccS5cccc6"
+  ],
+  "(benzothiophene_19)": [
+    "ccccSc5ccc6@@"
+  ],
+  "(benzothiophene_20)": [
+    "ccccScc5..cc6"
+  ],
+  "(benzothiophene_21)": [
+    "ccccSccc5c6"
+  ],
+  "(benzothiophene_22)": [
+    "cccccS5..ccc6"
+  ],
+  "(benzothiophene_23)": [
+    "cccccSc5cc6"
+  ],
+  "(benzothiophene_24)": [
+    "cccccScc5..c6"
+  ],
+  "(benzothiophene_25)": [
+    "cccccSccc56"
+  ],
+  "(benzothiophene_26)": [
+    "cccccc6....Scc5"
+  ],
+  "(benzothiophene_27)": [
+    "cccccc6....ccS5"
+  ],
+  "(benzothiophene_28)": [
+    "cccccc6...Scc5"
+  ],
+  "(benzothiophene_29)": [
+    "cccccc6...ccS5"
+  ],
+  "(benzothiophene_30)": [
+    "cccccc6..Scc5"
+  ],
+  "(benzothiophene_31)": [
+    "cccccc6..ccS5"
+  ],
+  "(benzothiophene_32)": [
+    "cccccc6.Scc5"
+  ],
+  "(benzothiophene_33)": [
+    "cccccc6.ccS5"
+  ],
+  "(benzothiophene_34)": [
+    "cccccc6Scc5"
+  ],
+  "(benzothiophene_35)": [
+    "cccccc6Scc5@"
+  ],
+  "(benzothiophene_36)": [
+    "cccccc6ccS5"
+  ],
+  "(benzothiophene_37)": [
+    "cccccc6ccS5@"
+  ],
+  "(benzothiophene_38)": [
+    "ccccccS5..cc6"
+  ],
+  "(benzothiophene_39)": [
+    "ccccccSc5c6"
+  ],
+  "(benzothiophene_40)": [
+    "ccccccc6....Sc5"
+  ],
+  "(benzothiophene_41)": [
+    "ccccccc6Sc5@@"
+  ],
+  "(benzothiophene_42)": [
+    "cccccccS5..c6"
+  ],
+  "(benzothiophene_43)": [
+    "cccccccSc56"
+  ],
+  "(benzothiophene_44)": [
+    "cccccccc6....S5"
+  ],
+  "(benzothiophene_45)": [
+    "cccccccc6S5@"
+  ],
+  "(benzoxazole_0)": [
+    "Occcccc6....nc5"
+  ],
+  "(benzoxazole_1)": [
+    "Occcccc6nc5@@"
+  ],
+  "(benzoxazole_2)": [
+    "Occnc5.cccc6"
+  ],
+  "(benzoxazole_3)": [
+    "Ocncc5cccc6"
+  ],
+  "(benzoxazole_4)": [
+    "Ocncccccc65"
+  ],
+  "(benzoxazole_5)": [
+    "cOcccccc6....n5"
+  ],
+  "(benzoxazole_6)": [
+    "cOcccccc6n5@"
+  ],
+  "(benzoxazole_7)": [
+    "cOccn5cccc6"
+  ],
+  "(benzoxazole_8)": [
+    "cOcnc5cccc6"
+  ],
+  "(benzoxazole_9)": [
+    "ccOcn5.cccc6"
+  ],
+  "(benzoxazole_10)": [
+    "ccOcnc5ccc6@"
+  ],
+  "(benzoxazole_11)": [
+    "cccOcn5.ccc6"
+  ],
+  "(benzoxazole_12)": [
+    "cccOcnc5cc6"
+  ],
+  "(benzoxazole_13)": [
+    "ccccOcn5.cc6"
+  ],
+  "(benzoxazole_14)": [
+    "ccccOcnc5c6"
+  ],
+  "(benzoxazole_15)": [
+    "cccccOcn5.c6"
+  ],
+  "(benzoxazole_16)": [
+    "cccccOcnc56"
+  ],
+  "(benzoxazole_17)": [
+    "cccccc6....Ocn5"
+  ],
+  "(benzoxazole_18)": [
+    "cccccc6....ncO5"
+  ],
+  "(benzoxazole_19)": [
+    "cccccc6...Ocn5"
+  ],
+  "(benzoxazole_20)": [
+    "cccccc6...ncO5"
+  ],
+  "(benzoxazole_21)": [
+    "cccccc6..Ocn5"
+  ],
+  "(benzoxazole_22)": [
+    "cccccc6..ncO5"
+  ],
+  "(benzoxazole_23)": [
+    "cccccc6.Ocn5"
+  ],
+  "(benzoxazole_24)": [
+    "cccccc6.ncO5"
+  ],
+  "(benzoxazole_25)": [
+    "cccccc6Ocn5"
+  ],
+  "(benzoxazole_26)": [
+    "cccccc6Ocn5@"
+  ],
+  "(benzoxazole_27)": [
+    "cccccc6ncO5"
+  ],
+  "(benzoxazole_28)": [
+    "cccccc6ncO5@"
+  ],
+  "(benzoxazole_29)": [
+    "cccccncO5.c6"
+  ],
+  "(benzoxazole_30)": [
+    "cccccncOc56"
+  ],
+  "(benzoxazole_31)": [
+    "ccccncO5.cc6"
+  ],
+  "(benzoxazole_32)": [
+    "ccccncOc5c6"
+  ],
+  "(benzoxazole_33)": [
+    "cccncO5.ccc6"
+  ],
+  "(benzoxazole_34)": [
+    "cccncOc5cc6"
+  ],
+  "(benzoxazole_35)": [
+    "ccncO5.cccc6"
+  ],
+  "(benzoxazole_36)": [
+    "ccncOc5ccc6@"
+  ],
+  "(benzoxazole_37)": [
+    "cncOc5cccc6"
+  ],
+  "(benzoxazole_38)": [
+    "cnccO5cccc6"
+  ],
+  "(benzoxazole_39)": [
+    "cncccccc6....O5"
+  ],
+  "(benzoxazole_40)": [
+    "cncccccc6O5@"
+  ],
+  "(benzoxazole_41)": [
+    "ncOcc5cccc6"
+  ],
+  "(benzoxazole_42)": [
+    "ncOcccccc65"
+  ],
+  "(benzoxazole_43)": [
+    "nccOc5.cccc6"
+  ],
+  "(benzoxazole_44)": [
+    "ncccccc6....Oc5"
+  ],
+  "(benzoxazole_45)": [
+    "ncccccc6Oc5@@"
+  ],
+  "(cinnoline_0)": [
+    "cccccc6....ccnn6"
+  ],
+  "(cinnoline_1)": [
+    "cccccc6....nncc6"
+  ],
+  "(cinnoline_2)": [
+    "cccccc6...ccnn6"
+  ],
+  "(cinnoline_3)": [
+    "cccccc6...nncc6"
+  ],
+  "(cinnoline_4)": [
+    "cccccc6..ccnn6"
+  ],
+  "(cinnoline_5)": [
+    "cccccc6..nncc6"
+  ],
+  "(cinnoline_6)": [
+    "cccccc6.ccnn6"
+  ],
+  "(cinnoline_7)": [
+    "cccccc6.nncc6"
+  ],
+  "(cinnoline_8)": [
+    "cccccc6ccnn6"
+  ],
+  "(cinnoline_9)": [
+    "cccccc6ccnn6@"
+  ],
+  "(cinnoline_10)": [
+    "cccccc6nncc6"
+  ],
+  "(cinnoline_11)": [
+    "cccccc6nncc6@"
+  ],
+  "(cinnoline_12)": [
+    "ccccccc6....nnc6"
+  ],
+  "(cinnoline_13)": [
+    "ccccccc6nnc6@@"
+  ],
+  "(cinnoline_14)": [
+    "cccccccc6....nn6"
+  ],
+  "(cinnoline_15)": [
+    "cccccccc6nn6@"
+  ],
+  "(cinnoline_16)": [
+    "cccccccnn6..c6"
+  ],
+  "(cinnoline_17)": [
+    "cccccccnnc66"
+  ],
+  "(cinnoline_18)": [
+    "ccccccnn6..cc6"
+  ],
+  "(cinnoline_19)": [
+    "ccccccnnc6c6"
+  ],
+  "(cinnoline_20)": [
+    "cccccnn6..ccc6"
+  ],
+  "(cinnoline_21)": [
+    "cccccnnc6cc6@"
+  ],
+  "(cinnoline_22)": [
+    "cccccnncc6..c6"
+  ],
+  "(cinnoline_23)": [
+    "cccccnnccc66"
+  ],
+  "(cinnoline_24)": [
+    "ccccnn6..cccc6"
+  ],
+  "(cinnoline_25)": [
+    "ccccnn6cccc6"
+  ],
+  "(cinnoline_26)": [
+    "ccccnnc6ccc6@"
+  ],
+  "(cinnoline_27)": [
+    "ccccnncc6..cc6"
+  ],
+  "(cinnoline_28)": [
+    "ccccnnccc6c6"
+  ],
+  "(cinnoline_29)": [
+    "cccnnc6.cccc6"
+  ],
+  "(cinnoline_30)": [
+    "cccnnc6cccc6"
+  ],
+  "(cinnoline_31)": [
+    "cccnncc6..ccc6"
+  ],
+  "(cinnoline_32)": [
+    "cccnnccc6cc6"
+  ],
+  "(cinnoline_33)": [
+    "ccnncc6..cccc6"
+  ],
+  "(cinnoline_34)": [
+    "ccnncc6cccc6"
+  ],
+  "(cinnoline_35)": [
+    "ccnnccc6ccc6@"
+  ],
+  "(cinnoline_36)": [
+    "ccnncccccc66"
+  ],
+  "(cinnoline_37)": [
+    "cnnccc6.cccc6"
+  ],
+  "(cinnoline_38)": [
+    "cnnccc6cccc6@"
+  ],
+  "(cinnoline_39)": [
+    "cnncccccc6....c6"
+  ],
+  "(cinnoline_40)": [
+    "cnncccccc6c6"
+  ],
+  "(cinnoline_41)": [
+    "ncccccc6....ccn6"
+  ],
+  "(cinnoline_42)": [
+    "ncccccc6ccn6@@"
+  ],
+  "(cinnoline_43)": [
+    "ncccccccc6....n6"
+  ],
+  "(cinnoline_44)": [
+    "ncccccccc6n6"
+  ],
+  "(cinnoline_45)": [
+    "nccccn6..cccc6"
+  ],
+  "(cinnoline_46)": [
+    "nccccn6cccc6"
+  ],
+  "(cinnoline_47)": [
+    "nncccc6..cccc6"
+  ],
+  "(cinnoline_48)": [
+    "nncccc6cccc6"
+  ],
+  "(cinnoline_49)": [
+    "nncccccc6....cc6"
+  ],
+  "(cinnoline_50)": [
+    "nncccccc6cc6@"
+  ],
+  "(cinnoline_51)": [
+    "nncccccccc66"
+  ],
+  "(furan_0)": [
+    "Occcc5"
+  ],
+  "(furan_1)": [
+    "cOccc5"
+  ],
+  "(furan_2)": [
+    "ccOcc5"
+  ],
+  "(furan_3)": [
+    "cccOc5"
+  ],
+  "(furan_4)": [
+    "ccccO5"
+  ],
+  "(imidazole_0)": [
+    "Nccnc5"
+  ],
+  "(imidazole_1)": [
+    "Ncncc5"
+  ],
+  "(imidazole_2)": [
+    "cNccn5"
+  ],
+  "(imidazole_3)": [
+    "cNcnc5"
+  ],
+  "(imidazole_4)": [
+    "ccNcn5"
+  ],
+  "(imidazole_5)": [
+    "ccncN5"
+  ],
+  "(imidazole_6)": [
+    "cncNc5"
+  ],
+  "(imidazole_7)": [
+    "cnccN5"
+  ],
+  "(imidazole_8)": [
+    "ncNcc5"
+  ],
+  "(imidazole_9)": [
+    "nccNc5"
+  ],
+  "(indazole_0)": [
+    "Ncccccc6....cn5"
+  ],
+  "(indazole_1)": [
+    "Ncccccc6cn5@@"
+  ],
+  "(indazole_2)": [
+    "Ncccn5.cccc6"
+  ],
+  "(indazole_3)": [
+    "Nnccc5cccc6"
+  ],
+  "(indazole_4)": [
+    "Nnccccccc65"
+  ],
+  "(indazole_5)": [
+    "cNncc5cccc6@"
+  ],
+  "(indazole_6)": [
+    "ccNnc5..cccc6"
+  ],
+  "(indazole_7)": [
+    "ccNncc5ccc6@"
+  ],
+  "(indazole_8)": [
+    "cccNn5.cccc6"
+  ],
+  "(indazole_9)": [
+    "cccNnc5..ccc6"
+  ],
+  "(indazole_10)": [
+    "cccNncc5cc6"
+  ],
+  "(indazole_11)": [
+    "ccccNnc5..cc6"
+  ],
+  "(indazole_12)": [
+    "ccccNncc5c6"
+  ],
+  "(indazole_13)": [
+    "cccccNnc5..c6"
+  ],
+  "(indazole_14)": [
+    "cccccNncc56"
+  ],
+  "(indazole_15)": [
+    "cccccc6....Nnc5"
+  ],
+  "(indazole_16)": [
+    "cccccc6....cnN5"
+  ],
+  "(indazole_17)": [
+    "cccccc6...Nnc5"
+  ],
+  "(indazole_18)": [
+    "cccccc6...cnN5"
+  ],
+  "(indazole_19)": [
+    "cccccc6..Nnc5"
+  ],
+  "(indazole_20)": [
+    "cccccc6..cnN5"
+  ],
+  "(indazole_21)": [
+    "cccccc6.Nnc5"
+  ],
+  "(indazole_22)": [
+    "cccccc6.cnN5"
+  ],
+  "(indazole_23)": [
+    "cccccc6Nnc5"
+  ],
+  "(indazole_24)": [
+    "cccccc6Nnc5@"
+  ],
+  "(indazole_25)": [
+    "cccccc6cnN5"
+  ],
+  "(indazole_26)": [
+    "cccccc6cnN5@"
+  ],
+  "(indazole_27)": [
+    "ccccccc6....Nn5"
+  ],
+  "(indazole_28)": [
+    "ccccccc6Nn5@@"
+  ],
+  "(indazole_29)": [
+    "ccccccnN5..c6"
+  ],
+  "(indazole_30)": [
+    "ccccccnNc56"
+  ],
+  "(indazole_31)": [
+    "cccccnN5..cc6"
+  ],
+  "(indazole_32)": [
+    "cccccnNc5c6"
+  ],
+  "(indazole_33)": [
+    "ccccnN5..ccc6"
+  ],
+  "(indazole_34)": [
+    "ccccnNc5cc6"
+  ],
+  "(indazole_35)": [
+    "cccnN5..cccc6"
+  ],
+  "(indazole_36)": [
+    "cccnNc5ccc6@"
+  ],
+  "(indazole_37)": [
+    "ccnNc5cccc6@"
+  ],
+  "(indazole_38)": [
+    "cnNcc5cccc6"
+  ],
+  "(indazole_39)": [
+    "cnNcccccc65"
+  ],
+  "(indazole_40)": [
+    "nNccc5.cccc6"
+  ],
+  "(indazole_41)": [
+    "nNcccccc6....c5"
+  ],
+  "(indazole_42)": [
+    "nNcccccc6c5@"
+  ],
+  "(indazole_43)": [
+    "ncccN5.cccc6"
+  ],
+  "(indazole_44)": [
+    "nccccccc6....N5"
+  ],
+  "(indazole_45)": [
+    "nccccccc6N5@"
+  ],
+  "(indole_0)": [
+    "Ncccc5..cccc6"
+  ],
+  "(indole_1)": [
+    "Ncccc5cccc6"
+  ],
+  "(indole_2)": [
+    "Ncccccc6....cc5"
+  ],
+  "(indole_3)": [
+    "Ncccccc6cc5@@"
+  ],
+  "(indole_4)": [
+    "Ncccccccc65"
+  ],
+  "(indole_5)": [
+    "cNccc5.cccc6"
+  ],
+  "(indole_6)": [
+    "cNccc5cccc6@"
+  ],
+  "(indole_7)": [
+    "cNcccccc6....c5"
+  ],
+  "(indole_8)": [
+    "cNcccccc6c5@"
+  ],
+  "(indole_9)": [
+    "ccNcc5...cccc6"
+  ],
+  "(indole_10)": [
+    "ccNcc5cccc6"
+  ],
+  "(indole_11)": [
+    "ccNccc5ccc6@@"
+  ],
+  "(indole_12)": [
+    "ccNcccccc65"
+  ],
+  "(indole_13)": [
+    "cccNc5..cccc6"
+  ],
+  "(indole_14)": [
+    "cccNc5cccc6@"
+  ],
+  "(indole_15)": [
+    "cccNcc5...ccc6"
+  ],
+  "(indole_16)": [
+    "cccNccc5cc6"
+  ],
+  "(indole_17)": [
+    "ccccN5...cccc6"
+  ],
+  "(indole_18)": [
+    "ccccN5.cccc6"
+  ],
+  "(indole_19)": [
+    "ccccNc5ccc6@@"
+  ],
+  "(indole_20)": [
+    "ccccNcc5...cc6"
+  ],
+  "(indole_21)": [
+    "ccccNccc5c6"
+  ],
+  "(indole_22)": [
+    "cccccN5...ccc6"
+  ],
+  "(indole_23)": [
+    "cccccNc5cc6"
+  ],
+  "(indole_24)": [
+    "cccccNcc5...c6"
+  ],
+  "(indole_25)": [
+    "cccccNccc56"
+  ],
+  "(indole_26)": [
+    "cccccc6....Ncc5"
+  ],
+  "(indole_27)": [
+    "cccccc6....ccN5"
+  ],
+  "(indole_28)": [
+    "cccccc6...Ncc5"
+  ],
+  "(indole_29)": [
+    "cccccc6...ccN5"
+  ],
+  "(indole_30)": [
+    "cccccc6..Ncc5"
+  ],
+  "(indole_31)": [
+    "cccccc6..ccN5"
+  ],
+  "(indole_32)": [
+    "cccccc6.Ncc5"
+  ],
+  "(indole_33)": [
+    "cccccc6.ccN5"
+  ],
+  "(indole_34)": [
+    "cccccc6Ncc5"
+  ],
+  "(indole_35)": [
+    "cccccc6Ncc5@"
+  ],
+  "(indole_36)": [
+    "cccccc6ccN5"
+  ],
+  "(indole_37)": [
+    "cccccc6ccN5@"
+  ],
+  "(indole_38)": [
+    "ccccccN5...cc6"
+  ],
+  "(indole_39)": [
+    "ccccccNc5c6"
+  ],
+  "(indole_40)": [
+    "ccccccc6....Nc5"
+  ],
+  "(indole_41)": [
+    "ccccccc6Nc5@@"
+  ],
+  "(indole_42)": [
+    "cccccccN5...c6"
+  ],
+  "(indole_43)": [
+    "cccccccNc56"
+  ],
+  "(indole_44)": [
+    "cccccccc6....N5"
+  ],
+  "(indole_45)": [
+    "cccccccc6N5@"
+  ],
+  "(isobenzofuran_0)": [
+    "Occcc5.cccc6"
+  ],
+  "(isobenzofuran_1)": [
+    "Occccccc6....c5"
+  ],
+  "(isobenzofuran_2)": [
+    "Occccccc6c5@"
+  ],
+  "(isobenzofuran_3)": [
+    "cOccc5cccc6"
+  ],
+  "(isobenzofuran_4)": [
+    "cOccccccc65"
+  ],
+  "(isobenzofuran_5)": [
+    "ccOcc5cccc6@"
+  ],
+  "(isobenzofuran_6)": [
+    "cccOc5..cccc6"
+  ],
+  "(isobenzofuran_7)": [
+    "cccOcc5ccc6@"
+  ],
+  "(isobenzofuran_8)": [
+    "ccccO5.cccc6"
+  ],
+  "(isobenzofuran_9)": [
+    "ccccOc5..ccc6"
+  ],
+  "(isobenzofuran_10)": [
+    "ccccOcc5cc6"
+  ],
+  "(isobenzofuran_11)": [
+    "cccccOc5..cc6"
+  ],
+  "(isobenzofuran_12)": [
+    "cccccOcc5c6"
+  ],
+  "(isobenzofuran_13)": [
+    "cccccc6....cOc5"
+  ],
+  "(isobenzofuran_14)": [
+    "cccccc6...cOc5"
+  ],
+  "(isobenzofuran_15)": [
+    "cccccc6..cOc5"
+  ],
+  "(isobenzofuran_16)": [
+    "cccccc6.cOc5"
+  ],
+  "(isobenzofuran_17)": [
+    "cccccc6cOc5"
+  ],
+  "(isobenzofuran_18)": [
+    "cccccc6cOc5@"
+  ],
+  "(isobenzofuran_19)": [
+    "ccccccOc5..c6"
+  ],
+  "(isobenzofuran_20)": [
+    "ccccccOcc56"
+  ],
+  "(isobenzofuran_21)": [
+    "ccccccc6....cO5"
+  ],
+  "(isobenzofuran_22)": [
+    "ccccccc6cO5@@"
+  ],
+  "(isoindole_0)": [
+    "Ncccc5.cccc6"
+  ],
+  "(isoindole_1)": [
+    "Nccccccc6....c5"
+  ],
+  "(isoindole_2)": [
+    "Nccccccc6c5@"
+  ],
+  "(isoindole_3)": [
+    "cNccc5cccc6"
+  ],
+  "(isoindole_4)": [
+    "cNccccccc65"
+  ],
+  "(isoindole_5)": [
+    "ccNcc5cccc6@"
+  ],
+  "(isoindole_6)": [
+    "cccNc5...cccc6"
+  ],
+  "(isoindole_7)": [
+    "cccNcc5ccc6@@"
+  ],
+  "(isoindole_8)": [
+    "ccccN5..cccc6"
+  ],
+  "(isoindole_9)": [
+    "ccccNc5...ccc6"
+  ],
+  "(isoindole_10)": [
+    "ccccNcc5cc6"
+  ],
+  "(isoindole_11)": [
+    "cccccNc5...cc6"
+  ],
+  "(isoindole_12)": [
+    "cccccNcc5c6"
+  ],
+  "(isoindole_13)": [
+    "cccccc6....cNc5"
+  ],
+  "(isoindole_14)": [
+    "cccccc6...cNc5"
+  ],
+  "(isoindole_15)": [
+    "cccccc6..cNc5"
+  ],
+  "(isoindole_16)": [
+    "cccccc6.cNc5"
+  ],
+  "(isoindole_17)": [
+    "cccccc6cNc5"
+  ],
+  "(isoindole_18)": [
+    "cccccc6cNc5@"
+  ],
+  "(isoindole_19)": [
+    "ccccccNc5...c6"
+  ],
+  "(isoindole_20)": [
+    "ccccccNcc56"
+  ],
+  "(isoindole_21)": [
+    "ccccccc6....cN5"
+  ],
+  "(isoindole_22)": [
+    "ccccccc6cN5@@"
+  ],
+  "(isoquinoline_0)": [
+    "cccccc6....ccnc6"
+  ],
+  "(isoquinoline_1)": [
+    "cccccc6....cncc6"
+  ],
+  "(isoquinoline_2)": [
+    "cccccc6...ccnc6"
+  ],
+  "(isoquinoline_3)": [
+    "cccccc6...cncc6"
+  ],
+  "(isoquinoline_4)": [
+    "cccccc6..ccnc6"
+  ],
+  "(isoquinoline_5)": [
+    "cccccc6..cncc6"
+  ],
+  "(isoquinoline_6)": [
+    "cccccc6.ccnc6"
+  ],
+  "(isoquinoline_7)": [
+    "cccccc6.cncc6"
+  ],
+  "(isoquinoline_8)": [
+    "cccccc6ccnc6"
+  ],
+  "(isoquinoline_9)": [
+    "cccccc6ccnc6@"
+  ],
+  "(isoquinoline_10)": [
+    "cccccc6cncc6"
+  ],
+  "(isoquinoline_11)": [
+    "cccccc6cncc6@"
+  ],
+  "(isoquinoline_12)": [
+    "ccccccc6....ccn6"
+  ],
+  "(isoquinoline_13)": [
+    "ccccccc6....cnc6"
+  ],
+  "(isoquinoline_14)": [
+    "ccccccc6ccn6@@"
+  ],
+  "(isoquinoline_15)": [
+    "ccccccc6cnc6@@"
+  ],
+  "(isoquinoline_16)": [
+    "cccccccc6....cn6"
+  ],
+  "(isoquinoline_17)": [
+    "cccccccc6cn6@"
+  ],
+  "(isoquinoline_18)": [
+    "cccccccnc6...c6"
+  ],
+  "(isoquinoline_19)": [
+    "cccccccncc66"
+  ],
+  "(isoquinoline_20)": [
+    "ccccccnc6...cc6"
+  ],
+  "(isoquinoline_21)": [
+    "ccccccncc6...c6"
+  ],
+  "(isoquinoline_22)": [
+    "ccccccncc6c6"
+  ],
+  "(isoquinoline_23)": [
+    "ccccccnccc66"
+  ],
+  "(isoquinoline_24)": [
+    "cccccn6..cccc6"
+  ],
+  "(isoquinoline_25)": [
+    "cccccn6.cccc6"
+  ],
+  "(isoquinoline_26)": [
+    "cccccnc6...ccc6"
+  ],
+  "(isoquinoline_27)": [
+    "cccccncc6...cc6"
+  ],
+  "(isoquinoline_28)": [
+    "cccccncc6cc6@"
+  ],
+  "(isoquinoline_29)": [
+    "cccccnccc6c6"
+  ],
+  "(isoquinoline_30)": [
+    "ccccnc6...cccc6"
+  ],
+  "(isoquinoline_31)": [
+    "ccccnc6..cccc6"
+  ],
+  "(isoquinoline_32)": [
+    "ccccncc6...ccc6"
+  ],
+  "(isoquinoline_33)": [
+    "ccccncc6ccc6@"
+  ],
+  "(isoquinoline_34)": [
+    "ccccnccc6cc6"
+  ],
+  "(isoquinoline_35)": [
+    "cccncc6...cccc6"
+  ],
+  "(isoquinoline_36)": [
+    "cccncc6cccc6@"
+  ],
+  "(isoquinoline_37)": [
+    "cccnccc6ccc6@@"
+  ],
+  "(isoquinoline_38)": [
+    "ccnccc6cccc6"
+  ],
+  "(isoquinoline_39)": [
+    "ccnccc6cccc6@"
+  ],
+  "(isoquinoline_40)": [
+    "ccnccccccc66"
+  ],
+  "(isoquinoline_41)": [
+    "cncccc6.cccc6"
+  ],
+  "(isoquinoline_42)": [
+    "cncccc6cccc6"
+  ],
+  "(isoquinoline_43)": [
+    "cnccccccc6....c6"
+  ],
+  "(isoquinoline_44)": [
+    "cnccccccc6c6"
+  ],
+  "(isoquinoline_45)": [
+    "cncccccccc66"
+  ],
+  "(isoquinoline_46)": [
+    "nccccc6..cccc6"
+  ],
+  "(isoquinoline_47)": [
+    "nccccc6.cccc6"
+  ],
+  "(isoquinoline_48)": [
+    "nccccccc6....cc6"
+  ],
+  "(isoquinoline_49)": [
+    "nccccccc6cc6@"
+  ],
+  "(isoquinoline_50)": [
+    "ncccccccc6....c6"
+  ],
+  "(isoquinoline_51)": [
+    "ncccccccc6c6"
+  ],
+  "(isoxazole_0)": [
+    "Occcn5"
+  ],
+  "(isoxazole_1)": [
+    "Onccc5"
+  ],
+  "(isoxazole_2)": [
+    "cOncc5"
+  ],
+  "(isoxazole_3)": [
+    "ccOnc5"
+  ],
+  "(isoxazole_4)": [
+    "cccOn5"
+  ],
+  "(isoxazole_5)": [
+    "cccnO5"
+  ],
+  "(isoxazole_6)": [
+    "ccnOc5"
+  ],
+  "(isoxazole_7)": [
+    "cnOcc5"
+  ],
+  "(isoxazole_8)": [
+    "nOccc5"
+  ],
+  "(isoxazole_9)": [
+    "ncccO5"
+  ],
+  "(naphthalene_0)": [
+    "cccccc6....cccc6"
+  ],
+  "(naphthalene_1)": [
+    "cccccc6...cccc6"
+  ],
+  "(naphthalene_2)": [
+    "cccccc6..cccc6"
+  ],
+  "(naphthalene_3)": [
+    "cccccc6.cccc6"
+  ],
+  "(naphthalene_4)": [
+    "cccccc6cccc6"
+  ],
+  "(naphthalene_5)": [
+    "cccccc6cccc6@"
+  ],
+  "(naphthalene_6)": [
+    "ccccccc6....ccc6"
+  ],
+  "(naphthalene_7)": [
+    "ccccccc6ccc6@@"
+  ],
+  "(naphthalene_8)": [
+    "cccccccc6....cc6"
+  ],
+  "(naphthalene_9)": [
+    "cccccccc6cc6@"
+  ],
+  "(naphthalene_10)": [
+    "ccccccccc6....c6"
+  ],
+  "(naphthalene_11)": [
+    "ccccccccc6c6"
+  ],
+  "(naphthalene_12)": [
+    "cccccccccc66"
+  ],
+  "(oxazole_0)": [
+    "Occnc5"
+  ],
+  "(oxazole_1)": [
+    "Ocncc5"
+  ],
+  "(oxazole_2)": [
+    "cOccn5"
+  ],
+  "(oxazole_3)": [
+    "cOcnc5"
+  ],
+  "(oxazole_4)": [
+    "ccOcn5"
+  ],
+  "(oxazole_5)": [
+    "ccncO5"
+  ],
+  "(oxazole_6)": [
+    "cncOc5"
+  ],
+  "(oxazole_7)": [
+    "cnccO5"
+  ],
+  "(oxazole_8)": [
+    "ncOcc5"
+  ],
+  "(oxazole_9)": [
+    "nccOc5"
+  ],
+  "(phenazine_0)": [
+    "cccccc6....ncccccc6....n6"
+  ],
+  "(phenazine_1)": [
+    "cccccc6....ncccccc6n6"
+  ],
+  "(phenazine_2)": [
+    "cccccc6....nccn6cccc6"
+  ],
+  "(phenazine_3)": [
+    "cccccc6...ncccccc6....n6"
+  ],
+  "(phenazine_4)": [
+    "cccccc6...ncccccc6n6"
+  ],
+  "(phenazine_5)": [
+    "cccccc6...nccn6cccc6"
+  ],
+  "(phenazine_6)": [
+    "cccccc6..ncccccc6....n6"
+  ],
+  "(phenazine_7)": [
+    "cccccc6..ncccccc6n6"
+  ],
+  "(phenazine_8)": [
+    "cccccc6..nccn6cccc6"
+  ],
+  "(phenazine_9)": [
+    "cccccc6.ncccccc6....n6"
+  ],
+  "(phenazine_10)": [
+    "cccccc6.ncccccc6n6"
+  ],
+  "(phenazine_11)": [
+    "cccccc6.nccn6cccc6"
+  ],
+  "(phenazine_12)": [
+    "cccccc6ncccccc6....n6"
+  ],
+  "(phenazine_13)": [
+    "cccccc6ncccccc6....n6@"
+  ],
+  "(phenazine_14)": [
+    "cccccc6ncccccc6n6"
+  ],
+  "(phenazine_15)": [
+    "cccccc6ncccccc6n6@"
+  ],
+  "(phenazine_16)": [
+    "cccccc6nccn6@cccc6"
+  ],
+  "(phenazine_17)": [
+    "cccccc6nccn6cccc6"
+  ],
+  "(phenazine_18)": [
+    "cccccncccccc6....n6c6"
+  ],
+  "(phenazine_19)": [
+    "cccccncccccc6....nc66"
+  ],
+  "(phenazine_20)": [
+    "cccccncccccc6n6....c6"
+  ],
+  "(phenazine_21)": [
+    "cccccncccccc6nc6@6@"
+  ],
+  "(phenazine_22)": [
+    "cccccnccn6cccc6....c6"
+  ],
+  "(phenazine_23)": [
+    "cccccnccnc66cccc6"
+  ],
+  "(phenazine_24)": [
+    "ccccncccccc6....n6cc6"
+  ],
+  "(phenazine_25)": [
+    "ccccncccccc6....nc6c6"
+  ],
+  "(phenazine_26)": [
+    "ccccncccccc6n6....cc6"
+  ],
+  "(phenazine_27)": [
+    "ccccncccccc6nc6@c6@@"
+  ],
+  "(phenazine_28)": [
+    "ccccnccn6cccc6....cc6"
+  ],
+  "(phenazine_29)": [
+    "ccccnccnc6c6.cccc6"
+  ],
+  "(phenazine_30)": [
+    "cccncccccc6....n6ccc6"
+  ],
+  "(phenazine_31)": [
+    "cccncccccc6....nc6cc6"
+  ],
+  "(phenazine_32)": [
+    "cccncccccc6n6....ccc6"
+  ],
+  "(phenazine_33)": [
+    "cccncccccc6nc6@cc6@"
+  ],
+  "(phenazine_34)": [
+    "cccnccn6cccc6....ccc6"
+  ],
+  "(phenazine_35)": [
+    "cccnccnc6cc6@..cccc6"
+  ],
+  "(phenazine_36)": [
+    "ccncccccc6....n6cccc6"
+  ],
+  "(phenazine_37)": [
+    "ccncccccc6....nc6ccc6"
+  ],
+  "(phenazine_38)": [
+    "ccncccccc6n6....cccc6"
+  ],
+  "(phenazine_39)": [
+    "ccncccccc6nc6@ccc6"
+  ],
+  "(phenazine_40)": [
+    "ccnccn6cccc6....cccc6"
+  ],
+  "(phenazine_41)": [
+    "ccnccnc6ccc6@...cccc6"
+  ],
+  "(phenazine_42)": [
+    "cncccccc6....nc6cccc6"
+  ],
+  "(phenazine_43)": [
+    "cncccccc6nc6@cccc6"
+  ],
+  "(phenazine_44)": [
+    "cnccnc6cccc6....cccc6"
+  ],
+  "(phenazine_45)": [
+    "ncccccc6....ncc6cccc6"
+  ],
+  "(phenazine_46)": [
+    "ncccccc6....ncccccc66"
+  ],
+  "(phenazine_47)": [
+    "ncccccc6ncc6@@cccc6"
+  ],
+  "(phenazine_48)": [
+    "ncccccc6ncccccc66@@"
+  ],
+  "(phenazine_49)": [
+    "nccncc6cccc6....cccc6"
+  ],
+  "(phenazine_50)": [
+    "nccncccccc66....cccc6"
+  ],
+  "(phthalazine_0)": [
+    "cccccc6....cnnc6"
+  ],
+  "(phthalazine_1)": [
+    "cccccc6...cnnc6"
+  ],
+  "(phthalazine_2)": [
+    "cccccc6..cnnc6"
+  ],
+  "(phthalazine_3)": [
+    "cccccc6.cnnc6"
+  ],
+  "(phthalazine_4)": [
+    "cccccc6cnnc6"
+  ],
+  "(phthalazine_5)": [
+    "cccccc6cnnc6@"
+  ],
+  "(phthalazine_6)": [
+    "ccccccc6....cnn6"
+  ],
+  "(phthalazine_7)": [
+    "ccccccc6cnn6@@"
+  ],
+  "(phthalazine_8)": [
+    "ccccccnnc6..c6"
+  ],
+  "(phthalazine_9)": [
+    "ccccccnncc66"
+  ],
+  "(phthalazine_10)": [
+    "cccccnnc6..cc6"
+  ],
+  "(phthalazine_11)": [
+    "cccccnncc6c6"
+  ],
+  "(phthalazine_12)": [
+    "ccccnn6.cccc6"
+  ],
+  "(phthalazine_13)": [
+    "ccccnnc6..ccc6"
+  ],
+  "(phthalazine_14)": [
+    "ccccnncc6cc6"
+  ],
+  "(phthalazine_15)": [
+    "cccnnc6..cccc6"
+  ],
+  "(phthalazine_16)": [
+    "cccnncc6ccc6@"
+  ],
+  "(phthalazine_17)": [
+    "ccnncc6cccc6@"
+  ],
+  "(phthalazine_18)": [
+    "cnnccc6cccc6"
+  ],
+  "(phthalazine_19)": [
+    "cnnccccccc66"
+  ],
+  "(phthalazine_20)": [
+    "nccccccc6....cn6"
+  ],
+  "(phthalazine_21)": [
+    "nccccccc6cn6@"
+  ],
+  "(phthalazine_22)": [
+    "nccccn6.cccc6"
+  ],
+  "(phthalazine_23)": [
+    "nncccc6.cccc6"
+  ],
+  "(phthalazine_24)": [
+    "nnccccccc6....c6"
+  ],
+  "(phthalazine_25)": [
+    "nnccccccc6c6"
+  ],
+  "(purine_0)": [
+    "Nccnc5.ncnc6"
+  ],
+  "(purine_1)": [
+    "Nccncnc6..nc5"
+  ],
+  "(purine_2)": [
+    "Nccncnc6nc5@@"
+  ],
+  "(purine_3)": [
+    "Ncncc5cncn6"
+  ],
+  "(purine_4)": [
+    "Ncncncncc65"
+  ],
+  "(purine_5)": [
+    "cNccn5ncnc6"
+  ],
+  "(purine_6)": [
+    "cNccncnc6..n5"
+  ],
+  "(purine_7)": [
+    "cNccncnc6n5"
+  ],
+  "(purine_8)": [
+    "cNcnc5ncnc6"
+  ],
+  "(purine_9)": [
+    "ccNcn5..cncn6"
+  ],
+  "(purine_10)": [
+    "ccNcnc5ncn6@@"
+  ],
+  "(purine_11)": [
+    "cccncN5..ncn6"
+  ],
+  "(purine_12)": [
+    "cccncn6..Ncn5"
+  ],
+  "(purine_13)": [
+    "cccncn6.ncN5"
+  ],
+  "(purine_14)": [
+    "ccncN5..ncnc6"
+  ],
+  "(purine_15)": [
+    "ccncnc6..ncN5"
+  ],
+  "(purine_16)": [
+    "ccncnc6ncN5"
+  ],
+  "(purine_17)": [
+    "cncNc5cncn6@"
+  ],
+  "(purine_18)": [
+    "cnccN5.cncn6"
+  ],
+  "(purine_19)": [
+    "cnccNcn5..cn6"
+  ],
+  "(purine_20)": [
+    "cnccNcnc5n6"
+  ],
+  "(purine_21)": [
+    "cncccn6.Ncn5"
+  ],
+  "(purine_22)": [
+    "cncccn6ncN5"
+  ],
+  "(purine_23)": [
+    "cncccncN5..n6"
+  ],
+  "(purine_24)": [
+    "cncccncn6..N5"
+  ],
+  "(purine_25)": [
+    "cncncNc5cn6"
+  ],
+  "(purine_26)": [
+    "cncncc6Ncn5"
+  ],
+  "(purine_27)": [
+    "cncncc6Ncn5@"
+  ],
+  "(purine_28)": [
+    "cncncncNc56"
+  ],
+  "(purine_29)": [
+    "cncncncc6N5@"
+  ],
+  "(purine_30)": [
+    "ncNcc5ncnc6"
+  ],
+  "(purine_31)": [
+    "ncNccncnc65"
+  ],
+  "(purine_32)": [
+    "nccNc5..cncn6"
+  ],
+  "(purine_33)": [
+    "nccNcn5..cnc6"
+  ],
+  "(purine_34)": [
+    "nccNcnc5nc6"
+  ],
+  "(purine_35)": [
+    "ncccnc6..Ncn5"
+  ],
+  "(purine_36)": [
+    "ncccnc6.ncN5"
+  ],
+  "(purine_37)": [
+    "ncccncN5..nc6"
+  ],
+  "(purine_38)": [
+    "ncccncn6..Nc5"
+  ],
+  "(purine_39)": [
+    "ncncNc5cnc6@"
+  ],
+  "(purine_40)": [
+    "ncnccNcn5..c6"
+  ],
+  "(purine_41)": [
+    "ncnccNcnc56"
+  ],
+  "(purine_42)": [
+    "ncnccc6.Ncn5"
+  ],
+  "(purine_43)": [
+    "ncnccc6ncN5"
+  ],
+  "(purine_44)": [
+    "ncncncNc5c6"
+  ],
+  "(purine_45)": [
+    "ncncncc6Nc5"
+  ],
+  "(pyrazine_0)": [
+    "ccnccn6"
+  ],
+  "(pyrazine_1)": [
+    "cnccnc6"
+  ],
+  "(pyrazine_2)": [
+    "nccncc6"
+  ],
+  "(pyrazole_0)": [
+    "Ncccn5"
+  ],
+  "(pyrazole_1)": [
+    "Nnccc5"
+  ],
+  "(pyrazole_2)": [
+    "cNncc5"
+  ],
+  "(pyrazole_3)": [
+    "ccNnc5"
+  ],
+  "(pyrazole_4)": [
+    "cccNn5"
+  ],
+  "(pyrazole_5)": [
+    "cccnN5"
+  ],
+  "(pyrazole_6)": [
+    "ccnNc5"
+  ],
+  "(pyrazole_7)": [
+    "cnNcc5"
+  ],
+  "(pyrazole_8)": [
+    "nNccc5"
+  ],
+  "(pyrazole_9)": [
+    "ncccN5"
+  ],
+  "(pyridazine_0)": [
+    "ccccnn6"
+  ],
+  "(pyridazine_1)": [
+    "cccnnc6"
+  ],
+  "(pyridazine_2)": [
+    "ccnncc6"
+  ],
+  "(pyridazine_3)": [
+    "cnnccc6"
+  ],
+  "(pyridazine_4)": [
+    "nccccn6"
+  ],
+  "(pyridazine_5)": [
+    "nncccc6"
+  ],
+  "(pyridine_0)": [
+    "cccccn6"
+  ],
+  "(pyridine_1)": [
+    "ccccnc6"
+  ],
+  "(pyridine_2)": [
+    "cccncc6"
+  ],
+  "(pyridine_3)": [
+    "ccnccc6"
+  ],
+  "(pyridine_4)": [
+    "cncccc6"
+  ],
+  "(pyridine_5)": [
+    "nccccc6"
+  ],
+  "(pyrimidine_0)": [
+    "cccncn6"
+  ],
+  "(pyrimidine_1)": [
+    "ccncnc6"
+  ],
+  "(pyrimidine_2)": [
+    "cncccn6"
+  ],
+  "(pyrimidine_3)": [
+    "cncncc6"
+  ],
+  "(pyrimidine_4)": [
+    "ncccnc6"
+  ],
+  "(pyrimidine_5)": [
+    "ncnccc6"
+  ],
+  "(pyrrole_0)": [
+    "Ncccc5"
+  ],
+  "(pyrrole_1)": [
+    "cNccc5"
+  ],
+  "(pyrrole_2)": [
+    "ccNcc5"
+  ],
+  "(pyrrole_3)": [
+    "cccNc5"
+  ],
+  "(pyrrole_4)": [
+    "ccccN5"
+  ],
+  "(quinazoline_0)": [
+    "cccccc6....cncn6"
+  ],
+  "(quinazoline_1)": [
+    "cccccc6....ncnc6"
+  ],
+  "(quinazoline_2)": [
+    "cccccc6...cncn6"
+  ],
+  "(quinazoline_3)": [
+    "cccccc6...ncnc6"
+  ],
+  "(quinazoline_4)": [
+    "cccccc6..cncn6"
+  ],
+  "(quinazoline_5)": [
+    "cccccc6..ncnc6"
+  ],
+  "(quinazoline_6)": [
+    "cccccc6.cncn6"
+  ],
+  "(quinazoline_7)": [
+    "cccccc6.ncnc6"
+  ],
+  "(quinazoline_8)": [
+    "cccccc6cncn6"
+  ],
+  "(quinazoline_9)": [
+    "cccccc6cncn6@"
+  ],
+  "(quinazoline_10)": [
+    "cccccc6ncnc6"
+  ],
+  "(quinazoline_11)": [
+    "cccccc6ncnc6@"
+  ],
+  "(quinazoline_12)": [
+    "ccccccc6....ncn6"
+  ],
+  "(quinazoline_13)": [
+    "ccccccc6ncn6@@"
+  ],
+  "(quinazoline_14)": [
+    "ccccccncn6..c6"
+  ],
+  "(quinazoline_15)": [
+    "ccccccncnc66"
+  ],
+  "(quinazoline_16)": [
+    "cccccncn6..cc6"
+  ],
+  "(quinazoline_17)": [
+    "cccccncnc6..c6"
+  ],
+  "(quinazoline_18)": [
+    "cccccncnc6c6"
+  ],
+  "(quinazoline_19)": [
+    "cccccncncc66"
+  ],
+  "(quinazoline_20)": [
+    "ccccncn6..ccc6"
+  ],
+  "(quinazoline_21)": [
+    "ccccncnc6..cc6"
+  ],
+  "(quinazoline_22)": [
+    "ccccncnc6cc6"
+  ],
+  "(quinazoline_23)": [
+    "ccccncncc6c6"
+  ],
+  "(quinazoline_24)": [
+    "cccncn6..cccc6"
+  ],
+  "(quinazoline_25)": [
+    "cccncn6.cccc6"
+  ],
+  "(quinazoline_26)": [
+    "cccncnc6..ccc6"
+  ],
+  "(quinazoline_27)": [
+    "cccncnc6ccc6@@"
+  ],
+  "(quinazoline_28)": [
+    "cccncncc6cc6@"
+  ],
+  "(quinazoline_29)": [
+    "ccncnc6..cccc6"
+  ],
+  "(quinazoline_30)": [
+    "ccncnc6cccc6"
+  ],
+  "(quinazoline_31)": [
+    "ccncncc6ccc6"
+  ],
+  "(quinazoline_32)": [
+    "cncccccc6....cn6"
+  ],
+  "(quinazoline_33)": [
+    "cncccccc6cn6@"
+  ],
+  "(quinazoline_34)": [
+    "cnccccccc6....n6"
+  ],
+  "(quinazoline_35)": [
+    "cnccccccc6n6"
+  ],
+  "(quinazoline_36)": [
+    "cncccn6.cccc6"
+  ],
+  "(quinazoline_37)": [
+    "cncccn6cccc6"
+  ],
+  "(quinazoline_38)": [
+    "cncncc6cccc6"
+  ],
+  "(quinazoline_39)": [
+    "cncncc6cccc6@"
+  ],
+  "(quinazoline_40)": [
+    "cncncccccc66"
+  ],
+  "(quinazoline_41)": [
+    "ncccccc6....cnc6"
+  ],
+  "(quinazoline_42)": [
+    "ncccccc6cnc6@@"
+  ],
+  "(quinazoline_43)": [
+    "nccccccc6....nc6"
+  ],
+  "(quinazoline_44)": [
+    "nccccccc6nc6@"
+  ],
+  "(quinazoline_45)": [
+    "ncccnc6..cccc6"
+  ],
+  "(quinazoline_46)": [
+    "ncccnc6.cccc6"
+  ],
+  "(quinazoline_47)": [
+    "ncnccc6.cccc6"
+  ],
+  "(quinazoline_48)": [
+    "ncnccc6cccc6"
+  ],
+  "(quinazoline_49)": [
+    "ncncccccc6....c6"
+  ],
+  "(quinazoline_50)": [
+    "ncncccccc6c6"
+  ],
+  "(quinazoline_51)": [
+    "ncnccccccc66"
+  ],
+  "(quinoline_0)": [
+    "cccccc6....cccn6"
+  ],
+  "(quinoline_1)": [
+    "cccccc6....nccc6"
+  ],
+  "(quinoline_2)": [
+    "cccccc6...cccn6"
+  ],
+  "(quinoline_3)": [
+    "cccccc6...nccc6"
+  ],
+  "(quinoline_4)": [
+    "cccccc6..cccn6"
+  ],
+  "(quinoline_5)": [
+    "cccccc6..nccc6"
+  ],
+  "(quinoline_6)": [
+    "cccccc6.cccn6"
+  ],
+  "(quinoline_7)": [
+    "cccccc6.nccc6"
+  ],
+  "(quinoline_8)": [
+    "cccccc6cccn6"
+  ],
+  "(quinoline_9)": [
+    "cccccc6cccn6@"
+  ],
+  "(quinoline_10)": [
+    "cccccc6nccc6"
+  ],
+  "(quinoline_11)": [
+    "cccccc6nccc6@"
+  ],
+  "(quinoline_12)": [
+    "ccccccc6....ncc6"
+  ],
+  "(quinoline_13)": [
+    "ccccccc6ncc6@@"
+  ],
+  "(quinoline_14)": [
+    "cccccccc6....nc6"
+  ],
+  "(quinoline_15)": [
+    "cccccccc6nc6@"
+  ],
+  "(quinoline_16)": [
+    "ccccccccc6....n6"
+  ],
+  "(quinoline_17)": [
+    "ccccccccc6n6"
+  ],
+  "(quinoline_18)": [
+    "ccccccccn6...c6"
+  ],
+  "(quinoline_19)": [
+    "ccccccccnc66"
+  ],
+  "(quinoline_20)": [
+    "cccccccn6...cc6"
+  ],
+  "(quinoline_21)": [
+    "cccccccnc6c6"
+  ],
+  "(quinoline_22)": [
+    "ccccccn6...ccc6"
+  ],
+  "(quinoline_23)": [
+    "ccccccnc6cc6@"
+  ],
+  "(quinoline_24)": [
+    "cccccn6...cccc6"
+  ],
+  "(quinoline_25)": [
+    "cccccn6cccc6"
+  ],
+  "(quinoline_26)": [
+    "cccccnc6ccc6@@"
+  ],
+  "(quinoline_27)": [
+    "cccccnccc6...c6"
+  ],
+  "(quinoline_28)": [
+    "cccccncccc66"
+  ],
+  "(quinoline_29)": [
+    "ccccnc6.cccc6"
+  ],
+  "(quinoline_30)": [
+    "ccccnc6cccc6"
+  ],
+  "(quinoline_31)": [
+    "ccccnccc6...cc6"
+  ],
+  "(quinoline_32)": [
+    "ccccncccc6c6"
+  ],
+  "(quinoline_33)": [
+    "cccncc6..cccc6"
+  ],
+  "(quinoline_34)": [
+    "cccncc6cccc6"
+  ],
+  "(quinoline_35)": [
+    "cccnccc6...ccc6"
+  ],
+  "(quinoline_36)": [
+    "cccncccc6cc6@"
+  ],
+  "(quinoline_37)": [
+    "cccncccccc66"
+  ],
+  "(quinoline_38)": [
+    "ccnccc6...cccc6"
+  ],
+  "(quinoline_39)": [
+    "ccnccc6.cccc6"
+  ],
+  "(quinoline_40)": [
+    "ccncccc6ccc6@"
+  ],
+  "(quinoline_41)": [
+    "ccncccccc6....c6"
+  ],
+  "(quinoline_42)": [
+    "ccncccccc6c6"
+  ],
+  "(quinoline_43)": [
+    "cncccc6..cccc6"
+  ],
+  "(quinoline_44)": [
+    "cncccc6cccc6@"
+  ],
+  "(quinoline_45)": [
+    "cncccccc6....cc6"
+  ],
+  "(quinoline_46)": [
+    "cncccccc6cc6@"
+  ],
+  "(quinoline_47)": [
+    "nccccc6...cccc6"
+  ],
+  "(quinoline_48)": [
+    "nccccc6cccc6"
+  ],
+  "(quinoline_49)": [
+    "ncccccc6....ccc6"
+  ],
+  "(quinoline_50)": [
+    "ncccccc6ccc6@@"
+  ],
+  "(quinoline_51)": [
+    "nccccccccc66"
+  ],
+  "(quinoxaline_0)": [
+    "cccccc6....nccn6"
+  ],
+  "(quinoxaline_1)": [
+    "cccccc6...nccn6"
+  ],
+  "(quinoxaline_2)": [
+    "cccccc6..nccn6"
+  ],
+  "(quinoxaline_3)": [
+    "cccccc6.nccn6"
+  ],
+  "(quinoxaline_4)": [
+    "cccccc6nccn6"
+  ],
+  "(quinoxaline_5)": [
+    "cccccc6nccn6@"
+  ],
+  "(quinoxaline_6)": [
+    "cccccnccn6..c6"
+  ],
+  "(quinoxaline_7)": [
+    "cccccnccnc66"
+  ],
+  "(quinoxaline_8)": [
+    "ccccnccn6..cc6"
+  ],
+  "(quinoxaline_9)": [
+    "ccccnccnc6c6"
+  ],
+  "(quinoxaline_10)": [
+    "cccnccn6..ccc6"
+  ],
+  "(quinoxaline_11)": [
+    "cccnccnc6cc6@"
+  ],
+  "(quinoxaline_12)": [
+    "ccncccccc6....n6"
+  ],
+  "(quinoxaline_13)": [
+    "ccncccccc6n6"
+  ],
+  "(quinoxaline_14)": [
+    "ccnccn6..cccc6"
+  ],
+  "(quinoxaline_15)": [
+    "ccnccn6cccc6"
+  ],
+  "(quinoxaline_16)": [
+    "ccnccnc6ccc6@"
+  ],
+  "(quinoxaline_17)": [
+    "cncccccc6....nc6"
+  ],
+  "(quinoxaline_18)": [
+    "cncccccc6nc6@"
+  ],
+  "(quinoxaline_19)": [
+    "cnccnc6.cccc6"
+  ],
+  "(quinoxaline_20)": [
+    "cnccnc6cccc6"
+  ],
+  "(quinoxaline_21)": [
+    "ncccccc6....ncc6"
+  ],
+  "(quinoxaline_22)": [
+    "ncccccc6ncc6@@"
+  ],
+  "(quinoxaline_23)": [
+    "nccncc6..cccc6"
+  ],
+  "(quinoxaline_24)": [
+    "nccncc6cccc6"
+  ],
+  "(quinoxaline_25)": [
+    "nccncccccc66"
+  ],
+  "(thiazole_0)": [
+    "Sccnc5"
+  ],
+  "(thiazole_1)": [
+    "Scncc5"
+  ],
+  "(thiazole_2)": [
+    "cSccn5"
+  ],
+  "(thiazole_3)": [
+    "cScnc5"
+  ],
+  "(thiazole_4)": [
+    "ccScn5"
+  ],
+  "(thiazole_5)": [
+    "ccncS5"
+  ],
+  "(thiazole_6)": [
+    "cncSc5"
+  ],
+  "(thiazole_7)": [
+    "cnccS5"
+  ],
+  "(thiazole_8)": [
+    "ncScc5"
+  ],
+  "(thiazole_9)": [
+    "nccSc5"
+  ],
+  "(thiophene_0)": [
+    "Scccc5"
+  ],
+  "(thiophene_1)": [
+    "cSccc5"
+  ],
+  "(thiophene_2)": [
+    "ccScc5"
+  ],
+  "(thiophene_3)": [
+    "cccSc5"
+  ],
+  "(thiophene_4)": [
+    "ccccS5"
+  ]
+}
