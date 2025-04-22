@@ -18,6 +18,7 @@ L_PAREN = "("
 R_PAREN = ")"
 SKIP = "@"
 MOLSEP = ";"
+AMPERSAND = "&"
 
 DIHEDRAL_FOR_BOND_SYMBOL = {
     s: 30 * (i - 12 if i > 6 else i) for i, s in enumerate(DIHEDRALS)
@@ -33,8 +34,11 @@ _pring = (
 )
 _psaturate = f"(?P<saturate>{escape(DOT)})"
 _pmolsep = f"(?P<molsep>{escape(MOLSEP)})"
+_pampersand = f"(?P<ampersand>{escape(AMPERSAND)})"
 
-RegExp = compile(f"({_pbond}?({_patom}|({_pring})))|{_psaturate}|{_pmolsep}")
+RegExp = compile(
+    f"({_pbond}?({_patom}|({_pring})))|{_psaturate}|{_pmolsep}|{_pampersand}"
+)
 
 
 def ToTokens(s: str) -> List[str]:

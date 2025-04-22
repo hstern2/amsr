@@ -34,13 +34,6 @@ def _bondAtom(mol, atom, a, bond, makeBond, stringent, dihedral_for_bond):
             _addAtom(mol, atom, a)
             _addBond(mol, atom, i, len(atom) - 1, bond, dihedral_for_bond)
             return
-    for i in reversed(range(len(atom))):
-        if atom[i].nNeighbors < atom[i].maxNeighbors and atom[i].canBondWith(
-            a, stringent
-        ):
-            _addAtom(mol, atom, a)
-            _addBond(mol, atom, i, len(atom) - 1, bond, dihedral_for_bond)
-            return
 
 
 def _saturate(atom):
@@ -88,6 +81,7 @@ def ToMol(
     atom: List[Atom] = []
     dihedral_for_bond: Dict[int] = {}
     makeBond = False
+    isSaturated_save = None
     for m in RegExp.finditer(DecodeGroups(s)):
         if m.group("ring"):
             _ring(
@@ -113,6 +107,24 @@ def ToMol(
             _saturate(atom)
         elif m.group("molsep"):
             makeBond = False
+        elif m.group("ampersand"):
+            if isSaturated_save is None:
+                for a in reversed(mol.GetAtoms()):
+                    j = a.GetIdx()
+                    if atom[j].canBond():
+                        isSaturated_save = [
+                            atom[k].isSaturated for k in range(0, j + 1)
+                        ]
+                        for k in range(0, j):
+                            atom[k].isSaturated = True
+                        break
+            else:
+                for k, isSaturated in enumerate(isSaturated_save):
+                    atom[k].isSaturated = isSaturated
+                for k in range(len(isSaturated_save), len(atom)):
+                    atom[k].isSaturated = True
+                isSaturated_save = None
+
     for a in mol.GetAtoms():
         if a.GetChiralTag() != Chem.ChiralType.CHI_UNSPECIFIED:
             n = len(a.GetBonds())
