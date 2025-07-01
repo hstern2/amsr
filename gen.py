@@ -3,7 +3,7 @@ from argparse import ArgumentParser
 import os
 
 DEFAULT_T = 1.0
-DEFAULT_MAX_LENGTH = 20
+DEFAULT_MAX_LENGTH = 100
 DEFAULT_N = 10
 DEFAULT_MODEL = os.path.join(os.path.dirname(__file__), "models", "model.pth")
 
