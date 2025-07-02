@@ -1,5 +1,3 @@
-# Invalid SMILES test file - These should fail parsing
-# Format: SMILES molecule_name
 C invalid_bracket
 [ invalid_atom
 ) unmatched_bracket

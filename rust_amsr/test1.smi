@@ -1,5 +1,10 @@
 CCO ethanol
 c1ccccc1 benzene
 CC(C)C isobutane
-CCOC diethyl ether
-C1CCCCC1 cyclohexane 
+C1CCCCC1 cyclohexane
+CCOC diethyl_ether
+CC(=O)O acetic_acid
+CCN ethylamine
+C1=CC=CC=C1 benzene_explicit_bonds
+CC(C)(C)C neopentane
+CCOCC diethylene_glycol 

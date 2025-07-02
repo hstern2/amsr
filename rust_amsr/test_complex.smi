@@ -1,5 +1,3 @@
-# Complex SMILES test file - More complex molecules
-# Format: SMILES molecule_name
 C1CC2CCCC2CC1 bicyclo[2.2.1]heptane
 c1ccc2c(c1)cccc2 naphthalene
 C1CC2CCCC2CC1CC2CCCC2C1 adamantane
