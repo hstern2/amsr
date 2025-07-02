@@ -8,6 +8,8 @@ pub mod amsr_encode;
 pub mod amsr_decode;
 pub mod smiles_encode;
 pub mod smiles_decode;
+#[cfg(test)]
+pub mod integration_tests;
 pub use amsr_encode::{encode_molecule, encode_molecule_to_tokens, AMSREncoder};
 pub use amsr_decode::{decode_amsr, decode_amsr_with_dihedrals, AMSRDecoder};
 pub use smiles_encode::{encode_smiles, SMILESEncoder};

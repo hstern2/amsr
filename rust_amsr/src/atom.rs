@@ -226,7 +226,7 @@ impl Atom {
         // Add radical electrons
         result.push_str(&RADICAL.repeat(self.radical_electrons as usize));
 
-        result
+        resul
     }
 }
 

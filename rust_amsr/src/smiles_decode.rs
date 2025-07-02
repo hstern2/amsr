@@ -52,7 +52,8 @@ pub fn decode_smiles(smiles: &str) -> Result<Molecule, Box<dyn std::error::Error
                 let mut symbol = c.to_string();
                 // Handle two-letter elements (e.g., Cl, Br)
                 if let Some(&next) = chars.peek() {
-                    if next.is_ascii_lowercase() {
+                    if next.is_ascii_lowercase() && !c.is_lowercase() {
+                        // This is a two-letter element (e.g., Cl, Br)
                         symbol.push(chars.next().unwrap());
                     }
                 }
