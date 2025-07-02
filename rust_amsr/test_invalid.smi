@@ -1,4 +1,4 @@
 C invalid_bracket
 [ invalid_atom
 ) unmatched_bracket
-1CCCCC1 ring_closure_before_atom 
+1CCCCC1 ring_closure_before_atom
