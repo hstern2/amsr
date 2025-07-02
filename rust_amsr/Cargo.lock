@@ -15,12 +15,19 @@ dependencies = [
 name = "amsr"
 version = "0.1.0"
 dependencies = [
+ "gamma",
  "lazy_static",
  "regex",
  "serde",
  "serde_json",
  "thiserror",
 ]
+
+[[package]]
+name = "gamma"
+version = "0.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "598aa3d76b6761086bef56540d97ae1cca8b44d1fec56a64282fdbeba83f13dc"
 
 [[package]]
 name = "itoa"

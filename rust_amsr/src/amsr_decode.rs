@@ -61,10 +61,10 @@ impl AMSRDecoder {
                     }
                 },
                 Token::Saturate => {
-                    // Mark atom as saturated
-                    if let Some(atom_idx) = atom_stack.last() {
-                        mol.atoms[*atom_idx].is_saturated = true;
-                    }
+                    // SMILES doesn't need AMSR saturation
+                    // if let Some(atom_idx) = atom_stack.last() {
+                    //     mol.atoms[*atom_idx].is_saturated = true;
+                    // }
                 },
                 Token::MolSep => {
                     // Start new molecule componen
@@ -88,11 +88,11 @@ impl AMSRDecoder {
         }
 
         // Saturate remaining atoms
-        for atom in &mut mol.atoms {
-            if atom.can_bond() {
-                atom.is_saturated = true;
-            }
-        }
+        // for atom in &mut mol.atoms {
+        //     if atom.can_bond() {
+        //         atom.is_saturated = true;
+        //     }
+        // }
 
         Ok(mol)
     }
@@ -145,10 +145,10 @@ impl AMSRDecoder {
                     }
                 },
                 Token::Saturate => {
-                    // Mark atom as saturated
-                    if let Some(atom_idx) = atom_stack.last() {
-                        mol.atoms[*atom_idx].is_saturated = true;
-                    }
+                    // SMILES doesn't need AMSR saturation
+                    // if let Some(atom_idx) = atom_stack.last() {
+                    //     mol.atoms[*atom_idx].is_saturated = true;
+                    // }
                 },
                 Token::MolSep => {
                     // Start new molecule componen
@@ -192,11 +192,11 @@ impl AMSRDecoder {
         }
 
         // Saturate remaining atoms
-        for atom in &mut mol.atoms {
-            if atom.can_bond() {
-                atom.is_saturated = true;
-            }
-        }
+        // for atom in &mut mol.atoms {
+        //     if atom.can_bond() {
+        //         atom.is_saturated = true;
+        //     }
+        // }
 
         Ok((mol, dihedrals))
     }

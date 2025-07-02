@@ -1,4 +1,3 @@
-use crate::valence::get_valence;
 use crate::tokens::{PLUS, MINUS, RADICAL, EXTRA_PI, BANG, CW, CCW};
 use regex::Regex;
 use lazy_static::lazy_static;
@@ -23,11 +22,7 @@ pub struct Atom {
     pub radical_electrons: i32,
     pub bangs: i32,
     pub chiral_type: ChiralType,
-    pub max_pi_bonds: i32,
-    pub n_pi_bonds: i32,
-    pub max_neighbors: i32,
-    pub n_neighbors: i32,
-    pub is_saturated: bool,
+    // SMILES doesn't need neighbor counting - that's AMSR-specific
 }
 
 impl Atom {
@@ -40,15 +35,9 @@ impl Atom {
             radical_electrons: 0,
             bangs: 0,
             chiral_type: ChiralType::Unspecified,
-            max_pi_bonds: 0,
-            n_pi_bonds: 0,
-            max_neighbors: 0,
-            n_neighbors: 0,
-            is_saturated: false,
         };
 
         atom.parse_symbol()?;
-        atom.calculate_properties()?;
 
         Ok(atom)
     }
@@ -91,62 +80,16 @@ impl Atom {
             // Convert first letter to uppercase and set aromatic pi bonds
             let first_char = self.atom_symbol.chars().next().unwrap().to_uppercase().next().unwrap();
             self.atom_symbol = first_char.to_string() + &self.atom_symbol[1..];
-            self.max_pi_bonds = 1;
         }
 
         // Add extra pi bonds from : symbols
-        self.max_pi_bonds += 2 * self.symbol.matches(EXTRA_PI).count() as i32;
-
         Ok(())
     }
 
-    fn calculate_properties(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        // Get valence from lookup table
-        println!("Valence lookup: symbol='{}', charge={}, bangs={}", self.atom_symbol, self.charge, self.bangs);
-        let valence = get_valence(&self.atom_symbol, self.charge, self.bangs)
-            .ok_or_else(|| format!("Unknown valence for {}{}{}",
-                self.atom_symbol, self.charge, self.bangs))?;
+    // SMILES doesn't need valence calculations - that's AMSR-specific
 
-        // Calculate max neighbors: valence - radical electrons - pi bonds
-        self.max_neighbors = valence - self.radical_electrons - self.max_pi_bonds;
-
-        if self.max_neighbors < 0 {
-            return Err(format!("Invalid valence state for atom {}", self.symbol).into());
-        }
-
-        Ok(())
-    }
-
-    pub fn add_bond_to(&mut self, other: &mut Atom) {
-        self.n_neighbors += 1;
-        other.n_neighbors += 1;
-    }
-
-    pub fn can_bond(&self) -> bool {
-        !self.is_saturated && self.n_neighbors < self.max_neighbors
-    }
-
-    pub fn can_bond_with(&self, other: &Atom, stringent: bool) -> bool {
-        if !stringent {
-            return true;
-        }
-
-        // Oxygen-oxygen bonds are unstable
-        if self.is_oxygen() && other.is_oxygen() {
-            return false;
-        }
-
-        // Halogen-heteroatom bonds are often unstable
-        if self.is_halogen() && other.is_hetero() {
-            return false;
-        }
-
-        true
-    }
-
-    pub fn n_available_pi_bonds(&self) -> i32 {
-        self.max_pi_bonds - self.n_pi_bonds
-    }
+    // SMILES doesn't need these AMSR-specific methods
+    // Neighbor counting and valence checking are handled differently in SMILES
 
     pub fn is_carbon(&self) -> bool {
         self.atom_symbol == "C"
@@ -172,27 +115,6 @@ impl Atom {
         self.is_hetero() && !self.is_halogen()
     }
 
-    pub fn is_aromatic(&self) -> bool {
-        // If symbol starts with '[', look for the first alphabetic character after any isotope
-        if self.symbol.starts_with('[') {
-            let mut chars = self.symbol[1..].chars();
-            // Skip digits (isotope)
-            while let Some(c) = chars.next() {
-                if c.is_ascii_alphabetic() {
-                    return c.is_lowercase();
-                }
-            }
-            return false;
-        }
-        // Otherwise, check if the first alphabetic character is lowercase
-        for c in self.symbol.chars() {
-            if c.is_ascii_alphabetic() {
-                return c.is_lowercase();
-            }
-        }
-        false
-    }
-
     pub fn symbol_with(&self, suffix: &str) -> String {
         if self.symbol.starts_with('[') {
             format!("[{}{}{}]", &self.symbol[1..self.symbol.len()-1], suffix, "]")
@@ -210,11 +132,7 @@ impl Atom {
         }
 
         // Add atom symbol
-        if self.is_aromatic() {
-            result.push_str(&self.atom_symbol.to_lowercase());
-        } else {
-            result.push_str(&self.atom_symbol);
-        }
+        result.push_str(&self.atom_symbol);
 
         // Add charge
         if self.charge > 0 {
@@ -226,7 +144,7 @@ impl Atom {
         // Add radical electrons
         result.push_str(&RADICAL.repeat(self.radical_electrons as usize));
 
-        resul
+        result
     }
 }
 
@@ -241,8 +159,6 @@ mod tests {
         assert_eq!(atom.charge, 0);
         assert_eq!(atom.radical_electrons, 0);
         assert_eq!(atom.bangs, 0);
-        assert_eq!(atom.max_neighbors, 4);
-        assert_eq!(atom.max_pi_bonds, 0);
     }
 
     #[test]
@@ -250,21 +166,16 @@ mod tests {
         let atom = Atom::new("O+").unwrap();
         assert_eq!(atom.atom_symbol, "O");
         assert_eq!(atom.charge, 1);
-        assert_eq!(atom.max_neighbors, 3); // valence(3) - radicals(0) - pi_bonds(0) = 3
 
         let atom = Atom::new("N-").unwrap();
         assert_eq!(atom.atom_symbol, "N");
         assert_eq!(atom.charge, -1);
-        assert_eq!(atom.max_neighbors, 2); // valence(2) - radicals(0) - pi_bonds(0) = 2
     }
 
     #[test]
     fn test_aromatic_atom() {
         let atom = Atom::new("c").unwrap();
         assert_eq!(atom.atom_symbol, "C");
-        assert_eq!(atom.max_pi_bonds, 1);
-        assert_eq!(atom.max_neighbors, 3); // valence(4) - radicals(0) - pi_bonds(1) = 3
-        assert!(atom.is_aromatic());
     }
 
     #[test]
@@ -272,7 +183,6 @@ mod tests {
         let atom = Atom::new("C*").unwrap();
         assert_eq!(atom.atom_symbol, "C");
         assert_eq!(atom.radical_electrons, 1);
-        assert_eq!(atom.max_neighbors, 3); // valence(4) - radicals(1) - pi_bonds(0) = 3
     }
 
     #[test]
@@ -280,7 +190,6 @@ mod tests {
         let atom = Atom::new("S!").unwrap();
         assert_eq!(atom.atom_symbol, "S");
         assert_eq!(atom.bangs, 1);
-        assert_eq!(atom.max_neighbors, 4); // valence(4) - radicals(0) - pi_bonds(0) = 4
     }
 
     #[test]
@@ -288,7 +197,6 @@ mod tests {
         let atom = Atom::new("[13C]").unwrap();
         assert_eq!(atom.atom_symbol, "C");
         assert_eq!(atom.isotope, Some(13));
-        assert_eq!(atom.max_neighbors, 4);
     }
 
     #[test]
@@ -306,8 +214,6 @@ mod tests {
     fn test_extra_pi_bonds() {
         let atom = Atom::new("C::").unwrap();
         assert_eq!(atom.atom_symbol, "C");
-        assert_eq!(atom.max_pi_bonds, 4); // 2 * 2 colons = 4
-        assert_eq!(atom.max_neighbors, 0); // valence(4) - radicals(0) - pi_bonds(4) = 0
     }
 
     #[test]
@@ -318,9 +224,7 @@ mod tests {
         assert_eq!(atom.charge, 1);
         assert_eq!(atom.radical_electrons, 1);
         assert_eq!(atom.bangs, 1);
-        assert_eq!(atom.max_pi_bonds, 3); // aromatic(1) + extra(2) = 3
         assert_eq!(atom.chiral_type, ChiralType::CW);
-        assert!(atom.is_aromatic());
     }
 
     #[test]

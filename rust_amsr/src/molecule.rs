@@ -35,17 +35,12 @@ impl Molecule {
         // Add bond
         self.bonds.push((atom1_idx, atom2_idx, bond));
 
-        // Update adjacency lis
+        // Update adjacency list
         self.adjacency_list.get_mut(&atom1_idx).unwrap().push(atom2_idx);
         self.adjacency_list.get_mut(&atom2_idx).unwrap().push(atom1_idx);
 
-        // Update atom neighbor counts
-        {
-            let (left, right) = self.atoms.split_at_mut(atom1_idx + 1);
-            let atom1 = &mut left[atom1_idx];
-            let atom2 = &mut right[atom2_idx - atom1_idx - 1];
-            atom1.add_bond_to(atom2);
-        }
+        // For SMILES, we don't need to track neighbor counts
+        // The adjacency list is sufficient for graph operations
 
         Ok(())
     }
@@ -56,6 +51,15 @@ impl Molecule {
 
     pub fn get_bond(&self, atom1_idx: usize, atom2_idx: usize) -> Option<&Bond> {
         for (a1, a2, bond) in &self.bonds {
+            if (*a1 == atom1_idx && *a2 == atom2_idx) || (*a1 == atom2_idx && *a2 == atom1_idx) {
+                return Some(bond);
+            }
+        }
+        None
+    }
+
+    pub fn get_bond_mut(&mut self, atom1_idx: usize, atom2_idx: usize) -> Option<&mut Bond> {
+        for (a1, a2, bond) in &mut self.bonds {
             if (*a1 == atom1_idx && *a2 == atom2_idx) || (*a1 == atom2_idx && *a2 == atom1_idx) {
                 return Some(bond);
             }

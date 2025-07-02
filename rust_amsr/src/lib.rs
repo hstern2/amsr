@@ -8,11 +8,12 @@ pub mod amsr_encode;
 pub mod amsr_decode;
 pub mod smiles_encode;
 pub mod smiles_decode;
+pub mod aromaticity;
 #[cfg(test)]
-pub mod integration_tests;
+pub mod test;
 pub use amsr_encode::{encode_molecule, encode_molecule_to_tokens, AMSREncoder};
 pub use amsr_decode::{decode_amsr, decode_amsr_with_dihedrals, AMSRDecoder};
-pub use smiles_encode::{encode_smiles, SMILESEncoder};
+pub use smiles_encode::{encode_smiles, SMILES_Encoder};
 pub use smiles_decode::decode_smiles;
 
 use errors::AMSRResult;

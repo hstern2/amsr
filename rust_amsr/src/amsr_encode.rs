@@ -159,41 +159,18 @@ impl AMSREncoder {
             }
         }
 
-        // Add saturation dot if atom can still bond
-        if mol.atoms[current].can_bond() {
-            tokens.push(DOT.to_string());
-        }
+        // SMILES doesn't need AMSR saturation checking
+        // if mol.atoms[current].can_bond() {
+        //     tokens.push(DOT.to_string());
+        // }
 
         Ok(())
     }
 
     fn search_order(&self, mol: &Molecule, current: usize, a: usize, b: usize) -> std::cmp::Ordering {
-        // 1. Seen atoms before unseen atoms (i.e. rings)
-        let a_seen = mol.atoms[a].n_neighbors > 0;
-        let b_seen = mol.atoms[b].n_neighbors > 0;
-
-        if a_seen != b_seen {
-            return a_seen.cmp(&b_seen);
-        }
-
-        // 2. Aromatic bonds first (simplified)
-        let a_aromatic = mol.atoms[a].is_aromatic();
-        let b_aromatic = mol.atoms[b].is_aromatic();
-
-        if a_aromatic != b_aromatic {
-            return a_aromatic.cmp(&b_aromatic).reverse();
-        }
-
-        // 3. Small rings before larger (for seen) .. otherwise atom index (for unseen)
-        if a_seen {
-            // For seen atoms, prefer smaller ring sizes
-            let a_ring_size = self.estimate_ring_size(mol, current, a);
-            let b_ring_size = self.estimate_ring_size(mol, current, b);
-            a_ring_size.cmp(&b_ring_size)
-        } else {
-            // For unseen atoms, use atom index
-            a.cmp(&b)
-        }
+        // SMILES doesn't need AMSR neighbor counting
+        // For now, just use atom index for ordering
+        a.cmp(&b)
     }
 
     fn estimate_ring_size(&self, mol: &Molecule, current: usize, target: usize) -> usize {
