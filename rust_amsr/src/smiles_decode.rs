@@ -1,17 +1,26 @@
 use crate::molecule::Molecule;
 use crate::atom::Atom;
 use crate::bond::{Bond, BondStereo};
-use std::collections::HashMap;
+use crate::aromaticity::kekulize_molecule;
+use std::collections::{HashMap, HashSet};
+
+/// Represents a pending ring closure with optional bond type
+#[derive(Debug, Clone)]
+struct RingClosure {
+    atom_idx: usize,
+    bond: Option<Bond>,
+}
 
 /// Decode a SMILES string into a Molecule graph.
 pub fn decode_smiles(smiles: &str) -> Result<Molecule, Box<dyn std::error::Error>> {
     let mut mol = Molecule::new();
     let mut atom_stack: Vec<usize> = Vec::new();
     let mut branch_points: Vec<usize> = Vec::new();
-    let mut ring_closures: HashMap<u32, usize> = HashMap::new();
+    let mut ring_closures: HashMap<u32, RingClosure> = HashMap::new();
     let mut chars = smiles.chars().peekable();
     let mut prev_atom: Option<usize> = None;
     let mut pending_bond: Option<Bond> = None;
+    let mut aromatic_atoms = HashSet::new();
 
     while let Some(c) = chars.next() {
         match c {
@@ -37,14 +46,14 @@ pub fn decode_smiles(smiles: &str) -> Result<Molecule, Box<dyn std::error::Error
             // Ring closure (single digit)
             d if d.is_ascii_digit() => {
                 let ring_num = d.to_digit(10).unwrap();
-                if let Some(&other_idx) = ring_closures.get(&ring_num) {
-                    if let Some(cur_idx) = prev_atom {
-                        let bond = pending_bond.take().unwrap_or_else(Bond::single);
-                        mol.add_bond(cur_idx, other_idx, bond)?;
-                    }
-                    ring_closures.remove(&ring_num);
-                } else if let Some(cur_idx) = prev_atom {
-                    ring_closures.insert(ring_num, cur_idx);
+                handle_ring_closure(&mut mol, &mut ring_closures, &mut prev_atom,
+                                  &mut pending_bond, ring_num)?;
+            }
+            // Multi-digit ring closure (e.g., %10, %11)
+            '%' => {
+                if let Some(ring_num) = parse_ring_number(&mut chars) {
+                    handle_ring_closure(&mut mol, &mut ring_closures, &mut prev_atom,
+                                      &mut pending_bond, ring_num)?;
                 }
             }
             // Atom (including aromatic)
@@ -59,6 +68,9 @@ pub fn decode_smiles(smiles: &str) -> Result<Molecule, Box<dyn std::error::Error
                 }
                 let atom = Atom::new(&symbol)?;
                 let idx = mol.add_atom(atom);
+                if c.is_lowercase() {
+                    aromatic_atoms.insert(idx);
+                }
                 if let Some(prev) = prev_atom {
                     let bond = pending_bond.take().unwrap_or_else(Bond::single);
                     mol.add_bond(prev, idx, bond)?;
@@ -70,7 +82,59 @@ pub fn decode_smiles(smiles: &str) -> Result<Molecule, Box<dyn std::error::Error
             _ => {}
         }
     }
+
+    // Kekulize aromatic systems if present
+    kekulize_molecule(&mut mol, &aromatic_atoms)?;
+
     Ok(mol)
+}
+
+/// Handle ring closure logic for both single and multi-digit ring numbers
+fn handle_ring_closure(
+    mol: &mut Molecule,
+    ring_closures: &mut HashMap<u32, RingClosure>,
+    prev_atom: &mut Option<usize>,
+    pending_bond: &mut Option<Bond>,
+    ring_num: u32,
+) -> Result<(), Box<dyn std::error::Error>> {
+    if let Some(ring_closure) = ring_closures.get(&ring_num) {
+        // This is the second occurrence of this ring number - create the bond
+        if let Some(cur_idx) = *prev_atom {
+            let bond = pending_bond.take().unwrap_or_else(|| {
+                // Use the bond from the first occurrence if available, otherwise single bond
+                ring_closure.bond.clone().unwrap_or_else(Bond::single)
+            });
+            mol.add_bond(cur_idx, ring_closure.atom_idx, bond)?;
+        }
+        ring_closures.remove(&ring_num);
+    } else if let Some(cur_idx) = *prev_atom {
+        // This is the first occurrence of this ring number - store it
+        let bond = pending_bond.take();
+        ring_closures.insert(ring_num, RingClosure {
+            atom_idx: cur_idx,
+            bond,
+        });
+    }
+    // If prev_atom is None, this is an invalid SMILES (ring closure before atom)
+    // We ignore it as per SMILES specification
+    Ok(())
+}
+
+/// Parse multi-digit ring numbers (e.g., %10, %11, etc.)
+fn parse_ring_number(chars: &mut std::iter::Peekable<std::str::Chars<'_>>) -> Option<u32> {
+    if chars.next()? == '%' {
+        let mut num_str = String::new();
+        while let Some(&c) = chars.peek() {
+            if c.is_ascii_digit() {
+                num_str.push(chars.next().unwrap());
+            } else {
+                break;
+            }
+        }
+        num_str.parse::<u32>().ok()
+    } else {
+        None
+    }
 }
 
 #[cfg(test)]
@@ -103,5 +167,36 @@ mod tests {
         let mol = decode_smiles("c1ccccc1").unwrap();
         assert_eq!(mol.num_atoms(), 6);
         assert_eq!(mol.num_bonds(), 6);
+    }
+
+    #[test]
+    fn test_multi_digit_ring() {
+        let mol = decode_smiles("C1CCCCC%101").unwrap();
+        assert_eq!(mol.num_atoms(), 6);
+        assert_eq!(mol.num_bonds(), 6);
+    }
+
+    #[test]
+    fn test_ring_with_explicit_bonds() {
+        let mol = decode_smiles("C1=CC=CC=C1").unwrap();
+        assert_eq!(mol.num_atoms(), 6);
+        assert_eq!(mol.num_bonds(), 6);
+    }
+
+    #[test]
+    fn test_complex_ring_system() {
+        let mol = decode_smiles("C1CC2CCCC2CC1").unwrap();
+        assert_eq!(mol.num_atoms(), 8);
+        assert_eq!(mol.num_bonds(), 9);
+    }
+
+    #[test]
+    fn test_ring_closure_before_atom() {
+        // This tests the case where a ring closure appears before an atom
+        // This is technically invalid SMILES but should be handled gracefully
+        // The leading '1' should be ignored, so we get CCCCC1 = 5 atoms
+        let mol = decode_smiles("1CCCCC1").unwrap();
+        assert_eq!(mol.num_atoms(), 5);
+        assert_eq!(mol.num_bonds(), 4); // 4 bonds between 5 atoms in a chain
     }
 }
