@@ -1,4 +1,3 @@
-use crate::errors::{AMSRResult, AMSRError};
 use crate::atom::Atom;
 use crate::bond::Bond;
 
@@ -18,28 +17,28 @@ impl Molecule {
             adjacency_list: HashMap::new(),
         }
     }
-    
 
-    
+
+
     pub fn add_atom(&mut self, atom: Atom) -> usize {
         let idx = self.atoms.len();
         self.atoms.push(atom);
         self.adjacency_list.insert(idx, Vec::new());
         idx
     }
-    
-    pub fn add_bond(&mut self, atom1_idx: usize, atom2_idx: usize, bond: Bond) -> AMSRResult<()> {
+
+    pub fn add_bond(&mut self, atom1_idx: usize, atom2_idx: usize, bond: Bond) -> Result<(), Box<dyn std::error::Error>> {
         if atom1_idx >= self.atoms.len() || atom2_idx >= self.atoms.len() {
-            return Err(AMSRError::GraphError("Invalid atom indices".to_string()));
+            return Err("Invalid atom indices".into());
         }
-        
+
         // Add bond
         self.bonds.push((atom1_idx, atom2_idx, bond));
-        
-        // Update adjacency list
+
+        // Update adjacency lis
         self.adjacency_list.get_mut(&atom1_idx).unwrap().push(atom2_idx);
         self.adjacency_list.get_mut(&atom2_idx).unwrap().push(atom1_idx);
-        
+
         // Update atom neighbor counts
         {
             let (left, right) = self.atoms.split_at_mut(atom1_idx + 1);
@@ -47,14 +46,14 @@ impl Molecule {
             let atom2 = &mut right[atom2_idx - atom1_idx - 1];
             atom1.add_bond_to(atom2);
         }
-        
+
         Ok(())
     }
-    
+
     pub fn get_neighbors(&self, atom_idx: usize) -> Vec<usize> {
         self.adjacency_list.get(&atom_idx).cloned().unwrap_or_default()
     }
-    
+
     pub fn get_bond(&self, atom1_idx: usize, atom2_idx: usize) -> Option<&Bond> {
         for (a1, a2, bond) in &self.bonds {
             if (*a1 == atom1_idx && *a2 == atom2_idx) || (*a1 == atom2_idx && *a2 == atom1_idx) {
@@ -63,25 +62,25 @@ impl Molecule {
         }
         None
     }
-    
+
     pub fn num_atoms(&self) -> usize {
         self.atoms.len()
     }
-    
+
     pub fn num_bonds(&self) -> usize {
         self.bonds.len()
     }
-    
+
     pub fn is_connected(&self) -> bool {
         if self.atoms.is_empty() {
             return true;
         }
-        
+
         let mut visited = HashSet::new();
         let mut queue = VecDeque::new();
         queue.push_back(0);
         visited.insert(0);
-        
+
         while let Some(current) = queue.pop_front() {
             for &neighbor in &self.get_neighbors(current) {
                 if !visited.contains(&neighbor) {
@@ -90,28 +89,28 @@ impl Molecule {
                 }
             }
         }
-        
+
         visited.len() == self.atoms.len()
     }
-    
+
     pub fn find_rings(&self) -> Vec<Vec<usize>> {
         let mut rings = Vec::new();
         let mut visited = HashSet::new();
-        
+
         for start in 0..self.atoms.len() {
             if !visited.contains(&start) {
                 self.dfs_find_rings(start, start, &mut Vec::new(), &mut visited, &mut rings);
             }
         }
-        
+
         rings
     }
-    
-    fn dfs_find_rings(&self, current: usize, start: usize, path: &mut Vec<usize>, 
+
+    fn dfs_find_rings(&self, current: usize, start: usize, path: &mut Vec<usize>,
                      visited: &mut HashSet<usize>, rings: &mut Vec<Vec<usize>>) {
         path.push(current);
         visited.insert(current);
-        
+
         for &neighbor in &self.get_neighbors(current) {
             if neighbor == start && path.len() > 2 {
                 // Found a ring
@@ -120,13 +119,13 @@ impl Molecule {
                 self.dfs_find_rings(neighbor, start, path, visited, rings);
             }
         }
-        
+
         path.pop();
         visited.remove(&current);
     }
-    
 
-    
+
+
 
 }
 
@@ -146,10 +145,10 @@ mod tests {
         let c1 = mol.add_atom(Atom::new("C").unwrap());
         let c2 = mol.add_atom(Atom::new("C").unwrap());
         let o = mol.add_atom(Atom::new("O").unwrap());
-        
+
         mol.add_bond(c1, c2, Bond::single()).unwrap();
         mol.add_bond(c2, o, Bond::single()).unwrap();
-        
+
         assert_eq!(mol.num_atoms(), 3);
         assert_eq!(mol.num_bonds(), 2);
         assert!(mol.is_connected());
@@ -167,8 +166,8 @@ mod tests {
         let mol = crate::smiles_decode::decode_smiles("c1ccccc1").unwrap();
         assert_eq!(mol.num_atoms(), 6);
         assert_eq!(mol.num_bonds(), 6);
-        
+
         let rings = mol.find_rings();
         assert!(!rings.is_empty());
     }
-} 
+}

@@ -8,12 +8,12 @@ pub mod amsr_encode;
 pub mod amsr_decode;
 pub mod smiles_encode;
 pub mod smiles_decode;
-
-use errors::AMSRResult;
 pub use amsr_encode::{encode_molecule, encode_molecule_to_tokens, AMSREncoder};
 pub use amsr_decode::{decode_amsr, decode_amsr_with_dihedrals, AMSRDecoder};
 pub use smiles_encode::{encode_smiles, SMILESEncoder};
 pub use smiles_decode::decode_smiles;
+
+use errors::AMSRResult;
 
 /// Convert a SMILES string to AMSR
 pub fn smiles_to_amsr(smiles: &str) -> AMSRResult<String> {
@@ -24,7 +24,7 @@ pub fn smiles_to_amsr(smiles: &str) -> AMSRResult<String> {
 /// Convert AMSR to a SMILES string
 pub fn amsr_to_smiles(amsr: &str) -> AMSRResult<String> {
     let mol = decode_amsr(amsr)?;
-    encode_smiles(&mol)
+    Ok(encode_smiles(&mol)?)
 }
 
 /// Convert a molecule graph to AMSR
@@ -38,12 +38,12 @@ pub fn amsr_to_molecule(amsr: &str) -> AMSRResult<molecule::Molecule> {
 }
 
 /// Convert a SMILES string to a molecule graph
-pub fn smiles_to_molecule(smiles: &str) -> AMSRResult<molecule::Molecule> {
+pub fn smiles_to_molecule(smiles: &str) -> Result<molecule::Molecule, Box<dyn std::error::Error>> {
     decode_smiles(smiles)
 }
 
 /// Convert a molecule graph to SMILES
-pub fn molecule_to_smiles(mol: &molecule::Molecule) -> AMSRResult<String> {
+pub fn molecule_to_smiles(mol: &molecule::Molecule) -> Result<String, Box<dyn std::error::Error>> {
     encode_smiles(mol)
 }
 
@@ -68,4 +68,4 @@ mod tests {
         let back_to_smiles = amsr_to_smiles(&amsr).unwrap();
         assert_eq!(smiles, back_to_smiles);
     }
-} 
+}

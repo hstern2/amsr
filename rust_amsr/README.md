@@ -21,9 +21,9 @@ Add this to your `Cargo.toml`:
 amsr = { path = "./rust_amsr" }
 ```
 
-## Quick Start
+## Quick Star
 
-```rust
+```rus
 use amsr::{smiles_to_amsr, amsr_to_smiles, Molecule};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -31,11 +31,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let smiles = "CCO";
     let amsr = smiles_to_amsr(smiles)?;
     println!("AMSR: {}", amsr);
-    
+
     // Convert AMSR back to SMILES
     let back_to_smiles = amsr_to_smiles(&amsr)?;
     println!("SMILES: {}", back_to_smiles);
-    
+
     Ok(())
 }
 ```
@@ -46,7 +46,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 The main data structure representing a molecular graph:
 
-```rust
+```rus
 use amsr::{Molecule, atom::Atom, bond::Bond};
 
 let mut mol = Molecule::new();
@@ -70,7 +70,7 @@ println!("Connected: {}", mol.is_connected());
 
 Represents an atom with its properties:
 
-```rust
+```rus
 use amsr::atom::Atom;
 
 let carbon = Atom::new("C")?;
@@ -85,7 +85,7 @@ println!("Oxygen is hetero: {}", oxygen.is_hetero());
 
 Represents chemical bonds with stereochemistry:
 
-```rust
+```rus
 use amsr::bond::{Bond, BondType, BondStereo};
 
 let single_bond = Bond::single();
@@ -157,7 +157,7 @@ The library supports common elements with their valence rules:
 
 Basic support for E/Z stereochemistry is included:
 
-```rust
+```rus
 use amsr::bond::{Bond, BondStereo};
 
 let e_bond = Bond::single().with_stereo(BondStereo::E);
@@ -168,7 +168,7 @@ let z_bond = Bond::single().with_stereo(BondStereo::Z);
 
 The library uses custom error types for robust error handling:
 
-```rust
+```rus
 use amsr::errors::{AMSRResult, AMSRError};
 
 fn process_molecule(smiles: &str) -> AMSRResult<()> {
@@ -201,7 +201,7 @@ This is a simplified implementation with the following limitations:
 1. **Limited SMILES Support**: Basic SMILES parsing (no complex features like isotopes, stereochemistry, etc.)
 2. **Simplified AMSR**: Not all AMSR features are implemented
 3. **No 3D Conformers**: No support for 3D molecular conformations
-4. **Basic Stereochemistry**: Limited stereochemistry support
+4. **Basic Stereochemistry**: Limited stereochemistry suppor
 5. **No Groups**: No support for molecular group abbreviations
 
 ## Contributing
@@ -214,4 +214,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Acknowledgments
 
-This implementation is inspired by the original Python AMSR library and aims to provide similar functionality in Rust. 
+This implementation is inspired by the original Python AMSR library and aims to provide similar functionality in Rust.

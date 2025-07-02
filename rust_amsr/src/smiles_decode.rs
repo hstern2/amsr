@@ -1,11 +1,10 @@
-use crate::errors::AMSRResult;
 use crate::molecule::Molecule;
 use crate::atom::Atom;
 use crate::bond::{Bond, BondStereo};
 use std::collections::HashMap;
 
 /// Decode a SMILES string into a Molecule graph.
-pub fn decode_smiles(smiles: &str) -> AMSRResult<Molecule> {
+pub fn decode_smiles(smiles: &str) -> Result<Molecule, Box<dyn std::error::Error>> {
     let mut mol = Molecule::new();
     let mut atom_stack: Vec<usize> = Vec::new();
     let mut branch_points: Vec<usize> = Vec::new();
@@ -16,7 +15,7 @@ pub fn decode_smiles(smiles: &str) -> AMSRResult<Molecule> {
 
     while let Some(c) = chars.next() {
         match c {
-            // Branch start
+            // Branch star
             '(' => {
                 if let Some(idx) = prev_atom {
                     branch_points.push(idx);
@@ -97,11 +96,11 @@ mod tests {
         assert_eq!(mol.num_atoms(), 4);
         assert_eq!(mol.num_bonds(), 3);
     }
-    
+
     #[test]
     fn test_aromatic() {
         let mol = decode_smiles("c1ccccc1").unwrap();
         assert_eq!(mol.num_atoms(), 6);
         assert_eq!(mol.num_bonds(), 6);
     }
-} 
+}

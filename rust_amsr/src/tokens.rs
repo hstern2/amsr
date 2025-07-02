@@ -44,32 +44,32 @@ lazy_static! {
             .map(|s| regex::escape(s))
             .collect::<Vec<_>>()
             .join("|");
-        
+
         let bond_pattern = format!(r"(?P<bond>{})", dihedrals_escaped);
-        let atom_chars = format!(r"[{}{}{}{}{}{}{}]", 
+        let atom_chars = format!(r"[{}{}{}{}{}{}{}]",
             regex::escape(PLUS), regex::escape(MINUS), regex::escape(RADICAL),
             regex::escape(EXTRA_PI), regex::escape(BANG), regex::escape(CW), regex::escape(CCW));
-        
+
         let atom_pattern = format!(
             r"(?P<atom>{}[0-9]*[A-Za-z]+{}*{}|{}[0-9A-Za-z]+{}|[A-Za-z]{}*)",
             regex::escape(L_BRACKET), atom_chars, regex::escape(R_BRACKET),
             regex::escape(L_PAREN), regex::escape(R_PAREN), atom_chars
         );
-        
+
         let ring_pattern = format!(
             r"(?P<ring>({}[0-9]+{}|[3-9]){}*)",
             regex::escape(L_BRACKET), regex::escape(R_BRACKET), regex::escape(SKIP)
         );
-        
+
         let saturate_pattern = format!(r"(?P<saturate>{})", regex::escape(DOT));
         let molsep_pattern = format!(r"(?P<molsep>{})", regex::escape(MOLSEP));
         let ampersand_pattern = format!(r"(?P<ampersand>{})", regex::escape(AMPERSAND));
-        
+
         let full_pattern = format!(
             r"({}?({}|({})))|{}|{}|{}",
             bond_pattern, atom_pattern, ring_pattern, saturate_pattern, molsep_pattern, ampersand_pattern
         );
-        
+
         Regex::new(&full_pattern).unwrap()
     };
 }
@@ -86,43 +86,43 @@ pub enum Token {
 
 pub fn to_tokens(s: &str) -> Vec<Token> {
     let mut tokens = Vec::new();
-    
+
     for cap in AMSR_REGEX.captures_iter(s) {
         if let Some(bond) = cap.name("bond") {
             tokens.push(Token::Bond(bond.as_str().to_string()));
         }
-        
+
         if let Some(atom) = cap.name("atom") {
             tokens.push(Token::Atom(atom.as_str().to_string()));
         }
-        
+
         if let Some(ring) = cap.name("ring") {
             let ring_str = ring.as_str();
             let ring_number = ring_str.chars()
                 .filter(|c| c.is_ascii_digit())
                 .collect::<String>();
             tokens.push(Token::Ring(ring_number));
-            
+
             // Add skip tokens
             let skip_count = ring_str.chars().filter(|c| *c == SKIP.chars().next().unwrap()).count();
             for _ in 0..skip_count {
                 tokens.push(Token::Atom(SKIP.to_string()));
             }
         }
-        
+
         if cap.name("saturate").is_some() {
             tokens.push(Token::Saturate);
         }
-        
+
         if cap.name("molsep").is_some() {
             tokens.push(Token::MolSep);
         }
-        
+
         if cap.name("ampersand").is_some() {
             tokens.push(Token::Ampersand);
         }
     }
-    
+
     tokens
 }
 
@@ -155,4 +155,4 @@ mod tests {
         assert_eq!(get_dihedral_angle("_"), Some(180));
         assert_eq!(get_dihedral_angle("E"), Some(-180));
     }
-} 
+}

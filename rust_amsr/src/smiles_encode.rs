@@ -1,4 +1,3 @@
-use crate::errors::AMSRResult;
 use crate::molecule::Molecule;
 use std::collections::{HashMap, HashSet};
 
@@ -16,60 +15,60 @@ impl SMILESEncoder {
             kekule: false,
         }
     }
-    
+
     pub fn canonical(mut self, canonical: bool) -> Self {
         self.canonical = canonical;
         self
     }
-    
+
     pub fn isomeric(mut self, isomeric: bool) -> Self {
         self.isomeric = isomeric;
         self
     }
-    
+
     pub fn kekule(mut self, kekule: bool) -> Self {
         self.kekule = kekule;
         self
     }
-    
-    pub fn encode(&self, mol: &Molecule) -> AMSRResult<String> {
+
+    pub fn encode(&self, mol: &Molecule) -> Result<String, Box<dyn std::error::Error>> {
         if mol.atoms.is_empty() {
             return Ok(String::new());
         }
-        
+
         let mut result = String::new();
         let mut visited = HashSet::new();
         let mut ring_numbers = HashMap::new();
         let mut next_ring_number = 1;
-        
+
         // Find connected components
         let components = self.find_connected_components(mol);
-        
+
         for (i, component) in components.iter().enumerate() {
             if i > 0 {
                 result.push('.');
             }
-            
+
             if let Some(&start_atom) = component.first() {
-                self.encode_dfs(mol, start_atom, &mut visited, &mut ring_numbers, 
+                self.encode_dfs(mol, start_atom, &mut visited, &mut ring_numbers,
                               &mut next_ring_number, &mut result)?;
             }
         }
-        
+
         Ok(result)
     }
-    
+
     fn find_connected_components(&self, mol: &Molecule) -> Vec<Vec<usize>> {
         let mut components = Vec::new();
         let mut visited = HashSet::new();
-        
+
         for start in 0..mol.atoms.len() {
             if !visited.contains(&start) {
                 let mut component = Vec::new();
                 let mut stack = Vec::new();
                 stack.push(start);
                 visited.insert(start);
-                
+
                 while let Some(current) = stack.pop() {
                     component.push(current);
                     for &neighbor in &mol.get_neighbors(current) {
@@ -79,22 +78,22 @@ impl SMILESEncoder {
                         }
                     }
                 }
-                
+
                 components.push(component);
             }
         }
-        
+
         components
     }
-    
+
     fn encode_dfs(&self, mol: &Molecule, current: usize, visited: &mut HashSet<usize>,
-                  ring_numbers: &mut HashMap<(usize, usize), usize>, 
-                  next_ring_number: &mut usize, result: &mut String) -> AMSRResult<()> {
+                  ring_numbers: &mut HashMap<(usize, usize), usize>,
+                  next_ring_number: &mut usize, result: &mut String) -> Result<(), Box<dyn std::error::Error>> {
         visited.insert(current);
-        
+
         // Add atom
         result.push_str(&mol.atoms[current].to_smiles());
-        
+
         // Process neighbors
         let neighbors = mol.get_neighbors(current);
         for &neighbor in &neighbors {
@@ -114,7 +113,7 @@ impl SMILESEncoder {
                 result.push_str(&ring_numbers[&bond_key].to_string());
             }
         }
-        
+
         Ok(())
     }
 }
@@ -125,7 +124,7 @@ impl Default for SMILESEncoder {
     }
 }
 
-pub fn encode_smiles(mol: &Molecule) -> AMSRResult<String> {
+pub fn encode_smiles(mol: &Molecule) -> Result<String, Box<dyn std::error::Error>> {
     SMILESEncoder::new().encode(mol)
 }
 
@@ -141,10 +140,10 @@ mod tests {
         let c1 = mol.add_atom(Atom::new("C").unwrap());
         let c2 = mol.add_atom(Atom::new("C").unwrap());
         let o = mol.add_atom(Atom::new("O").unwrap());
-        
+
         mol.add_bond(c1, c2, Bond::single()).unwrap();
         mol.add_bond(c2, o, Bond::single()).unwrap();
-        
+
         let smiles = encode_smiles(&mol).unwrap();
         assert_eq!(smiles, "CCO");
     }
@@ -155,4 +154,4 @@ mod tests {
         let smiles = encode_smiles(&mol).unwrap();
         assert!(smiles.contains("1"));
     }
-} 
+}

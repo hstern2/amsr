@@ -1,4 +1,3 @@
-use crate::errors::{AMSRResult, AMSRError};
 use crate::tokens::{E, Z, get_dihedral_angle, get_bond_symbol};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -37,15 +36,15 @@ impl Bond {
             dihedral_angle: None,
         }
     }
-    
-    pub fn from_symbol(symbol: &str) -> AMSRResult<Self> {
+
+    pub fn from_symbol(symbol: &str) -> Result<Self, Box<dyn std::error::Error>> {
         let mut bond = Bond::new();
-        
+
         // Check if it's a dihedral symbol
         if let Some(angle) = get_dihedral_angle(symbol) {
             bond.dihedral_angle = Some(angle);
             bond.symbol = Some(symbol.to_string());
-            
+
             // Determine if it's E/Z stereo
             if symbol == E {
                 bond.stereo = BondStereo::E;
@@ -53,12 +52,12 @@ impl Bond {
                 bond.stereo = BondStereo::Z;
             }
         } else {
-            return Err(AMSRError::InvalidBond(format!("Unknown bond symbol: {}", symbol)));
+            return Err(format!("Unknown bond symbol: {}", symbol).into());
         }
-        
+
         Ok(bond)
     }
-    
+
     pub fn single() -> Self {
         Bond {
             bond_type: BondType::Single,
@@ -68,7 +67,7 @@ impl Bond {
             dihedral_angle: None,
         }
     }
-    
+
     pub fn double() -> Self {
         Bond {
             bond_type: BondType::Double,
@@ -78,7 +77,7 @@ impl Bond {
             dihedral_angle: None,
         }
     }
-    
+
     pub fn triple() -> Self {
         Bond {
             bond_type: BondType::Triple,
@@ -88,7 +87,7 @@ impl Bond {
             dihedral_angle: None,
         }
     }
-    
+
     pub fn aromatic() -> Self {
         Bond {
             bond_type: BondType::Aromatic,
@@ -98,12 +97,12 @@ impl Bond {
             dihedral_angle: None,
         }
     }
-    
+
     pub fn with_stereo(mut self, stereo: BondStereo) -> Self {
         self.stereo = stereo;
         self
     }
-    
+
     pub fn with_dihedral(mut self, angle: i32) -> Self {
         self.dihedral_angle = Some(angle);
         if let Some(symbol) = get_bond_symbol(angle) {
@@ -111,7 +110,7 @@ impl Bond {
         }
         self
     }
-    
+
     pub fn to_smiles(&self) -> String {
         match self.bond_type {
             BondType::Single => {
@@ -126,11 +125,11 @@ impl Bond {
             BondType::Aromatic => ":".to_string(),
         }
     }
-    
+
     pub fn is_rotatable(&self) -> bool {
         self.is_rotatable
     }
-    
+
     pub fn set_rotatable(&mut self, rotatable: bool) {
         self.is_rotatable = rotatable;
     }
@@ -171,8 +170,8 @@ mod tests {
     fn test_e_z_stereo() {
         let bond_e = Bond::from_symbol("E").unwrap();
         assert_eq!(bond_e.stereo, BondStereo::E);
-        
+
         let bond_z = Bond::from_symbol("Z").unwrap();
         assert_eq!(bond_z.stereo, BondStereo::Z);
     }
-} 
+}

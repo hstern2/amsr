@@ -15,21 +15,21 @@ impl AMSRDecoder {
             stringent: true,
         }
     }
-    
+
     pub fn stringent(mut self, stringent: bool) -> Self {
         self.stringent = stringent;
         self
     }
-    
+
     pub fn decode(&self, amsr: &str) -> AMSRResult<Molecule> {
         let mut mol = Molecule::new();
         let tokens = to_tokens(amsr);
-        
+
         let mut atom_stack = Vec::new();
         let mut bond_stack = Vec::new();
         let mut ring_map = HashMap::new();
         let _next_ring_number = 1;
-        
+
         for token in tokens {
             match token {
                 Token::Atom(symbol) => {
@@ -46,7 +46,7 @@ impl AMSRDecoder {
                         if ring_num < 3 {
                             return Err(AMSRError::InvalidAMSR(format!("Invalid ring size: {}", ring_num)));
                         }
-                        
+
                         // Handle ring closure
                         if let Some(atom_idx) = atom_stack.last().copied() {
                             if let Some(target_idx) = ring_map.get(&ring_num) {
@@ -67,7 +67,7 @@ impl AMSRDecoder {
                     }
                 },
                 Token::MolSep => {
-                    // Start new molecule component
+                    // Start new molecule componen
                     atom_stack.clear();
                     bond_stack.clear();
                     ring_map.clear();
@@ -77,7 +77,7 @@ impl AMSRDecoder {
                 },
             }
         }
-        
+
         // Process any remaining bonds
         while let (Some(atom1), Some(atom2), Some(bond)) = (
             atom_stack.pop(),
@@ -86,27 +86,27 @@ impl AMSRDecoder {
         ) {
             mol.add_bond(atom1, atom2, bond)?;
         }
-        
+
         // Saturate remaining atoms
         for atom in &mut mol.atoms {
             if atom.can_bond() {
                 atom.is_saturated = true;
             }
         }
-        
+
         Ok(mol)
     }
-    
+
     pub fn decode_with_dihedrals(&self, amsr: &str) -> AMSRResult<(Molecule, HashMap<(usize, usize, usize, usize), i32>)> {
         let mut mol = Molecule::new();
         let mut dihedrals = HashMap::new();
         let tokens = to_tokens(amsr);
-        
+
         let mut atom_stack = Vec::new();
         let mut bond_stack = Vec::new();
         let mut ring_map = HashMap::new();
         let mut bond_dihedral_map = HashMap::new();
-        
+
         for token in tokens {
             match token {
                 Token::Atom(symbol) => {
@@ -123,7 +123,7 @@ impl AMSRDecoder {
                         if ring_num < 3 {
                             return Err(AMSRError::InvalidAMSR(format!("Invalid ring size: {}", ring_num)));
                         }
-                        
+
                         // Handle ring closure
                         if let Some(atom_idx) = atom_stack.last().copied() {
                             if let Some(target_idx) = ring_map.get(&ring_num) {
@@ -132,7 +132,7 @@ impl AMSRDecoder {
                                 let dihedral_angle = bond.dihedral_angle;
                                 let bond_idx = mol.bonds.len();
                                 mol.add_bond(atom_idx, *target_idx, bond)?;
-                                
+
                                 // Store dihedral information
                                 if let Some(angle) = dihedral_angle {
                                     bond_dihedral_map.insert(bond_idx, angle);
@@ -151,7 +151,7 @@ impl AMSRDecoder {
                     }
                 },
                 Token::MolSep => {
-                    // Start new molecule component
+                    // Start new molecule componen
                     atom_stack.clear();
                     bond_stack.clear();
                     ring_map.clear();
@@ -161,7 +161,7 @@ impl AMSRDecoder {
                 },
             }
         }
-        
+
         // Process any remaining bonds
         while let (Some(atom1), Some(atom2), Some(bond)) = (
             atom_stack.pop(),
@@ -171,13 +171,13 @@ impl AMSRDecoder {
             let dihedral_angle = bond.dihedral_angle;
             let bond_idx = mol.bonds.len();
             mol.add_bond(atom1, atom2, bond)?;
-            
+
             // Store dihedral information
             if let Some(angle) = dihedral_angle {
                 bond_dihedral_map.insert(bond_idx, angle);
             }
         }
-        
+
         // Convert bond dihedral map to atom quartet dihedral map
         for (bond_idx, angle) in bond_dihedral_map {
             if let Some((atom1, atom2, _)) = mol.bonds.get(bond_idx) {
@@ -190,14 +190,14 @@ impl AMSRDecoder {
                 }
             }
         }
-        
+
         // Saturate remaining atoms
         for atom in &mut mol.atoms {
             if atom.can_bond() {
                 atom.is_saturated = true;
             }
         }
-        
+
         Ok((mol, dihedrals))
     }
 }
@@ -242,4 +242,4 @@ mod tests {
         let result = decode_amsr(amsr);
         assert!(result.is_err());
     }
-} 
+}
