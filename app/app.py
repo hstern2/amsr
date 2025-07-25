@@ -34,15 +34,28 @@ def rotate_mol(m, rotationValue: int):
 
 
 def get_svg(mol, flip: bool, rotationValue: int):
+    # Minimal stereochemistry assignment without adding atoms
+    Chem.AssignAtomChiralTagsFromStructure(mol, replaceExistingTags=True)
+    Chem.AssignStereochemistry(mol, force=True, flagPossibleStereoCenters=True)
+
+    # Set atom notes for stereocenters (smaller annotations)
+    for atom in mol.GetAtoms():
+        if atom.HasProp("_CIPCode"):
+            cip_code = atom.GetProp("_CIPCode")
+            atom.SetProp("atomNote", f"({cip_code})")
+
     rdkit.Chem.AllChem.Compute2DCoords(mol)
     if flip:
         flip_mol(mol)
     rotate_mol(mol, rotationValue)
     d = Chem.Draw.rdMolDraw2D.MolDraw2DSVG(396, 396)
+    opts = d.drawOptions()
+    opts.annotationFontScale = 0.75  # Make annotations smaller
+    opts.multipleBondOffset = 0.15  # Bring annotations closer
     actives = [a.GetIdx() for a in mol.GetAtoms() if a.HasProp("_active")]
     d.DrawMolecule(mol, highlightAtoms=actives)
     d.FinishDrawing()
-    return d.GetDrawingText()
+    return d.GetDrawingText().replace("svg:", "")
 
 
 def mol_isOK(mol):
