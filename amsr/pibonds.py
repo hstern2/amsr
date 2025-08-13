@@ -1,6 +1,7 @@
-from rdkit import Chem
 from networkx import Graph
 from networkx.algorithms import max_weight_matching
+from rdkit import Chem
+
 from .bridgehead import BridgeheadAtoms
 
 
@@ -63,15 +64,12 @@ class PiBonds:
         return not self.mol.GetAtomWithIdx(i).IsInRing()
 
     def reduceGraph(self):
-        self.graph = self.graph.subgraph(
-            [i for i in self.graph.nodes if self.canPiBond(i)]
-        )
+        self.graph = self.graph.subgraph([i for i in self.graph.nodes if self.canPiBond(i)])
 
     def singleCoordinate(self, i):
         return self.graph.degree[i] == 1
 
     def __init__(self, mol, atom, stringent):
-
         self.mol = mol
         self.atom = atom
 

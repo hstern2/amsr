@@ -113,6 +113,4 @@ VALENCE = {
     ("Ra", 2, 0): 0,
 }
 
-BANGS = {
-    (sym, chg, val): bangs for (sym, chg, bangs), val in VALENCE.items() if bangs > 0
-}
+BANGS = {(sym, chg, val): bangs for (sym, chg, bangs), val in VALENCE.items() if bangs > 0}

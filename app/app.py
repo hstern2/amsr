@@ -1,9 +1,16 @@
+import json
+import math
+import os
+import sys
+
+import rdkit.Chem.AllChem
+import rdkit.Chem.Draw
 from flask import Flask, render_template, request
 from rdkit import Chem
-import rdkit.Chem.Draw, rdkit.Chem.AllChem
-import pandas, json, amsr, math, sys, os
-from rdkit.Chem.QED import qed
 from rdkit.Chem.Descriptors import TPSA
+from rdkit.Chem.QED import qed
+
+import amsr
 
 # synthetic accessibility score; smaller means more accessible
 # Ertl & Schuffenhauer, J. Cheminf. 2009, 1 (8)

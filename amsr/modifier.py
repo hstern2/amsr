@@ -1,9 +1,11 @@
-from rdkit import Chem
-from typing import List, Optional
-from .encode import FromMolToTokens
-from .decode import ToMol
-from .lstm import LSTMModel
 from random import expovariate, randrange
+from typing import Optional
+
+from rdkit import Chem
+
+from .decode import ToMol
+from .encode import FromMolToTokens
+from .lstm import LSTMModel
 
 
 class Modifier:
@@ -35,14 +37,14 @@ class Modifier:
         :return: modified molecule
         """
         a = FromMolToTokens(mol, randomize=True)
-        if self.nDeleteAvg > 0:  # delete tokens
+        if self.nDeleteAvg is not None and self.nDeleteAvg > 0:  # delete tokens
             k = min(round(expovariate(1 / self.nDeleteAvg)), len(a) - 1)
             if k > 0:
                 a = a[:-k]
-        if self.nReplaceAvg > 0:  # replace tokens
+        if self.nReplaceAvg is not None and self.nReplaceAvg > 0:  # replace tokens
             for _ in range(round(expovariate(1 / self.nReplaceAvg))):
                 a = self.model.replace_token(a, randrange(len(a)))
-        if self.nAddMax > 0:
+        if self.nAddMax is not None and self.nAddMax > 0:
             a = self.model.generate_tokens(a, self.nAddMax)
 
         return ToMol("".join(a))

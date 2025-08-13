@@ -1,8 +1,10 @@
-from rdkit import Chem
 from re import match, sub
-from .valence import VALENCE, BANGS
+
+from rdkit import Chem
+
 from .parity import IsEvenParity
-from .tokens import CW, CCW, PLUS, MINUS, RADICAL, EXTRA_PI, BANG
+from .tokens import BANG, CCW, CW, EXTRA_PI, MINUS, PLUS, RADICAL
+from .valence import BANGS, VALENCE
 
 
 def GetSeenIndex(a):
@@ -127,6 +129,10 @@ class Atom:
         isotope = a.GetIsotope()
         bangs = BANGS.get((atomSym, chg, valence + nrad), 0)
         q, r = divmod(VALENCE[(atomSym, chg, bangs)] - nrad - a.GetTotalDegree(), 2)
-        c = f"{PLUS*chg if chg > 0 else ''}{MINUS*(-chg) if chg < 0 else ''}{RADICAL*nrad}{BANG*bangs}{EXTRA_PI*q}"
+        c = (
+            f"{PLUS*chg if chg > 0 else ''}"
+            f"{MINUS*(-chg) if chg < 0 else ''}"
+            f"{RADICAL*nrad}{BANG*bangs}{EXTRA_PI*q}"
+        )
         sym = (f"{isotope}" if isotope else "") + (atomSym.lower() if r else atomSym)
         return cls(f"[{sym}{c}]" if len(atomSym) == 2 or isotope else f"{sym}{c}")

@@ -1,7 +1,9 @@
-import pandas
-from amsr import FromMolToTokens, LSTMModel
-from rdkit.Chem import MolFromSmiles, RenumberAtoms
 from random import shuffle
+
+import pandas
+from rdkit.Chem import MolFromSmiles, RenumberAtoms
+
+from amsr import FromMolToTokens, LSTMModel
 
 model = LSTMModel()
 df = pandas.read_csv("chembl_33_filtered.csv")

@@ -1,5 +1,4 @@
-from re import compile, escape, Match
-from typing import Iterator, List
+from re import compile, escape
 
 DOT = "."
 DIHEDRALS = ["^", "^\\", "<\\", "<", "</", "_/", "_", "\\_", "\\>", ">", "/>", "/^"]
@@ -20,28 +19,25 @@ SKIP = "@"
 MOLSEP = ";"
 AMPERSAND = "&"
 
-DIHEDRAL_FOR_BOND_SYMBOL = {
-    s: 30 * (i - 12 if i > 6 else i) for i, s in enumerate(DIHEDRALS)
-}
+DIHEDRAL_FOR_BOND_SYMBOL = {s: 30 * (i - 12 if i > 6 else i) for i, s in enumerate(DIHEDRALS)}
 BOND_SYMBOL_FOR_DIHEDRAL = {v: k for k, v in DIHEDRAL_FOR_BOND_SYMBOL.items()}
 BOND_SYMBOL_FOR_DIHEDRAL[-180] = E
 
 _pbond = f"(?P<bond>{'|'.join(map(escape, sorted(DIHEDRALS, key=len, reverse=True)))})"
 _c = f"[{''.join(map(escape, [PLUS,MINUS,RADICAL,EXTRA_PI,BANG,CW,CCW]))}]*"
-_patom = f"(?P<atom>{escape(L_BRACKET)}[0-9]*[A-Za-z]+{_c}{escape(R_BRACKET)}|{escape(L_PAREN)}[0-9A-Za-z]+{escape(R_PAREN)}|[A-Za-z]{_c})"
-_pring = (
-    f"(?P<ring>({escape(L_BRACKET)}[0-9]+{escape(R_BRACKET)}|[3-9]){escape(SKIP)}*)"
+_patom = (
+    f"(?P<atom>{escape(L_BRACKET)}[0-9]*[A-Za-z]+{_c}{escape(R_BRACKET)}|"
+    f"{escape(L_PAREN)}[0-9A-Za-z]+{escape(R_PAREN)}|[A-Za-z]{_c})"
 )
+_pring = f"(?P<ring>({escape(L_BRACKET)}[0-9]+{escape(R_BRACKET)}|[3-9]){escape(SKIP)}*)"
 _psaturate = f"(?P<saturate>{escape(DOT)})"
 _pmolsep = f"(?P<molsep>{escape(MOLSEP)})"
 _pampersand = f"(?P<ampersand>{escape(AMPERSAND)})"
 
-RegExp = compile(
-    f"({_pbond}?({_patom}|({_pring})))|{_psaturate}|{_pmolsep}|{_pampersand}"
-)
+RegExp = compile(f"({_pbond}?({_patom}|({_pring})))|{_psaturate}|{_pmolsep}|{_pampersand}")
 
 
-def ToTokens(s: str) -> List[str]:
+def ToTokens(s: str) -> list[str]:
     """Convert AMSR string to a list of tokens
 
     :param s: AMSR

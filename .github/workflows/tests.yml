@@ -1,4 +1,4 @@
-name: test
+name: tests
 
 on:
   push:
@@ -8,29 +8,37 @@ on:
 
 jobs:
   test:
-
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11']
+        python-version: ['3.9', '3.10', '3.11', '3.12']
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
-    - name: Check pre-commit
-      run: pre-commit run --all-files || ( git status --short ; git diff ; exit 1 )
-    - name: Install
-      run: |
-        pip install .
-    - name: List contents of the tests directory
-      run: ls -la tests/
-    - name: Run Test
-      run: |
-         pytest tests --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report=xml --cov-report=html
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          python-version: ${{ matrix.python-version }}
+
+      # Install your package + dev tools (pytest, ruff, mypy via extras)
+      - name: Install project (dev extras)
+        run: uv pip install -e ".[dev]"
+
+      # Run exactly the same hooks as locally
+      - name: Pre-commit (lint + format check + mypy)
+        run: |
+          uv run pre-commit install
+          uv run pre-commit run --all-files
+
+      - name: Run tests
+        run: |
+          uv run pytest tests --doctest-modules \
+            --junitxml=junit/test-results.xml \
+            --cov=amsr --cov-report=xml --cov-report=term-missing

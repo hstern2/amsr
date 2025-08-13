@@ -1,7 +1,9 @@
-from rdkit import Chem
 from typing import Optional
-from .encode import FromMol
+
+from rdkit import Chem
+
 from .decode import ToMol
+from .encode import FromMol
 
 
 def CheckMol(m1: Chem.Mol, stringent: Optional[bool] = True) -> bool:
