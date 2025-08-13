@@ -1,101 +1,250 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="amsr" href="toc.html" />
+
+    <!-- Generated with Sphinx 8.2.3 and Furo 2025.07.19 -->
+        <title>amsr 0.1.4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=25af2a20" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
 
 
-<!DOCTYPE html>
-<html class="writer-html5" lang="en">
-<head>
-  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AMSR &mdash; amsr  documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
-
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
   
-      <script src="_static/jquery.js?v=5d32c60e"></script>
-      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=b3ba4146"></script>
-      <script src="_static/doctools.js?v=888ff710"></script>
-      <script src="_static/sphinx_highlight.js?v=4825356b"></script>
-    <script src="_static/js/theme.js"></script>
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Change Log" href="changelog.html" />
-    <link rel="prev" title="amsr" href="toc.html" /> 
-</head>
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #2b2b2b;
+  --color-code-foreground: #f8f8f2;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #2b2b2b;
+  --color-code-foreground: #f8f8f2;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
 
-<body class="wy-body-for-nav"> 
-  <div class="wy-grid-for-nav">
-    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
-      <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
 
-          
-          
-          <a href="toc.html" class="icon icon-home">
-            amsr
-          </a>
-<div role="search">
-  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
-    <input type="hidden" name="check_keywords" value="yes" />
-    <input type="hidden" name="area" value="default" />
-  </form>
-</div>
-        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">AMSR</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#demo">Demo</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#installing">Installing</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#usage">Usage</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#description">Description</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#atoms">Atoms</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#chains">Chains</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#branches">Branches</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#rings">Rings</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#double-bonds-sp2-centers">Double bonds (sp<sup>2</sup> centers)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#ring-selection">Ring selection</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#triple-bonds-sp-centers">Triple bonds (sp centers)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#hypervalent-atoms">Hypervalent atoms</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#formal-charges-radical-electrons-isotopes">Formal charges, radical electrons, isotopes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#tetrahedral-stereochemistry">Tetrahedral stereochemistry</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#e-z-stereochemistry"><em>E/Z</em> stereochemistry</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#groups">Groups</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#multiple-molecules">Multiple molecules</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#developing">Developing</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="changelog.html">Change Log</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api.html">API</a></li>
-</ul>
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
 
-        </div>
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="#"><div class="brand">amsr 0.1.4 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
       </div>
-    </nav>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="#">
+  
+  <span class="sidebar-brand-text">amsr 0.1.4 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="toc.html">amsr</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of amsr</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html">Change Log</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html">API</a></li>
+</ul>
+</li>
+</ul>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
-          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="toc.html">amsr</a>
-      </nav>
-
-      <div class="wy-nav-content">
-        <div class="rst-content">
-          <div role="navigation" aria-label="Page navigation">
-  <ul class="wy-breadcrumbs">
-      <li><a href="toc.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">AMSR</li>
-      <li class="wy-breadcrumbs-aside">
-            <a href="_sources/index.md.txt" rel="nofollow"> View page source</a>
-      </li>
-  </ul>
-  <hr/>
 </div>
-          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
-           <div itemprop="articleBody">
-             
-  <section id="amsr">
-<h1>AMSR<a class="headerlink" href="#amsr" title="Permalink to this heading"></a></h1>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="_sources/index.md.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="amsr">
+<h1>AMSR<a class="headerlink" href="#amsr" title="Link to this heading">¶</a></h1>
 <p><strong>A</strong>nother <strong>M</strong>olecular <strong>S</strong>tring <strong>R</strong>epresentation,
 inspired by</p>
 <ul class="simple">
@@ -105,22 +254,15 @@ inspired by</p>
 <li><p><a class="reference external" href="https://github.com/baoilleach/deepsmiles">DeepSMILES</a></p></li>
 <li><p><a class="reference external" href="https://github.com/aspuru-guzik-group/selfies">SELFIES</a></p></li>
 </ul>
-<section id="demo">
-<h2>Demo<a class="headerlink" href="#demo" title="Permalink to this heading"></a></h2>
-<p><a class="reference external" href="http://155.138.219.61:8000">AMSR demo</a></p>
-</section>
 <section id="installing">
-<h2>Installing<a class="headerlink" href="#installing" title="Permalink to this heading"></a></h2>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">amsr</span>
-</pre></div>
-</div>
-<p>For GPU:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">install</span> <span class="n">pytorch</span> <span class="n">torchvision</span> <span class="n">torchaudio</span> <span class="n">cudatoolkit</span><span class="o">=</span><span class="mf">11.8</span> <span class="o">-</span><span class="n">c</span> <span class="n">pytorch</span> <span class="o">-</span><span class="n">c</span> <span class="n">nvidia</span>
-</pre></div>
-</div>
+<h2>Installing<a class="headerlink" href="#installing" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>clone repo</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">pip</span> <span class="pre">install</span> <span class="pre">.</span></code></p></li>
+</ul>
 </section>
 <section id="usage">
-<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this heading"></a></h2>
+<h2>Usage<a class="headerlink" href="#usage" title="Link to this heading">¶</a></h2>
 <div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">amsr</span>
 
 <span class="n">amsr</span><span class="o">.</span><span class="n">ToMol</span><span class="p">(</span><span class="s2">&quot;CNcncc5cNcN6C.oC.o&quot;</span><span class="p">)</span> <span class="c1"># caffeine</span>
@@ -138,17 +280,18 @@ inspired by</p>
 </div>
 </section>
 <section id="description">
-<h2>Description<a class="headerlink" href="#description" title="Permalink to this heading"></a></h2>
+<h2>Description<a class="headerlink" href="#description" title="Link to this heading">¶</a></h2>
 <p>A molecular string representation in which every sequence of tokens generates a “reasonable” molecule.
 You may have different ideas about what constitutes a reasonable molecule than this string representation.</p>
 <section id="atoms">
-<h3>Atoms<a class="headerlink" href="#atoms" title="Permalink to this heading"></a></h3>
+<h3>Atoms<a class="headerlink" href="#atoms" title="Link to this heading">¶</a></h3>
 <p>Atoms are represented by their symbol
 enclosed in square brackets, as in SMILES.
 For a one-letter symbol,
 brackets may be omitted.  Atoms are assumed to have a fixed
 valence that limits the number of covalently-bonded neighbors.
 If an atom makes fewer bonds than its valence, hydrogens are assumed.</p>
+<div class="table-wrapper colwidths-auto docutils container">
 <table class="docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"><p>AMSR</p></th>
@@ -167,6 +310,7 @@ If an atom makes fewer bonds than its valence, hydrogens are assumed.</p>
 </tr>
 </tbody>
 </table>
+</div>
 <div>
 <span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
@@ -342,12 +486,13 @@ L 104.2 64.6
 </div>
 </section>
 <section id="chains">
-<h3>Chains<a class="headerlink" href="#chains" title="Permalink to this heading"></a></h3>
+<h3>Chains<a class="headerlink" href="#chains" title="Link to this heading">¶</a></h3>
 <p>Each atom in a chain is bonded to the most recently added atom that
 can still make bonds, according to its valence. Hydrogens may be added
 explicitly like any other atom.  In the
 example below, the fluorines are added to the second carbon; the chlorine
 is then added to the first carbon, since the second can no longer bond.</p>
+<div class="table-wrapper colwidths-auto docutils container">
 <table class="docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"><p>AMSR</p></th>
@@ -360,6 +505,7 @@ is then added to the first carbon, since the second can no longer bond.</p>
 </tr>
 </tbody>
 </table>
+</div>
 <div>
 <span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
@@ -379,7 +525,7 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 <path class='bond-3 atom-1 atom-4' d='M 95.8,63.1 L 86.1,46.2' style='fill:none;fill-rule:evenodd;stroke:#33CCCC;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-4 atom-0 atom-5' d='M 63.3,104.4 L 43.4,92.9' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-4 atom-0 atom-5' d='M 43.4,92.9 L 23.5,81.4' style='fill:none;fill-rule:evenodd;stroke:#00CC00;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path d='M 65.4,103.2 L 63.3,104.4 L 62.3,103.9' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
+<path d='M 65.4,103.2 L 63.3,104.4 L 62.3,103.9' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
 <path class='atom-2' d='M 143.8 48.7
 L 152.0 48.7
 L 152.0 50.2
@@ -444,13 +590,14 @@ L 20.1 72.6
 </div>
 </section>
 <section id="branches">
-<h3>Branches<a class="headerlink" href="#branches" title="Permalink to this heading"></a></h3>
+<h3>Branches<a class="headerlink" href="#branches" title="Link to this heading">¶</a></h3>
 <p>Branches are formed automatically when atoms can no longer
 make bonds.  They can also be made by “capping” or
 “saturating” an atom with hydrogens, using a period <code class="docutils literal notranslate"><span class="pre">.</span></code>
 (capping hydrogens are applied to the most
 recently-added atom that can still make bonds).
 New atoms will then be bonded to those added earlier, forming a branch.</p>
+<div class="table-wrapper colwidths-auto docutils container">
 <table class="docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"><p>AMSR</p></th>
@@ -466,6 +613,7 @@ New atoms will then be bonded to those added earlier, forming a branch.</p>
 </tr>
 </tbody>
 </table>
+</div>
 <div>
 <span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
@@ -495,19 +643,20 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 <path class='bond-2 atom-2 atom-3' d='M 104.0,80.0 L 131.7,32.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-3 atom-2 atom-4' d='M 104.0,80.0 L 76.3,128.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-4 atom-2 atom-5' d='M 104.0,80.0 L 152.0,107.7' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path d='M 53.6,53.7 L 56.0,52.3 L 58.4,53.7' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
+<path d='M 53.6,53.7 L 56.0,52.3 L 58.4,53.7' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
 </svg>
 </span>
 </div>
 </section>
 <section id="rings">
-<h3>Rings<a class="headerlink" href="#rings" title="Permalink to this heading"></a></h3>
+<h3>Rings<a class="headerlink" href="#rings" title="Link to this heading">¶</a></h3>
 <p>Rings are denoted by a single digit
 (or two or more digits enclosed in square brackets)
 giving the size of the ring.
 A new bond is formed between
 the two most recently-added atoms that
 can make bonds and when bonded will form a ring of that size.</p>
+<div class="table-wrapper colwidths-auto docutils container">
 <table class="docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"><p>AMSR</p></th>
@@ -526,6 +675,7 @@ can make bonds and when bonded will form a ring of that size.</p>
 </tr>
 </tbody>
 </table>
+</div>
 <div>
 <span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
@@ -541,8 +691,8 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 <path class='bond-1 atom-1 atom-2' d='M 32.2,63.4 L 32.2,116.9' style='fill:none;fill-rule:evenodd;stroke:#FF0000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-2 atom-2 atom-0' d='M 49.3,125.5 L 95.1,99.0' style='fill:none;fill-rule:evenodd;stroke:#FF0000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-2 atom-2 atom-0' d='M 95.1,99.0 L 140.8,72.6' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path d='M 135.4,69.5 L 140.8,72.6 L 138.5,73.9' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 37.6,13.0 L 32.2,9.9 L 32.2,12.6' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
+<path d='M 135.4,69.5 L 140.8,72.6 L 138.5,73.9' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 37.6,13.0 L 32.2,9.9 L 32.2,12.6' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
 <path class='atom-2' d='M 19.2 135.4
 Q 19.2 128.6, 22.5 124.8
 Q 25.9 121.0, 32.2 121.0
@@ -579,12 +729,12 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 <path class='bond-3 atom-3 atom-4' d='M 8.0,80.0 L 44.0,17.6' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-4 atom-4 atom-5' d='M 44.0,17.6 L 116.0,17.6' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-5 atom-5 atom-0' d='M 116.0,17.6 L 152.0,80.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path d='M 150.2,83.1 L 152.0,80.0 L 150.2,76.9' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 117.8,139.2 L 116.0,142.4 L 112.4,142.4' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 47.6,142.4 L 44.0,142.4 L 42.2,139.2' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 9.8,83.1 L 8.0,80.0 L 9.8,76.9' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 42.2,20.8 L 44.0,17.6 L 47.6,17.6' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 112.4,17.6 L 116.0,17.6 L 117.8,20.8' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
+<path d='M 150.2,83.1 L 152.0,80.0 L 150.2,76.9' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 117.8,139.2 L 116.0,142.4 L 112.4,142.4' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 47.6,142.4 L 44.0,142.4 L 42.2,139.2' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 9.8,83.1 L 8.0,80.0 L 9.8,76.9' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 42.2,20.8 L 44.0,17.6 L 47.6,17.6' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 112.4,17.6 L 116.0,17.6 L 117.8,20.8' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
 </svg>
 </span>
 <span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
@@ -608,24 +758,24 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 <path class='bond-9 atom-9 atom-10' d='M 80.0,8.0 L 116.0,17.6' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-10 atom-10 atom-11' d='M 116.0,17.6 L 142.4,44.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-11 atom-11 atom-0' d='M 142.4,44.0 L 152.0,80.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path d='M 151.5,81.8 L 152.0,80.0 L 151.5,78.2' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 142.8,114.2 L 142.4,116.0 L 141.0,117.3' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 117.3,141.0 L 116.0,142.4 L 114.2,142.8' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 81.8,151.5 L 80.0,152.0 L 78.2,151.5' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 45.8,142.8 L 44.0,142.4 L 42.7,141.0' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 19.0,117.3 L 17.6,116.0 L 17.2,114.2' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 8.5,81.8 L 8.0,80.0 L 8.5,78.2' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 17.2,45.8 L 17.6,44.0 L 19.0,42.7' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 42.7,19.0 L 44.0,17.6 L 45.8,17.2' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 78.2,8.5 L 80.0,8.0 L 81.8,8.5' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 114.2,17.2 L 116.0,17.6 L 117.3,19.0' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 141.0,42.7 L 142.4,44.0 L 142.8,45.8' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
+<path d='M 151.5,81.8 L 152.0,80.0 L 151.5,78.2' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 142.8,114.2 L 142.4,116.0 L 141.0,117.3' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 117.3,141.0 L 116.0,142.4 L 114.2,142.8' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 81.8,151.5 L 80.0,152.0 L 78.2,151.5' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 45.8,142.8 L 44.0,142.4 L 42.7,141.0' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 19.0,117.3 L 17.6,116.0 L 17.2,114.2' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 8.5,81.8 L 8.0,80.0 L 8.5,78.2' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 17.2,45.8 L 17.6,44.0 L 19.0,42.7' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 42.7,19.0 L 44.0,17.6 L 45.8,17.2' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 78.2,8.5 L 80.0,8.0 L 81.8,8.5' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 114.2,17.2 L 116.0,17.6 L 117.3,19.0' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 141.0,42.7 L 142.4,44.0 L 142.8,45.8' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
 </svg>
 </span>
 </div>
 </section>
 <section id="double-bonds-sp2-centers">
-<h3>Double bonds (sp<sup>2</sup> centers)<a class="headerlink" href="#double-bonds-sp2-centers" title="Permalink to this heading"></a></h3>
+<h3>Double bonds (sp<sup>2</sup> centers)<a class="headerlink" href="#double-bonds-sp2-centers" title="Link to this heading">¶</a></h3>
 <p>Atoms making a double bond are indicated by changing
 the symbol to lowercase (note that lowercase
 does not mean “aromatic”; merely, “atom having one
@@ -635,6 +785,7 @@ matching cannot be found (for instance, in the case
 of an odd number of contiguous lowercase symbols) a
 maximal matching is chosen, non-matched atoms
 remain singly bonded, and hydrogens are added.</p>
+<div class="table-wrapper colwidths-auto docutils container">
 <table class="docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"><p>AMSR</p></th>
@@ -653,6 +804,7 @@ remain singly bonded, and hydrogens are added.</p>
 </tr>
 </tbody>
 </table>
+</div>
 <div>
 <span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
@@ -706,12 +858,12 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 <path class='bond-4 atom-4 atom-5' d='M 44.0,17.6 L 116.0,17.6' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-4 atom-4 atom-5' d='M 50.2,28.4 L 109.8,28.4' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-5 atom-5 atom-0' d='M 116.0,17.6 L 152.0,80.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path d='M 150.2,83.1 L 152.0,80.0 L 150.2,76.9' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 117.8,139.2 L 116.0,142.4 L 112.4,142.4' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 47.6,142.4 L 44.0,142.4 L 42.2,139.2' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 9.8,83.1 L 8.0,80.0 L 9.8,76.9' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 42.2,20.8 L 44.0,17.6 L 47.6,17.6' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 112.4,17.6 L 116.0,17.6 L 117.8,20.8' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
+<path d='M 150.2,83.1 L 152.0,80.0 L 150.2,76.9' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 117.8,139.2 L 116.0,142.4 L 112.4,142.4' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 47.6,142.4 L 44.0,142.4 L 42.2,139.2' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 9.8,83.1 L 8.0,80.0 L 9.8,76.9' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 42.2,20.8 L 44.0,17.6 L 47.6,17.6' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 112.4,17.6 L 116.0,17.6 L 117.8,20.8' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
 </svg>
 </span>
 <span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
@@ -728,7 +880,7 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 <path class='bond-1 atom-1 atom-2' d='M 104.1,67.9 L 131.8,83.9' style='fill:none;fill-rule:evenodd;stroke:#FF0000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-1 atom-1 atom-2' d='M 76.3,65.6 L 98.2,78.2' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-1 atom-1 atom-2' d='M 98.2,78.2 L 125.9,94.2' style='fill:none;fill-rule:evenodd;stroke:#FF0000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path d='M 72.9,53.9 L 76.3,51.9 L 77.7,52.7' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
+<path d='M 72.9,53.9 L 76.3,51.9 L 77.7,52.7' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
 <path class='atom-2' d='M 131.5 96.5
 Q 131.5 91.2, 134.1 88.2
 Q 136.8 85.2, 141.7 85.2
@@ -755,6 +907,7 @@ Q 138.3 105.6, 141.7 105.6
 is still denoted by a capital (not a lowercase) symbol,
 although sp<sup>2</sup>-hybridized,
 since its coordination number is still equal to its valence.</p>
+<div class="table-wrapper colwidths-auto docutils container">
 <table class="docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"><p>AMSR</p></th>
@@ -770,6 +923,7 @@ since its coordination number is still equal to its valence.</p>
 </tr>
 </tbody>
 </table>
+</div>
 <div>
 <span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
@@ -789,10 +943,10 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 <path class='bond-3 atom-3 atom-4' d='M 49.4,125.2 L 81.5,135.6' style='fill:none;fill-rule:evenodd;stroke:#FF0000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-4 atom-4 atom-0' d='M 105.3,125.6 L 124.0,99.8' style='fill:none;fill-rule:evenodd;stroke:#FF0000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-4 atom-4 atom-0' d='M 124.0,99.8 L 142.8,74.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path d='M 140.4,70.7 L 142.8,74.0 L 141.8,75.3' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 97.2,11.3 L 94.8,8.0 L 90.9,9.3' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 21.1,31.9 L 17.2,33.2 L 17.2,37.3' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 17.2,110.7 L 17.2,114.8 L 18.9,115.3' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
+<path d='M 140.4,70.7 L 142.8,74.0 L 141.8,75.3' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 97.2,11.3 L 94.8,8.0 L 90.9,9.3' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 21.1,31.9 L 17.2,33.2 L 17.2,37.3' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 17.2,110.7 L 17.2,114.8 L 18.9,115.3' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
 <path class='atom-4' d='M 84.2 140.0
 Q 84.2 134.5, 87.0 131.4
 Q 89.7 128.3, 94.8 128.3
@@ -832,10 +986,10 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 <path class='bond-3 atom-3 atom-4' d='M 54.7,108.2 L 82.9,117.3' style='fill:none;fill-rule:evenodd;stroke:#0000FF;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-4 atom-4 atom-0' d='M 101.4,108.4 L 117.5,86.3' style='fill:none;fill-rule:evenodd;stroke:#0000FF;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-4 atom-4 atom-0' d='M 117.5,86.3 L 133.5,64.2' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path d='M 131.5,61.4 L 133.5,64.2 L 132.7,65.4' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 94.7,10.8 L 92.6,8.0 L 89.3,9.1' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 29.8,28.4 L 26.5,29.5 L 26.5,33.0' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 26.5,95.5 L 26.5,99.0 L 27.9,99.5' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
+<path d='M 131.5,61.4 L 133.5,64.2 L 132.7,65.4' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 94.7,10.8 L 92.6,8.0 L 89.3,9.1' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 29.8,28.4 L 26.5,29.5 L 26.5,33.0' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 26.5,95.5 L 26.5,99.0 L 27.9,99.5' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
 <path class='atom-4' d='M 88.3 110.7
 L 94.7 121.1
 Q 95.4 122.1, 96.4 124.0
@@ -871,10 +1025,11 @@ L 84.9 132.3
 </div>
 </section>
 <section id="ring-selection">
-<h3>Ring selection<a class="headerlink" href="#ring-selection" title="Permalink to this heading"></a></h3>
+<h3>Ring selection<a class="headerlink" href="#ring-selection" title="Link to this heading">¶</a></h3>
 <p>When more than one ring of a given size can be formed, one or more <code class="docutils literal notranslate"><span class="pre">&#64;</span></code> signs immediately after
 the digit will make ring-forming bonds with atoms appearing earlier in the
 string, rather than the most recent.</p>
+<div class="table-wrapper colwidths-auto docutils container">
 <table class="docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"><p>AMSR</p></th>
@@ -890,6 +1045,7 @@ string, rather than the most recent.</p>
 </tr>
 </tbody>
 </table>
+</div>
 <div>
 <span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
@@ -916,12 +1072,12 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 <path class='bond-8 atom-7 atom-8' d='M 152.0,58.0 L 113.9,36.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-8 atom-7 atom-8' d='M 145.4,61.8 L 113.9,43.6' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-9 atom-8 atom-3' d='M 113.9,36.0 L 75.7,58.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path d='M 32.6,113.8 L 33.9,115.6 L 36.0,114.9' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 9.3,81.8 L 8.0,80.0 L 8.5,79.3' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 112.0,122.9 L 113.9,124.0 L 115.8,122.9' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 150.1,103.1 L 152.0,102.0 L 152.0,99.8' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 152.0,60.2 L 152.0,58.0 L 150.1,56.9' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 115.8,37.1 L 113.9,36.0 L 112.0,37.1' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
+<path d='M 32.6,113.8 L 33.9,115.6 L 36.0,114.9' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 9.3,81.8 L 8.0,80.0 L 8.5,79.3' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 112.0,122.9 L 113.9,124.0 L 115.8,122.9' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 150.1,103.1 L 152.0,102.0 L 152.0,99.8' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 152.0,60.2 L 152.0,58.0 L 150.1,56.9' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 115.8,37.1 L 113.9,36.0 L 112.0,37.1' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
 <path class='atom-2' d='M 28.2 44.4
 Q 28.2 41.4, 29.6 39.8
 Q 31.1 38.1, 33.9 38.1
@@ -968,12 +1124,12 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 <path class='bond-8 atom-7 atom-8' d='M 152.0,58.8 L 115.3,37.7' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-8 atom-7 atom-8' d='M 145.6,62.5 L 115.3,45.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-9 atom-8 atom-0' d='M 115.3,37.7 L 78.7,58.8' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path d='M 40.4,46.4 L 38.4,45.7 L 37.9,46.4' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 37.9,113.6 L 38.4,114.3 L 40.4,113.6' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 113.5,121.3 L 115.3,122.3 L 117.2,121.3' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 150.2,102.2 L 152.0,101.2 L 152.0,99.1' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 152.0,60.9 L 152.0,58.8 L 150.2,57.8' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 117.2,38.7 L 115.3,37.7 L 113.5,38.7' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
+<path d='M 40.4,46.4 L 38.4,45.7 L 37.9,46.4' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 37.9,113.6 L 38.4,114.3 L 40.4,113.6' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 113.5,121.3 L 115.3,122.3 L 117.2,121.3' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 150.2,102.2 L 152.0,101.2 L 152.0,99.1' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 152.0,60.9 L 152.0,58.8 L 150.2,57.8' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 117.2,38.7 L 115.3,37.7 L 113.5,38.7' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
 <path class='atom-2' d='M 8.0 80.0
 Q 8.0 77.2, 9.4 75.5
 Q 10.8 73.9, 13.5 73.9
@@ -998,9 +1154,10 @@ Q 11.7 84.9, 13.5 84.9
 </div>
 </section>
 <section id="triple-bonds-sp-centers">
-<h3>Triple bonds (sp centers)<a class="headerlink" href="#triple-bonds-sp-centers" title="Permalink to this heading"></a></h3>
+<h3>Triple bonds (sp centers)<a class="headerlink" href="#triple-bonds-sp-centers" title="Link to this heading">¶</a></h3>
 <p>Atoms with two fewer neighbors than their valence are designated by a trailing colon <code class="docutils literal notranslate"><span class="pre">:</span></code>
 can make triple bonds (or more than one double bond).</p>
+<div class="table-wrapper colwidths-auto docutils container">
 <table class="docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"><p>AMSR</p></th>
@@ -1016,6 +1173,7 @@ can make triple bonds (or more than one double bond).</p>
 </tr>
 </tbody>
 </table>
+</div>
 <div>
 <span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
@@ -1127,9 +1285,10 @@ Q 13.5 87.2, 16.3 87.2
 </div>
 </section>
 <section id="hypervalent-atoms">
-<h3>Hypervalent atoms<a class="headerlink" href="#hypervalent-atoms" title="Permalink to this heading"></a></h3>
+<h3>Hypervalent atoms<a class="headerlink" href="#hypervalent-atoms" title="Link to this heading">¶</a></h3>
 <p>Atoms denoted by their symbol alone are assumed to have their lowest possible valence
 (for instance, two for sulfur).  Higher valences are denoted by one or more exclamation points <code class="docutils literal notranslate"><span class="pre">!</span></code>.</p>
+<div class="table-wrapper colwidths-auto docutils container">
 <table class="docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"><p>AMSR</p></th>
@@ -1148,6 +1307,7 @@ Q 13.5 87.2, 16.3 87.2
 </tr>
 </tbody>
 </table>
+</div>
 <div>
 <span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
@@ -1393,10 +1553,11 @@ L 20.1 39.5
 </div>
 </section>
 <section id="formal-charges-radical-electrons-isotopes">
-<h3>Formal charges, radical electrons, isotopes<a class="headerlink" href="#formal-charges-radical-electrons-isotopes" title="Permalink to this heading"></a></h3>
+<h3>Formal charges, radical electrons, isotopes<a class="headerlink" href="#formal-charges-radical-electrons-isotopes" title="Link to this heading">¶</a></h3>
 <p>Positive/negative formal charges are designated by one or more of <code class="docutils literal notranslate"><span class="pre">+</span></code>/<code class="docutils literal notranslate"><span class="pre">-</span></code>.
 Radical electrons are denoted by one or more asterisks <code class="docutils literal notranslate"><span class="pre">*</span></code>.  An isotopic mass is denoted by a number prefix
 before the atomic symbol (in which case square brackets must be used even for a one-letter symbol).</p>
+<div class="table-wrapper colwidths-auto docutils container">
 <table class="docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"><p>AMSR</p></th>
@@ -1415,6 +1576,7 @@ before the atomic symbol (in which case square brackets must be used even for a 
 </tr>
 </tbody>
 </table>
+</div>
 <div>
 <span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
@@ -1658,9 +1820,9 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 <path class='bond-9 atom-9 atom-0' d='M 60.4,85.3 L 46.3,77.1' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-10 atom-9 atom-10' d='M 80.0,103.4 L 80.0,116.0' style='fill:none;fill-rule:evenodd;stroke:#0000FF;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-10 atom-9 atom-10' d='M 80.0,116.0 L 80.0,128.6' style='fill:none;fill-rule:evenodd;stroke:#FF0000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path d='M 46.3,40.2 L 46.3,38.2 L 48.0,37.3' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 78.3,19.7 L 80.0,18.8 L 81.7,19.7' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 112.0,37.3 L 113.7,38.2 L 113.7,40.2' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
+<path d='M 46.3,40.2 L 46.3,38.2 L 48.0,37.3' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 78.3,19.7 L 80.0,18.8 L 81.7,19.7' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 112.0,37.3 L 113.7,38.2 L 113.7,40.2' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
 <path class='atom-9' d='M 77.6 91.1
 L 81.2 96.9
 Q 81.5 97.5, 82.1 98.5
@@ -1696,7 +1858,7 @@ Q 76.5 133.3, 76.5 135.5
 Q 76.5 137.7, 77.4 138.9
 Q 78.3 140.0, 80.0 140.0
 ' fill='#FF0000'/>
-<path class='atom-10' d='M 88.2,135.5 L 88.2,135.5 L 88.2,135.6 L 88.1,135.7 L 88.1,135.7 L 88.1,135.8 L 88.1,135.9 L 88.0,135.9 L 88.0,136.0 L 87.9,136.0 L 87.9,136.1 L 87.8,136.1 L 87.8,136.1 L 87.7,136.2 L 87.7,136.2 L 87.6,136.2 L 87.5,136.2 L 87.5,136.3 L 87.4,136.3 L 87.3,136.3 L 87.3,136.3 L 87.2,136.2 L 87.1,136.2 L 87.1,136.2 L 87.0,136.2 L 87.0,136.1 L 86.9,136.1 L 86.9,136.0 L 86.8,136.0 L 86.8,135.9 L 86.7,135.9 L 86.7,135.8 L 86.7,135.8 L 86.6,135.7 L 86.6,135.6 L 86.6,135.6 L 86.6,135.5 L 86.6,135.4 L 86.6,135.4 L 86.6,135.3 L 86.6,135.3 L 86.7,135.2 L 86.7,135.1 L 86.7,135.1 L 86.8,135.0 L 86.8,135.0 L 86.9,134.9 L 86.9,134.9 L 87.0,134.8 L 87.0,134.8 L 87.1,134.8 L 87.1,134.7 L 87.2,134.7 L 87.3,134.7 L 87.3,134.7 L 87.4,134.7 L 87.5,134.7 L 87.5,134.7 L 87.6,134.7 L 87.7,134.8 L 87.7,134.8 L 87.8,134.8 L 87.8,134.8 L 87.9,134.9 L 87.9,134.9 L 88.0,135.0 L 88.0,135.0 L 88.1,135.1 L 88.1,135.2 L 88.1,135.2 L 88.1,135.3 L 88.2,135.3 L 88.2,135.4 L 88.2,135.5 L 87.4,135.5 Z' style='fill:#000000;fill-rule:evenodd;fill-opacity:1;stroke:#000000;stroke-width:0.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
+<path class='atom-10' d='M 88.2,135.5 L 88.2,135.5 L 88.2,135.6 L 88.1,135.7 L 88.1,135.7 L 88.1,135.8 L 88.1,135.9 L 88.0,135.9 L 88.0,136.0 L 87.9,136.0 L 87.9,136.1 L 87.8,136.1 L 87.8,136.1 L 87.7,136.2 L 87.7,136.2 L 87.6,136.2 L 87.5,136.2 L 87.5,136.3 L 87.4,136.3 L 87.3,136.3 L 87.3,136.3 L 87.2,136.2 L 87.1,136.2 L 87.1,136.2 L 87.0,136.2 L 87.0,136.1 L 86.9,136.1 L 86.9,136.0 L 86.8,136.0 L 86.8,135.9 L 86.7,135.9 L 86.7,135.8 L 86.7,135.8 L 86.6,135.7 L 86.6,135.6 L 86.6,135.6 L 86.6,135.5 L 86.6,135.4 L 86.6,135.4 L 86.6,135.3 L 86.6,135.3 L 86.7,135.2 L 86.7,135.1 L 86.7,135.1 L 86.8,135.0 L 86.8,135.0 L 86.9,134.9 L 86.9,134.9 L 87.0,134.8 L 87.0,134.8 L 87.1,134.8 L 87.1,134.7 L 87.2,134.7 L 87.3,134.7 L 87.3,134.7 L 87.4,134.7 L 87.5,134.7 L 87.5,134.7 L 87.6,134.7 L 87.7,134.8 L 87.7,134.8 L 87.8,134.8 L 87.8,134.8 L 87.9,134.9 L 87.9,134.9 L 88.0,135.0 L 88.0,135.0 L 88.1,135.1 L 88.1,135.2 L 88.1,135.2 L 88.1,135.3 L 88.2,135.3 L 88.2,135.4 L 88.2,135.5 L 87.4,135.5 Z' style='fill:#000000;fill-rule:evenodd;fill-opacity:1;stroke:#000000;stroke-width:0.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
 </svg>
 </span>
 <span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
@@ -1804,11 +1966,12 @@ L 19.1 54.8
 </div>
 </section>
 <section id="tetrahedral-stereochemistry">
-<h3>Tetrahedral stereochemistry<a class="headerlink" href="#tetrahedral-stereochemistry" title="Permalink to this heading"></a></h3>
+<h3>Tetrahedral stereochemistry<a class="headerlink" href="#tetrahedral-stereochemistry" title="Link to this heading">¶</a></h3>
 <p>Tetrahedral stereochemistry is denoted by a single quote <code class="docutils literal notranslate"><span class="pre">'</span></code> meaning “clockwise”
 or a backtick <code class="docutils literal notranslate"><span class="pre">`</span></code> meaning “counterclockwise,” referring to the first three neighbors of
 a stereocenter atoms as they appear in the string, with the last neighbor (or implicit hydrogen)
 in back.</p>
+<div class="table-wrapper colwidths-auto docutils container">
 <table class="docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"><p>AMSR</p></th>
@@ -1824,6 +1987,7 @@ in back.</p>
 </tr>
 </tbody>
 </table>
+</div>
 <div>
 <span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
@@ -1857,7 +2021,7 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 <path class='bond-1 atom-0 atom-2' d='M 68.1,69.0 L 68.1,41.5' style='fill:none;fill-rule:evenodd;stroke:#33CCCC;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-2 atom-0 atom-3' d='M 68.1,96.4 L 91.5,109.9' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-2 atom-0 atom-3' d='M 91.5,109.9 L 114.8,123.4' style='fill:none;fill-rule:evenodd;stroke:#FF0000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path d='M 68.1,95.1 L 68.1,96.4 L 69.3,97.1' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
+<path d='M 68.1,95.1 L 68.1,96.4 L 69.3,97.1' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
 <path class='atom-2' d='M 62.5 20.5
 L 73.7 20.5
 L 73.7 22.7
@@ -1914,12 +2078,12 @@ L 137.3 120.4
 width='160px' height='160px' viewBox='0 0 160 160'>
 <!-- END OF HEADER -->
 <rect style='opacity:1.0;fill:#FFFFFF;stroke:none' width='160.0' height='160.0' x='0.0' y='0.0'> </rect>
-<path class='bond-0 atom-0 atom-1' d='M 68.1,96.4 L 13.0,134.0 L 8.0,125.4 Z' style='fill:#000000;fill-rule:evenodd;fill-opacity:1;stroke:#000000;stroke-width:0.5px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
+<path class='bond-0 atom-0 atom-1' d='M 68.1,96.4 L 13.0,134.0 L 8.0,125.4 Z' style='fill:#000000;fill-rule:evenodd;fill-opacity:1;stroke:#000000;stroke-width:0.5px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
 <path class='bond-1 atom-0 atom-2' d='M 68.1,96.4 L 68.1,69.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-1 atom-0 atom-2' d='M 68.1,69.0 L 68.1,41.5' style='fill:none;fill-rule:evenodd;stroke:#33CCCC;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-2 atom-0 atom-3' d='M 68.1,96.4 L 91.5,109.9' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-2 atom-0 atom-3' d='M 91.5,109.9 L 114.8,123.4' style='fill:none;fill-rule:evenodd;stroke:#FF0000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path d='M 68.1,95.1 L 68.1,96.4 L 69.3,97.1' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
+<path d='M 68.1,95.1 L 68.1,96.4 L 69.3,97.1' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
 <path class='atom-2' d='M 62.5 20.5
 L 73.7 20.5
 L 73.7 22.7
@@ -1970,10 +2134,11 @@ L 137.3 120.4
 </div>
 </section>
 <section id="e-z-stereochemistry">
-<h3><em>E/Z</em> stereochemistry<a class="headerlink" href="#e-z-stereochemistry" title="Permalink to this heading"></a></h3>
+<h3><em>E/Z</em> stereochemistry<a class="headerlink" href="#e-z-stereochemistry" title="Link to this heading">¶</a></h3>
 <p>Stereochemistry for a double bond is denoted by an underscore <code class="docutils literal notranslate"><span class="pre">_</span></code> meaning “trans” or <em>E</em>,
 or caret <code class="docutils literal notranslate"><span class="pre">^</span></code> meaning “cis” or <em>Z</em>, between the two atoms making the bond,
 where the reference neighboring atoms are those that appear earliest in the string.</p>
+<div class="table-wrapper colwidths-auto docutils container">
 <table class="docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"><p>AMSR</p></th>
@@ -1989,6 +2154,7 @@ where the reference neighboring atoms are those that appear earliest in the stri
 </tr>
 </tbody>
 </table>
+</div>
 <div>
 <span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
@@ -2007,7 +2173,7 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 <path class='bond-2 atom-0 atom-3' d='M 69.3,87.9 L 103.0,107.4' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-3 atom-3 atom-4' d='M 103.0,115.6 L 120.0,105.7' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-3 atom-3 atom-4' d='M 120.0,105.7 L 137.1,95.9' style='fill:none;fill-rule:evenodd;stroke:#00CC00;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path d='M 101.0,114.4 L 103.0,115.6 L 103.8,115.1' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
+<path d='M 101.0,114.4 L 103.0,115.6 L 103.8,115.1' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
 <path class='atom-1' d='M 14.5 115.2
 Q 15.8 115.6, 16.4 116.4
 Q 17.1 117.1, 17.1 118.3
@@ -2113,7 +2279,7 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 <path class='bond-2 atom-0 atom-3' d='M 95.6,87.4 L 61.6,107.0' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-3 atom-3 atom-4' d='M 61.6,115.2 L 42.3,104.1' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-3 atom-3 atom-4' d='M 42.3,104.1 L 23.0,92.9' style='fill:none;fill-rule:evenodd;stroke:#00CC00;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path d='M 63.7,114.0 L 61.6,115.2 L 60.7,114.7' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
+<path d='M 63.7,114.0 L 61.6,115.2 L 60.7,114.7' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
 <path class='atom-1' d='M 104.6 43.8
 Q 105.9 44.1, 106.6 44.9
 Q 107.2 45.7, 107.2 46.9
@@ -2205,11 +2371,12 @@ L 19.7 84.3
 </div>
 </section>
 <section id="groups">
-<h3>Groups<a class="headerlink" href="#groups" title="Permalink to this heading"></a></h3>
+<h3>Groups<a class="headerlink" href="#groups" title="Link to this heading">¶</a></h3>
 <p>The following abbreviations may be used to represent various functional groups:</p>
 <div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="mi">5</span><span class="n">aN</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">aNbN</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">aNbO</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">aNbS</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">aNcN</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">aNcO</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">aNcS</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">aNdN</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">aNdO</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">aNdS</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">aNeN</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">aNeO</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">aNeS</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">aO</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">aS</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">bN</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">bNaN</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">bNaO</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">bNaS</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">bNcN</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">bNcO</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">bNcS</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">bNdN</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">bNdO</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">bNdS</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">bNeN</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">bNeO</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">bNeS</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">bO</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">bS</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">cN</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">cNaN</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">cNaO</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">cNaS</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">cNbN</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">cNbO</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">cNbS</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">cNdN</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">cNdO</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">cNdS</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">cNeN</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">cNeO</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">cNeS</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">cO</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">cS</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">dN</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">dNaN</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">dNaO</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">dNaS</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">dNbN</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">dNbO</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">dNbS</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">dNcN</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">dNcO</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">dNcS</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">dNeN</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">dNeO</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">dNeS</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">dO</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">dS</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">eN</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">eNaN</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">eNaO</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">eNaS</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">eNbN</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">eNbO</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">eNbS</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">eNcN</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">eNcO</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">eNcS</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">eNdN</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">eNdO</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">eNdS</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">eO</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="n">eS</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">aN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">abN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">abcN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">abdN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">abeN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">abfN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">acN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">acdN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">aceN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">acfN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">adN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">adeN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">adfN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">aeN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">aefN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">afN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">bN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">bcN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">bcdN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">bceN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">bcfN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">bdN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">bdeN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">bdfN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">beN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">befN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">bfN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">cN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">cdN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">cdeN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">cdfN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">ceN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">cefN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">cfN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">dN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">deN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">defN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">dfN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">eN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">efN</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="n">fN</span><span class="p">),</span> <span class="p">[</span><span class="n">Ac</span><span class="p">],</span> <span class="p">[</span><span class="n">Bn</span><span class="p">],</span> <span class="p">[</span><span class="n">Boc</span><span class="p">],</span> <span class="p">[</span><span class="n">Bz</span><span class="p">],</span> <span class="p">[</span><span class="n">CCl3</span><span class="p">],</span> <span class="p">[</span><span class="n">CF3</span><span class="p">],</span> <span class="p">[</span><span class="n">CHO</span><span class="p">],</span> <span class="p">[</span><span class="n">CN</span><span class="p">],</span> <span class="p">[</span><span class="n">COO</span><span class="o">-</span><span class="p">],</span> <span class="p">[</span><span class="n">COOEt</span><span class="p">],</span> <span class="p">[</span><span class="n">COOH</span><span class="p">],</span> <span class="p">[</span><span class="n">COOMe</span><span class="p">],</span> <span class="p">[</span><span class="n">Cbz</span><span class="p">],</span> <span class="p">[</span><span class="n">Cy</span><span class="p">],</span> <span class="p">[</span><span class="n">Et</span><span class="p">],</span> <span class="p">[</span><span class="n">Ms</span><span class="p">],</span> <span class="p">[</span><span class="n">NC</span><span class="p">],</span> <span class="p">[</span><span class="n">NHAc</span><span class="p">],</span> <span class="p">[</span><span class="n">NHMe</span><span class="p">],</span> <span class="p">[</span><span class="n">NMe2</span><span class="p">],</span> <span class="p">[</span><span class="n">NO2</span><span class="p">],</span> <span class="p">[</span><span class="n">OAc</span><span class="p">],</span> <span class="p">[</span><span class="n">OEt</span><span class="p">],</span> <span class="p">[</span><span class="n">OMe</span><span class="p">],</span> <span class="p">[</span><span class="n">OiBu</span><span class="p">],</span> <span class="p">[</span><span class="n">PO3</span><span class="p">],</span> <span class="p">[</span><span class="n">Ph</span><span class="p">],</span> <span class="p">[</span><span class="n">Piv</span><span class="p">],</span> <span class="p">[</span><span class="n">SMe</span><span class="p">],</span> <span class="p">[</span><span class="n">SO3</span><span class="p">],</span> <span class="p">[</span><span class="n">Tf</span><span class="p">],</span> <span class="p">[</span><span class="n">Tol</span><span class="p">],</span> <span class="p">[</span><span class="n">Ts</span><span class="p">],</span> <span class="p">[</span><span class="n">iBu</span><span class="p">],</span> <span class="p">[</span><span class="n">iPr</span><span class="p">],</span> <span class="p">[</span><span class="n">nBu</span><span class="p">],</span> <span class="p">[</span><span class="n">nDec</span><span class="p">],</span> <span class="p">[</span><span class="n">nHept</span><span class="p">],</span> <span class="p">[</span><span class="n">nHex</span><span class="p">],</span> <span class="p">[</span><span class="n">nNon</span><span class="p">],</span> <span class="p">[</span><span class="n">nOct</span><span class="p">],</span> <span class="p">[</span><span class="n">nPent</span><span class="p">],</span> <span class="p">[</span><span class="n">nPr</span><span class="p">],</span> <span class="p">[</span><span class="n">sBu</span><span class="p">],</span> <span class="p">[</span><span class="n">tBu</span><span class="p">]</span>
 </pre></div>
 </div>
+<div class="table-wrapper colwidths-auto docutils container">
 <table class="docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"><p>AMSR</p></th>
@@ -2228,6 +2395,7 @@ L 19.7 84.3
 </tr>
 </tbody>
 </table>
+</div>
 <div>
 <span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
@@ -2238,9 +2406,9 @@ L 19.7 84.3
 width='160px' height='160px' viewBox='0 0 160 160'>
 <!-- END OF HEADER -->
 <rect style='opacity:1.0;fill:#FFFFFF;stroke:none' width='160.0' height='160.0' x='0.0' y='0.0'> </rect>
-<path class='bond-0 atom-1 atom-0' d='M 56.1,76.4 L 57.7,66.1 L 59.7,66.6 Z' style='fill:#000000;fill-rule:evenodd;fill-opacity:1;stroke:#000000;stroke-width:0.5px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path class='bond-0 atom-1 atom-0' d='M 57.7,66.1 L 63.3,56.7 L 59.4,55.7 Z' style='fill:#0000FF;fill-rule:evenodd;fill-opacity:1;stroke:#0000FF;stroke-width:0.5px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path class='bond-0 atom-1 atom-0' d='M 57.7,66.1 L 59.7,66.6 L 63.3,56.7 Z' style='fill:#0000FF;fill-rule:evenodd;fill-opacity:1;stroke:#0000FF;stroke-width:0.5px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
+<path class='bond-0 atom-1 atom-0' d='M 56.1,76.4 L 57.7,66.1 L 59.7,66.6 Z' style='fill:#000000;fill-rule:evenodd;fill-opacity:1;stroke:#000000;stroke-width:0.5px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path class='bond-0 atom-1 atom-0' d='M 57.7,66.1 L 63.3,56.7 L 59.4,55.7 Z' style='fill:#0000FF;fill-rule:evenodd;fill-opacity:1;stroke:#0000FF;stroke-width:0.5px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path class='bond-0 atom-1 atom-0' d='M 57.7,66.1 L 59.7,66.6 L 63.3,56.7 Z' style='fill:#0000FF;fill-rule:evenodd;fill-opacity:1;stroke:#0000FF;stroke-width:0.5px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
 <path class='bond-1 atom-1 atom-2' d='M 56.1,76.4 L 75.0,95.1' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-2 atom-2 atom-3' d='M 75.0,95.1 L 100.7,88.1' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-3 atom-3 atom-4' d='M 100.7,88.1 L 107.4,62.3' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
@@ -2259,14 +2427,14 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 <path class='bond-10 atom-9 atom-10' d='M 29.7,93.9 L 26.8,105.0' style='fill:none;fill-rule:evenodd;stroke:#FF0000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-11 atom-9 atom-11' d='M 30.4,83.5 L 23.1,76.3' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-11 atom-9 atom-11' d='M 23.1,76.3 L 15.8,69.0' style='fill:none;fill-rule:evenodd;stroke:#FF0000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path d='M 57.0,77.4 L 56.1,76.4 L 54.8,76.8' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 74.1,94.2 L 75.0,95.1 L 76.3,94.8' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 107.1,63.6 L 107.4,62.3 L 108.7,62.0' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 131.8,55.6 L 133.1,55.3 L 134.0,56.2' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 151.1,73.0 L 152.0,74.0 L 151.7,75.3' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 145.6,98.4 L 145.3,99.7 L 144.0,100.1' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 120.9,106.4 L 119.6,106.8 L 118.7,105.8' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 31.7,83.1 L 30.4,83.5 L 30.0,83.1' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
+<path d='M 57.0,77.4 L 56.1,76.4 L 54.8,76.8' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 74.1,94.2 L 75.0,95.1 L 76.3,94.8' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 107.1,63.6 L 107.4,62.3 L 108.7,62.0' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 131.8,55.6 L 133.1,55.3 L 134.0,56.2' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 151.1,73.0 L 152.0,74.0 L 151.7,75.3' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 145.6,98.4 L 145.3,99.7 L 144.0,100.1' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 120.9,106.4 L 119.6,106.8 L 118.7,105.8' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 31.7,83.1 L 30.4,83.5 L 30.0,83.1' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
 <path class='atom-0' d='M 61.1 46.9
 L 63.6 50.9
 Q 63.8 51.3, 64.2 52.0
@@ -2420,12 +2588,12 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 <path class='bond-13 atom-12 atom-13' d='M 22.9,91.4 L 14.0,92.0' style='fill:none;fill-rule:evenodd;stroke:#FF0000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-14 atom-12 atom-14' d='M 30.8,89.4 L 35.2,96.1' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-14 atom-12 atom-14' d='M 35.2,96.1 L 39.6,102.7' style='fill:none;fill-rule:evenodd;stroke:#FF0000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path d='M 90.4,85.8 L 91.4,85.7 L 91.9,84.8' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 72.2,86.9 L 71.2,86.9 L 70.7,86.1' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 68.6,52.9 L 69.1,52.0 L 70.1,51.9' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 88.3,50.8 L 89.3,50.7 L 89.8,51.6' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 119.6,66.4 L 120.6,66.4 L 121.2,67.2' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 31.3,88.5 L 30.8,89.4 L 31.0,89.8' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
+<path d='M 90.4,85.8 L 91.4,85.7 L 91.9,84.8' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 72.2,86.9 L 71.2,86.9 L 70.7,86.1' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 68.6,52.9 L 69.1,52.0 L 70.1,51.9' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 88.3,50.8 L 89.3,50.7 L 89.8,51.6' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 119.6,66.4 L 120.6,66.4 L 121.2,67.2' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 31.3,88.5 L 30.8,89.4 L 31.0,89.8' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
 <path class='atom-13' d='M 8.0 90.7
 Q 8.0 89.3, 8.7 88.5
 Q 9.4 87.8, 10.6 87.8
@@ -2523,15 +2691,15 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 <path class='bond-16 atom-15 atom-16' d='M 58.0,94.8 L 58.3,105.7' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-16 atom-15 atom-16' d='M 58.3,105.7 L 58.5,116.7' style='fill:none;fill-rule:evenodd;stroke:#FF0000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-17 atom-15 atom-0' d='M 56.2,95.9 L 77.7,82.8' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path d='M 118.3,95.8 L 119.2,96.8 L 120.4,96.5' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 142.7,92.1 L 143.9,91.8 L 144.3,90.6' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 151.6,69.1 L 152.0,67.9 L 151.2,67.0' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 136.2,49.9 L 135.3,48.9 L 134.1,49.2' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 111.8,53.7 L 110.6,53.9 L 110.2,55.1' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 86.5,105.1 L 86.9,106.3 L 86.1,107.3' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 77.2,58.8 L 77.2,57.5 L 76.7,57.3' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 33.9,58.3 L 33.4,58.6 L 33.4,59.1' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 55.7,95.7 L 56.2,95.9 L 57.2,95.3' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
+<path d='M 118.3,95.8 L 119.2,96.8 L 120.4,96.5' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 142.7,92.1 L 143.9,91.8 L 144.3,90.6' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 151.6,69.1 L 152.0,67.9 L 151.2,67.0' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 136.2,49.9 L 135.3,48.9 L 134.1,49.2' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 111.8,53.7 L 110.6,53.9 L 110.2,55.1' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 86.5,105.1 L 86.9,106.3 L 86.1,107.3' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 77.2,58.8 L 77.2,57.5 L 76.7,57.3' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 33.9,58.3 L 33.4,58.6 L 33.4,59.1' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 55.7,95.7 L 56.2,95.9 L 57.2,95.3' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
 <path class='atom-10' d='M 95.4 44.4
 Q 95.4 42.7, 96.3 41.8
 Q 97.1 40.8, 98.7 40.8
@@ -2654,8 +2822,9 @@ Q 55.7 124.1, 56.8 124.1
 </div>
 </section>
 <section id="multiple-molecules">
-<h3>Multiple molecules<a class="headerlink" href="#multiple-molecules" title="Permalink to this heading"></a></h3>
+<h3>Multiple molecules<a class="headerlink" href="#multiple-molecules" title="Link to this heading">¶</a></h3>
 <p>More than one molecule may be specified by separating with <code class="docutils literal notranslate"><span class="pre">;</span></code>.</p>
+<div class="table-wrapper colwidths-auto docutils container">
 <table class="docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"><p>AMSR</p></th>
@@ -2668,6 +2837,7 @@ Q 55.7 124.1, 56.8 124.1
 </tr>
 </tbody>
 </table>
+</div>
 <div>
 <span style="margin:20px"><?xml version='1.0' encoding='iso-8859-1'?>
 <svg version='1.1' baseProfile='full'
@@ -2693,18 +2863,16 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 <path class='bond-4 atom-4 atom-5' d='M 119.9,100.9 L 133.4,93.1' style='fill:none;fill-rule:evenodd;stroke:#FF0000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-5 atom-4 atom-6' d='M 109.1,110.2 L 109.1,125.2' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-5 atom-4 atom-6' d='M 109.1,125.2 L 109.1,140.2' style='fill:none;fill-rule:evenodd;stroke:#FF0000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-6 atom-7 atom-8' d='M 33.5,67.8 L 65.0,49.6' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-7 atom-8 atom-9' d='M 67.8,51.2 L 67.8,35.5' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-7 atom-8 atom-9' d='M 67.8,35.5 L 67.8,19.8' style='fill:none;fill-rule:evenodd;stroke:#FF0000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-7 atom-8 atom-9' d='M 62.3,51.2 L 62.3,35.5' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-7 atom-8 atom-9' d='M 62.3,35.5 L 62.3,19.8' style='fill:none;fill-rule:evenodd;stroke:#FF0000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-8 atom-8 atom-10' d='M 65.0,49.6 L 78.2,57.2' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-8 atom-8 atom-10' d='M 78.2,57.2 L 91.4,64.8' style='fill:none;fill-rule:evenodd;stroke:#0000FF;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-9 atom-10 atom-11' d='M 101.7,64.8 L 111.9,58.9' style='fill:none;fill-rule:evenodd;stroke:#0000FF;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path class='bond-9 atom-10 atom-11' d='M 111.9,58.9 L 122.1,53.0' style='fill:none;fill-rule:evenodd;stroke:#FF0000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<path d='M 44.5,109.3 L 46.1,110.2 L 46.8,109.9' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 108.5,109.9 L 109.1,110.2 L 109.1,111.0' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
-<path d='M 63.5,50.5 L 65.0,49.6 L 65.7,50.0' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;' />
+<path class='bond-6 atom-7 atom-8' d='M 46.1,67.8 L 77.6,49.6' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-7 atom-8 atom-9' d='M 80.4,51.2 L 80.4,35.5' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-7 atom-8 atom-9' d='M 80.4,35.5 L 80.4,19.8' style='fill:none;fill-rule:evenodd;stroke:#FF0000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-7 atom-8 atom-9' d='M 74.9,51.2 L 74.9,35.5' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-7 atom-8 atom-9' d='M 74.9,35.5 L 74.9,19.8' style='fill:none;fill-rule:evenodd;stroke:#FF0000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-8 atom-8 atom-10' d='M 77.6,49.6 L 90.8,57.2' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-8 atom-8 atom-10' d='M 90.8,57.2 L 104.0,64.8' style='fill:none;fill-rule:evenodd;stroke:#0000FF;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path d='M 44.5,109.3 L 46.1,110.2 L 46.8,109.9' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 108.5,109.9 L 109.1,110.2 L 109.1,111.0' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path d='M 76.1,50.5 L 77.6,49.6 L 78.3,50.0' style='fill:none;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
 <path class='atom-0' d='M 41.4 146.7
 Q 41.4 144.2, 42.6 142.8
 Q 43.8 141.4, 46.1 141.4
@@ -2795,128 +2963,174 @@ L 116.9 151.8
 L 115.5 151.8
 L 115.5 141.5
 ' fill='#FF0000'/>
-<path class='atom-9' d='M 60.3 13.2
-Q 60.3 10.8, 61.5 9.4
-Q 62.7 8.0, 65.0 8.0
-Q 67.3 8.0, 68.5 9.4
-Q 69.8 10.8, 69.8 13.2
-Q 69.8 15.7, 68.5 17.2
-Q 67.3 18.6, 65.0 18.6
-Q 62.8 18.6, 61.5 17.2
-Q 60.3 15.8, 60.3 13.2
-M 65.0 17.4
-Q 66.6 17.4, 67.4 16.4
-Q 68.3 15.3, 68.3 13.2
-Q 68.3 11.2, 67.4 10.2
-Q 66.6 9.2, 65.0 9.2
-Q 63.5 9.2, 62.6 10.2
-Q 61.8 11.2, 61.8 13.2
-Q 61.8 15.3, 62.6 16.4
-Q 63.5 17.4, 65.0 17.4
+<path class='atom-9' d='M 72.9 13.2
+Q 72.9 10.8, 74.1 9.4
+Q 75.3 8.0, 77.6 8.0
+Q 79.9 8.0, 81.1 9.4
+Q 82.4 10.8, 82.4 13.2
+Q 82.4 15.7, 81.1 17.2
+Q 79.9 18.6, 77.6 18.6
+Q 75.4 18.6, 74.1 17.2
+Q 72.9 15.8, 72.9 13.2
+M 77.6 17.4
+Q 79.2 17.4, 80.1 16.4
+Q 80.9 15.3, 80.9 13.2
+Q 80.9 11.2, 80.1 10.2
+Q 79.2 9.2, 77.6 9.2
+Q 76.1 9.2, 75.2 10.2
+Q 74.4 11.2, 74.4 13.2
+Q 74.4 15.3, 75.2 16.4
+Q 76.1 17.4, 77.6 17.4
 ' fill='#FF0000'/>
-<path class='atom-10' d='M 94.3 62.6
-L 97.6 68.1
-Q 98.0 68.6, 98.5 69.6
-Q 99.1 70.6, 99.1 70.6
-L 99.1 62.6
-L 100.5 62.6
-L 100.5 72.9
-L 99.0 72.9
-L 95.4 67.0
-Q 95.0 66.3, 94.5 65.5
-Q 94.1 64.7, 94.0 64.4
-L 94.0 72.9
-L 92.6 72.9
-L 92.6 62.6
-L 94.3 62.6
+<path class='atom-10' d='M 106.9 62.6
+L 110.2 68.1
+Q 110.6 68.6, 111.1 69.6
+Q 111.7 70.6, 111.7 70.6
+L 111.7 62.6
+L 113.1 62.6
+L 113.1 72.9
+L 111.6 72.9
+L 108.0 67.0
+Q 107.6 66.3, 107.1 65.5
+Q 106.7 64.7, 106.6 64.4
+L 106.6 72.9
+L 105.2 72.9
+L 105.2 62.6
+L 106.9 62.6
 ' fill='#0000FF'/>
-<path class='atom-10' d='M 92.5 74.0
-L 93.9 74.0
-L 93.9 78.4
-L 99.2 78.4
-L 99.2 74.0
-L 100.6 74.0
-L 100.6 84.3
-L 99.2 84.3
-L 99.2 79.5
-L 93.9 79.5
-L 93.9 84.3
-L 92.5 84.3
-L 92.5 74.0
+<path class='atom-10' d='M 115.0 62.6
+L 116.4 62.6
+L 116.4 67.0
+L 121.7 67.0
+L 121.7 62.6
+L 123.1 62.6
+L 123.1 72.9
+L 121.7 72.9
+L 121.7 68.2
+L 116.4 68.2
+L 116.4 72.9
+L 115.0 72.9
+L 115.0 62.6
 ' fill='#0000FF'/>
-<path class='atom-11' d='M 123.3 49.6
-Q 123.3 47.2, 124.5 45.8
-Q 125.8 44.4, 128.1 44.4
-Q 130.3 44.4, 131.6 45.8
-Q 132.8 47.2, 132.8 49.6
-Q 132.8 52.1, 131.5 53.6
-Q 130.3 55.0, 128.1 55.0
-Q 125.8 55.0, 124.5 53.6
-Q 123.3 52.1, 123.3 49.6
-M 128.1 53.8
-Q 129.6 53.8, 130.5 52.8
-Q 131.3 51.7, 131.3 49.6
-Q 131.3 47.6, 130.5 46.6
-Q 129.6 45.6, 128.1 45.6
-Q 126.5 45.6, 125.6 46.6
-Q 124.8 47.6, 124.8 49.6
-Q 124.8 51.7, 125.6 52.8
-Q 126.5 53.8, 128.1 53.8
-' fill='#FF0000'/>
-<path class='atom-11' d='M 134.4 44.5
-L 135.8 44.5
-L 135.8 48.9
-L 141.1 48.9
-L 141.1 44.5
-L 142.5 44.5
-L 142.5 54.8
-L 141.1 54.8
-L 141.1 50.0
-L 135.8 50.0
-L 135.8 54.8
-L 134.4 54.8
-L 134.4 44.5
-' fill='#FF0000'/>
+<path class='atom-10' d='M 125.1 72.6
+Q 125.4 71.9, 125.9 71.6
+Q 126.5 71.2, 127.4 71.2
+Q 128.4 71.2, 129.0 71.8
+Q 129.6 72.3, 129.6 73.3
+Q 129.6 74.3, 128.8 75.3
+Q 128.1 76.2, 126.5 77.3
+L 129.7 77.3
+L 129.7 78.1
+L 125.1 78.1
+L 125.1 77.5
+Q 126.4 76.5, 127.1 75.9
+Q 127.9 75.2, 128.2 74.6
+Q 128.6 74.0, 128.6 73.4
+Q 128.6 72.7, 128.3 72.4
+Q 127.9 72.0, 127.4 72.0
+Q 126.8 72.0, 126.5 72.2
+Q 126.1 72.4, 125.8 72.9
+L 125.1 72.6
+' fill='#0000FF'/>
 </svg>
 </span>
 </div>
 </section>
 </section>
 <section id="developing">
-<h2>Developing<a class="headerlink" href="#developing" title="Permalink to this heading"></a></h2>
-<p>This repo uses pre-commit, so after cloning run <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-r</span> <span class="pre">requirements.txt</span></code> and <code class="docutils literal notranslate"><span class="pre">pre-commit</span> <span class="pre">install</span></code> prior to committing.</p>
+<h2>Developing<a class="headerlink" href="#developing" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">pip</span> <span class="pre">install</span> <span class="pre">&quot;.[dev]&quot;</span></code></p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="toc.html">amsr</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html">Change Log</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html">API</a></li>
+</ul>
+</li>
+</ul>
+</div>
 </section>
 </section>
 
-
-           </div>
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="toc.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">amsr</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
           </div>
-          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="toc.html" class="btn btn-neutral float-left" title="amsr" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="changelog.html" class="btn btn-neutral float-right" title="Change Log" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
     </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">AMSR</a><ul>
+<li><a class="reference internal" href="#installing">Installing</a></li>
+<li><a class="reference internal" href="#usage">Usage</a></li>
+<li><a class="reference internal" href="#description">Description</a><ul>
+<li><a class="reference internal" href="#atoms">Atoms</a></li>
+<li><a class="reference internal" href="#chains">Chains</a></li>
+<li><a class="reference internal" href="#branches">Branches</a></li>
+<li><a class="reference internal" href="#rings">Rings</a></li>
+<li><a class="reference internal" href="#double-bonds-sp2-centers">Double bonds (sp<sup>2</sup> centers)</a></li>
+<li><a class="reference internal" href="#ring-selection">Ring selection</a></li>
+<li><a class="reference internal" href="#triple-bonds-sp-centers">Triple bonds (sp centers)</a></li>
+<li><a class="reference internal" href="#hypervalent-atoms">Hypervalent atoms</a></li>
+<li><a class="reference internal" href="#formal-charges-radical-electrons-isotopes">Formal charges, radical electrons, isotopes</a></li>
+<li><a class="reference internal" href="#tetrahedral-stereochemistry">Tetrahedral stereochemistry</a></li>
+<li><a class="reference internal" href="#e-z-stereochemistry"><em>E/Z</em> stereochemistry</a></li>
+<li><a class="reference internal" href="#groups">Groups</a></li>
+<li><a class="reference internal" href="#multiple-molecules">Multiple molecules</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#developing">Developing</a></li>
+</ul>
+</li>
+</ul>
 
-  <hr/>
-
-  <div role="contentinfo">
-    <p>&#169; Copyright 2022 Harry Stern.</p>
-  </div>
-
-  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    provided by <a href="https://readthedocs.org">Read the Docs</a>.
-   
-
-</footer>
+          </div>
         </div>
       </div>
-    </section>
+      
+      
+    </aside>
   </div>
-  <script>
-      jQuery(function () {
-          SphinxRtdTheme.Navigation.enable(true);
-      });
-  </script> 
-
-</body>
+</div><script src="_static/documentation_options.js?v=fd825880"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
 </html>
