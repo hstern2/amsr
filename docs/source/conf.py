@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.abspath("../../"))
 
 project = "amsr"
 author = "Harry Stern"
-release = "0.1.4"
+release = "0.1.5"
 
 extensions = [
     "sphinx.ext.autodoc",  # <-- must precede sphinx_autodoc_typehints
