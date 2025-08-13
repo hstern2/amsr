@@ -1,8 +1,8 @@
 from Levenshtein import editops
-from .encode import FromSmilesToTokens
-from .decode import ToMol
-from typing import List
 from rdkit import Chem
+
+from .decode import ToMol
+from .encode import FromSmilesToTokens
 
 
 class Morph:
@@ -13,7 +13,7 @@ class Morph:
     :param t: list of AMSR tokens
     """
 
-    def __init__(self, s: List[str], t: List[str]):
+    def __init__(self, s: list[str], t: list[str]):
         s = list(s)[:]
         self.amsr = ["".join(s)]
         k = 0
@@ -29,8 +29,8 @@ class Morph:
             self.amsr.append("".join(s))
         self.mol = []
         i0 = None
-        for s in self.amsr:
-            m = ToMol(s)
+        for amsr_str in self.amsr:
+            m = ToMol(amsr_str)
             i = Chem.MolToInchi(m, options="-FixedH")
             if i0 is None or i != i0:
                 self.mol.append(m)

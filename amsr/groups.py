@@ -1,10 +1,11 @@
-from typing import Dict, List, Optional
-from re import compile, escape, Pattern
+from re import Pattern, compile, escape
+from typing import Optional
+
+from .aromatics import AddAromatics
 from .mreplace import MultipleReplace
 from .tokens import ToTokens
-from .aromatics import AddAromatics
 
-_groups: Dict[str, List[str]] = {
+_groups: dict[str, list[str]] = {
     "[Cy]": ["CCCCCC6......"],
     "[Ts]": ["S!!:oocccccc6..C...", "S!!:occcccc6..C...o", "S!!:cccccc6..C...oo"],
     "[Tf]": ["S!!:ooCFFF", "S!!:oCFFFo", "S!!:CFFFoo"],
@@ -53,7 +54,7 @@ _groups: Dict[str, List[str]] = {
 }
 
 
-def Groups() -> Dict[str, List[str]]:
+def Groups() -> dict[str, list[str]]:
     """Keys are functional group abbreviations, values are lists of one or more AMSR strings
     consisting only of atom/bond tokens.  May be modified, but :func:`InitializeGroups`
     must be called after modification.
@@ -85,5 +86,5 @@ def DecodeGroups(s: str) -> str:
     return s if _pattern is None else _pattern.sub(lambda m: _groups[m.group(1)][0], s)
 
 
-def EncodeGroups(s: List[str]) -> List[str]:
+def EncodeGroups(s: list[str]) -> list[str]:
     return s if _mr is None else _mr.replace(s)

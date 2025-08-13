@@ -1,11 +1,13 @@
+from random import shuffle
+from typing import Optional
+
 from rdkit import Chem
-from typing import Optional, List, Set, FrozenSet
-from .atom import Atom, GetSeenIndex, SetSeenIndex, IsSeen, UnSee
+
+from .atom import Atom, GetSeenIndex, IsSeen, SetSeenIndex, UnSee
 from .bfs import BFSFind
 from .bond import Bond
 from .groups import EncodeGroups
-from .tokens import DOT, SKIP, MOLSEP
-from random import shuffle
+from .tokens import DOT, MOLSEP, SKIP
 
 
 def _ringTokens(n, nSkip):
@@ -52,12 +54,13 @@ def FromMolToTokens(
     randomize: Optional[bool] = False,
     canonical: Optional[bool] = False,
     useStereo: Optional[bool] = True,
-) -> List[str]:
+) -> list[str]:
     """Convert RDKit Mol to list of AMSR tokens
 
     :param mol: RDKit Mol
     :param useGroups: use group symbols/abbreviations (default: True)
-    :param stringent: try to exclude unstable or synthetically inaccessible molecules (default: True)
+    :param stringent: try to exclude unstable or synthetically inaccessible molecules
+        (default: True)
     :param randomize: randomize order of graph traversal (default: False)
     :param canonical: canonical order of graph traversal (default: False)
     :param useStereo: encode stereochemistry (default: True)
@@ -79,7 +82,7 @@ def FromMolToTokens(
         mol = Chem.RenumberAtoms(mol, i)
 
     atom = [Atom.fromRDAtom(a) for a in mol.GetAtoms()]
-    seenBonds: Set[FrozenSet[int]] = set()
+    seenBonds: set[frozenset[int]] = set()
     nSeenAtoms = 0
 
     def _search(a):
@@ -105,9 +108,7 @@ def FromMolToTokens(
                         seenBonds.add(ij)
                         ai.addBondTo(aj)
                         break
-                    elif atom[k].canBond() and ai.canBondWith(
-                        atom[k], stringent=stringent
-                    ):
+                    elif atom[k].canBond() and ai.canBondWith(atom[k], stringent=stringent):
                         nSkip += 1
             else:  # new atom
                 seenBonds.add(ij)
@@ -130,7 +131,7 @@ def FromMolToTokens(
                 yield from _search(a)
                 _ = True
 
-    t = [t[1].asToken(t[0]) if type(t) == tuple else t for t in list(_getPreTokens())]
+    t = [t[1].asToken(t[0]) if isinstance(t, tuple) else t for t in list(_getPreTokens())]
 
     for a in mol.GetAtoms():
         UnSee(a)
@@ -153,7 +154,8 @@ def FromMol(
 
     :param mol: RDKit Mol
     :param useGroups: use group symbols/abbreviations (default: True)
-    :param stringent: try to exclude unstable or synthetically inaccessible molecules (default: True)
+    :param stringent: try to exclude unstable or synthetically inaccessible molecules
+        (default: True)
     :param randomize: randomize order of graph traversal (default: False)
     :param canonical: canonical order of graph traversal (default: False)
     :param useStereo: encode stereochemistry (default: True)
@@ -206,7 +208,7 @@ def FromSmilesToTokens(
     randomize: Optional[bool] = False,
     canonical: Optional[bool] = False,
     useStereo: Optional[bool] = True,
-) -> List[str]:
+) -> list[str]:
     """Convert SMILES to list of AMSR tokens
 
     :param mol: RDKit Mol

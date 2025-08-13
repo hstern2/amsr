@@ -16,16 +16,17 @@ __all__ = [
     "Modifier",
     "GetConformerAndEnergy",
     "LSTMModel",
+    "__version__",
 ]
 
-from .version import __version__
-from .encode import FromMol, FromMolToTokens, FromSmiles, FromSmilesToTokens
+from .check import CheckAMSR, CheckMol, CheckSmiles
+from .conf import GetConformerAndEnergy
 from .decode import ToMol, ToSmiles
-from .check import CheckMol, CheckSmiles, CheckAMSR
+from .encode import FromMol, FromMolToTokens, FromSmiles, FromSmilesToTokens
 from .groups import Groups, InitializeGroups
-from .tokens import ToTokens
-from .morph import Morph
+from .lstm import LSTMModel
 from .markov import Markov
 from .modifier import Modifier
-from .conf import GetConformerAndEnergy
-from .lstm import LSTMModel
+from .morph import Morph
+from .tokens import ToTokens
+from .version import __version__

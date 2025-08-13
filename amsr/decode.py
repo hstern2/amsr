@@ -1,13 +1,15 @@
+from re import escape, match
+from typing import Optional
+
 from rdkit import Chem
-from typing import Tuple, Optional, List, Dict
-from re import match, escape
+
 from .atom import Atom
-from .bond import Bond
-from .pibonds import PiBonds
 from .bfs import BFSTree
-from .parity import IsEvenParity
+from .bond import Bond
 from .groups import DecodeGroups
-from .tokens import RegExp, SKIP, L_BRACKET, R_BRACKET, DIHEDRAL_FOR_BOND_SYMBOL
+from .parity import IsEvenParity
+from .pibonds import PiBonds
+from .tokens import DIHEDRAL_FOR_BOND_SYMBOL, L_BRACKET, R_BRACKET, SKIP, RegExp
 
 
 def _addBond(mol, atom, i, j, bond, dihedral_for_bond):
@@ -44,9 +46,7 @@ def _saturate(atom):
 
 
 def _ring(mol, atom, ringStr, bond, stringent, dihedral_for_bond):
-    m = match(
-        f"{escape(L_BRACKET)}?([0-9]+){escape(R_BRACKET)}?({escape(SKIP)}*)", ringStr
-    )
+    m = match(f"{escape(L_BRACKET)}?([0-9]+){escape(R_BRACKET)}?({escape(SKIP)}*)", ringStr)
     n = int(m.group(1))
     if n < 3:
         return
@@ -68,18 +68,19 @@ def _ring(mol, atom, ringStr, bond, stringent, dihedral_for_bond):
 def ToMol(
     s: str,
     stringent: Optional[bool] = True,
-    dihedral: Optional[Dict[Tuple[int, int, int, int], int]] = None,
+    dihedral: Optional[dict[tuple[int, int, int, int], int]] = None,
 ) -> Chem.Mol:
     """Convert AMSR to an RDKit Mol
 
     :param s: AMSR
     :param stringent: try to exclude unstable or synthetically inaccessible molecules
-    :param dihedral: return dictionary of dihedral angles, where keys are indices and values are angles in degrees
+    :param dihedral: return dictionary of dihedral angles, where keys are indices and
+        values are angles in degrees
     :return: RDKit Mol
     """
     mol = Chem.RWMol()
-    atom: List[Atom] = []
-    dihedral_for_bond: Dict[int] = {}
+    atom: list[Atom] = []
+    dihedral_for_bond: dict[int, int] = {}
     makeBond = False
     isSaturated_save = None
     for m in RegExp.finditer(DecodeGroups(s)):
@@ -112,9 +113,7 @@ def ToMol(
                 for a in reversed(mol.GetAtoms()):
                     j = a.GetIdx()
                     if atom[j].canBond():
-                        isSaturated_save = [
-                            atom[k].isSaturated for k in range(0, j + 1)
-                        ]
+                        isSaturated_save = [atom[k].isSaturated for k in range(0, j + 1)]
                         for k in range(0, j):
                             atom[k].isSaturated = True
                         break
@@ -148,7 +147,7 @@ def ToMol(
                 mj = min(nj)
                 if is_EZ:
                     b.SetStereoAtoms(mi, mj)
-                if is_dihedral:
+                if is_dihedral and dihedral is not None:
                     dihedral[mi, i, j, mj] = dihedral_for_bond[k]
     PiBonds(mol, atom, stringent)
     for i, a in enumerate(atom):

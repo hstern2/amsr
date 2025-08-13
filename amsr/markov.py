@@ -1,8 +1,10 @@
-from .encode import FromMolToTokens
-from rdkit import Chem
-from typing import Optional, List
 from random import choices
+from typing import Any, Optional
+
+from rdkit import Chem
+
 from .count import Count
+from .encode import FromMolToTokens
 
 START_TOKEN = "[START]"
 END_TOKEN = "[END]"
@@ -14,9 +16,8 @@ class Markov:
     :param mols: rdkit Mols, from which to draw token frequencies
     """
 
-    def __init__(self, mols: List[Chem.Mol]):
-
-        self.p = dict()
+    def __init__(self, mols: list[Chem.Mol]):
+        self.p: dict[str, Any] = dict()
         self.p[START_TOKEN] = dict()
         for m in mols:
             t = FromMolToTokens(m, useGroups=True)
@@ -48,7 +49,7 @@ class Markov:
         """
         t = self._nextToken(START_TOKEN)
         n = 0
-        while t != END_TOKEN and (nmax < 0 or n < nmax):
+        while t != END_TOKEN and (nmax is None or nmax < 0 or n < nmax):
             yield t
             n += 1
             t = self._nextToken(t)

@@ -1,4 +1,4 @@
-def IsEvenParity(a):
+def IsEvenParity(a: list[int]) -> bool:
     s = 0
     for i, ai in enumerate(a):
         for j, aj in enumerate(a):

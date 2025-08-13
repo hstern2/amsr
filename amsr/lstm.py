@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader, TensorDataset, random_split
 from torch.nn.utils.rnn import pad_sequence
+from torch.utils.data import DataLoader, TensorDataset, random_split
 
 # Define special tokens
 PAD_TOK = 0
@@ -15,7 +15,7 @@ def _device():
 
 class LSTMModel(nn.Module):
     def __init__(self, d_model=128, nhid=256, nlayers=2, dropout=0.3):
-        super(LSTMModel, self).__init__()
+        super().__init__()
         self.d_model = d_model
         self.nhid = nhid
         self.nlayers = nlayers
@@ -64,18 +64,12 @@ class LSTMModel(nn.Module):
         self._get_vocab(seqs)
         self._init_model()
         seqs_as_tt = [
-            torch.tensor(
-                [self.index_for_token[t] for t in s] + [EOS_TOK], device=_device()
-            )
+            torch.tensor([self.index_for_token[t] for t in s] + [EOS_TOK], device=_device())
             for s in seqs
         ]
-        padded_sequences = pad_sequence(
-            seqs_as_tt, batch_first=True, padding_value=PAD_TOK
-        )
+        padded_sequences = pad_sequence(seqs_as_tt, batch_first=True, padding_value=PAD_TOK)
         targets = padded_sequences[:, 1:]
-        pad = torch.full(
-            (targets.shape[0], 1), PAD_TOK, dtype=targets.dtype, device=_device()
-        )
+        pad = torch.full((targets.shape[0], 1), PAD_TOK, dtype=targets.dtype, device=_device())
         padded_targets = torch.cat((targets, pad), dim=1)
 
         dataset = TensorDataset(padded_sequences, padded_targets)
@@ -83,16 +77,12 @@ class LSTMModel(nn.Module):
         val_size = len(dataset) - train_size
         train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
 
-        train_data_loader = DataLoader(
-            train_dataset, batch_size=batch_size, shuffle=True
-        )
+        train_data_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
         val_data_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 
         self.train()
         criterion = nn.CrossEntropyLoss(ignore_index=PAD_TOK)
-        optimizer = optim.Adam(
-            self.parameters(), lr=learning_rate, weight_decay=weight_decay
-        )
+        optimizer = optim.Adam(self.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
         best_val_loss = float("inf")
         epochs_no_improve = 0
@@ -167,7 +157,6 @@ class LSTMModel(nn.Module):
         return model
 
     def generate_tokens(self, start_input, max_length=20, temperature=1.0):
-
         assert temperature > 0
 
         self.eval()
@@ -179,9 +168,7 @@ class LSTMModel(nn.Module):
         for _ in range(max_length - 1):
             with torch.no_grad():
                 output = self(generated_sequence)
-                logits = (
-                    output[:, -1, :] / temperature
-                )  # Scale the logits by the temperature
+                logits = output[:, -1, :] / temperature  # Scale the logits by the temperature
                 probabilities = torch.softmax(logits, dim=-1)
                 next_token = torch.multinomial(
                     probabilities, num_samples=1
@@ -203,7 +190,6 @@ class LSTMModel(nn.Module):
         return "".join(self.generate_tokens(start_input, max_length, temperature))
 
     def replace_token(self, seq, position, temperature=1.0):
-
         assert temperature > 0
         assert position >= 0 and position < len(seq)
 
@@ -219,11 +205,7 @@ class LSTMModel(nn.Module):
             new_token_index = torch.multinomial(probabilities, num_samples=1).item()
             while new_token_index in (PAD_TOK, EOS_TOK):
                 new_token_index = torch.multinomial(probabilities, num_samples=1).item()
-            return (
-                seq[:position]
-                + [self.token_for_index[new_token_index]]
-                + seq[position + 1 :]
-            )
+            return seq[:position] + [self.token_for_index[new_token_index]] + seq[position + 1 :]
 
 
 if __name__ == "__main__":

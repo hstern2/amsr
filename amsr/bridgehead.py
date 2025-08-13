@@ -1,5 +1,7 @@
-from rdkit import Chem
 from itertools import combinations
+
+from rdkit import Chem
+
 from .count import Count
 
 

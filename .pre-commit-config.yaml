@@ -1,12 +1,21 @@
 repos:
+  # Ruff = linter + formatter
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.5.7
+    hooks:
+      - id: ruff
+        args: [--fix]          # auto-fix lint issues locally; CI will fail if changes would be made
+      - id: ruff-format        # formatter (Black replacement)
+
+  # Mypy type checking (matches your pyproject config)
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.10.0
+    hooks:
+      - id: mypy
+
+  # Simple hygiene hooks
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.2.3
+    rev: v4.6.0
     hooks:
-      - id: trailing-whitespace
-      - id: check-yaml
       - id: end-of-file-fixer
-      - id: mixed-line-ending
-  - repo: https://github.com/psf/black
-    rev: "22.3.0"
-    hooks:
-    - id: black
+      - id: trailing-whitespace

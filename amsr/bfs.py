@@ -1,5 +1,5 @@
 import anytree
-import rdkit.Chem as rd
+
 from .atom import GetSeenIndex
 
 
