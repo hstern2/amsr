@@ -29,7 +29,7 @@ jobs:
 
       # Install your package + dev tools (pytest, ruff, mypy via extras)
       - name: Install project (dev extras)
-        run: uv pip install -e ".[dev]"
+        run: uv pip install --system -e ".[dev]"
 
       # Run exactly the same hooks as locally
       - name: Pre-commit (lint + format check + mypy)
