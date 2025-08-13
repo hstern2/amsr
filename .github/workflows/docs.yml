@@ -22,7 +22,7 @@ jobs:
           python-version: '3.12'
 
       - name: Install project + docs extras
-        run: uv pip install -e ".[docs]"
+        run: uv pip install --system -e ".[docs]"
 
       - name: Build Sphinx HTML
         run: |
