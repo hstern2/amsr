@@ -2643,4 +2643,7 @@ L 125.1 72.6
 
 
 ## Developing
-`uv pip install ".[dev]"`
+```bash
+uv pip install ".[dev]"
+pre-commit install
+```
