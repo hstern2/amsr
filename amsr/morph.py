@@ -50,3 +50,9 @@ class Morph:
         """display each mol in the morph as SMILES"""
         for m in self.mol:
             print(Chem.MolToSmiles(m))
+
+    def asGridImage(self):
+        from rdkit.Chem.Draw import MolsToGridImage
+
+        """return mols as a grid image"""
+        return MolsToGridImage(self.mol)
