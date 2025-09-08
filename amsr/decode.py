@@ -163,11 +163,14 @@ def ToMol(
     return mol
 
 
-def ToSmiles(s: str, stringent: Optional[bool] = True) -> str:
+def ToSmiles(
+    s: str, stringent: Optional[bool] = True, isomericSmiles: Optional[bool] = True
+) -> str:
     """Convert AMSR to SMILES
 
     :param s: AMSR
     :param stringent: try to exclude unstable or synthetically inaccessible molecules
+    :param isomericSmiles: include stereochemistry
     :return: SMILES
     """
     return Chem.MolToSmiles(ToMol(s, stringent))
