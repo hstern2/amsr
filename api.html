@@ -156,13 +156,14 @@ values are angles in degrees</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="amsr.decode.ToSmiles">
-<span class="sig-prename descclassname"><span class="pre">amsr.decode.</span></span><span class="sig-name descname"><span class="pre">ToSmiles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stringent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amsr.decode.ToSmiles" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">amsr.decode.</span></span><span class="sig-name descname"><span class="pre">ToSmiles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stringent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">isomericSmiles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amsr.decode.ToSmiles" title="Link to this definition">¶</a></dt>
 <dd><p>Convert AMSR to SMILES</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>s</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – AMSR</p></li>
 <li><p><strong>stringent</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>]</span>) – try to exclude unstable or synthetically inaccessible molecules</p></li>
+<li><p><strong>isomericSmiles</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>]</span>) – include stereochemistry</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
