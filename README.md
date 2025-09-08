@@ -9,8 +9,10 @@ inspired by
 - [SELFIES](https://github.com/aspuru-guzik-group/selfies)
 
 ## Installing
-- clone repo
-- `uv pip install .`
+```bash
+uv pip install .
+uv pip install ".[gpu]" # for GPU support
+```
 
 ## Usage
 ```py
