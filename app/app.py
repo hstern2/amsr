@@ -51,6 +51,13 @@ def get_svg(mol, flip: bool, rotationValue: int):
             cip_code = atom.GetProp("_CIPCode")
             atom.SetProp("atomNote", f"({cip_code})")
 
+    # Set bond notes for E/Z double bonds (smaller annotations)
+    for bond in mol.GetBonds():
+        if bond.GetStereo() == Chem.BondStereo.STEREOE:
+            bond.SetProp("bondNote", "(E)")
+        elif bond.GetStereo() == Chem.BondStereo.STEREOZ:
+            bond.SetProp("bondNote", "(Z)")
+
     rdkit.Chem.AllChem.Compute2DCoords(mol)
     if flip:
         flip_mol(mol)
@@ -59,6 +66,7 @@ def get_svg(mol, flip: bool, rotationValue: int):
     opts = d.drawOptions()
     opts.annotationFontScale = 0.75  # Make annotations smaller
     opts.multipleBondOffset = 0.15  # Bring annotations closer
+    opts.setBondNoteColour((0, 0, 0))  # Set bond note color to black
     actives = [a.GetIdx() for a in mol.GetAtoms() if a.HasProp("_active")]
     d.DrawMolecule(mol, highlightAtoms=actives)
     d.FinishDrawing()
