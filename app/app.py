@@ -115,7 +115,7 @@ def mol_changed():
         if smiles_to_amsr:
             outString = amsr.FromMol(mol, stringent=stringent)
         else:
-            outString = Chem.MolToSmiles(mol)
+            outString = amsr.ToSmiles(inString, stringent=stringent, isomericSmiles=True)
     return json.dumps(
         {
             "svg": svg,

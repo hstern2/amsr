@@ -173,4 +173,4 @@ def ToSmiles(
     :param isomericSmiles: include stereochemistry
     :return: SMILES
     """
-    return Chem.MolToSmiles(ToMol(s, stringent))
+    return Chem.MolToSmiles(ToMol(s, stringent), isomericSmiles=isomericSmiles)
