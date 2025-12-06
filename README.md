@@ -10,7 +10,7 @@ inspired by
 
 ## Demo
 
-[harrystern.org/amsr](https://harrystern.org/amsr)
+[amsr.harrystern.org](https://amsr.harrystern.org)
 
 ## Installing
 ```bash
