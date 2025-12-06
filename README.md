@@ -8,7 +8,12 @@ inspired by
 - [DeepSMILES](https://github.com/baoilleach/deepsmiles)
 - [SELFIES](https://github.com/aspuru-guzik-group/selfies)
 
+## Demo
+
+[harrystern.org/amsr](https://harrystern.org/amsr)
+
 ## Installing
+
 ```bash
 uv pip install .
 uv pip install ".[gpu]" # for GPU support
