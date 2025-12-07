@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "amsr"
-version = "0.1.5"
+version = "0.1.6"
 description = "Another molecular string representation"
 authors = [{ name = "Harry Stern" }]
 license = { file = "LICENSE" }
