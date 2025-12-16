@@ -45,6 +45,7 @@
             autocorrect="off"
             autocomplete="on"
             onkeyup="mol_changed(false, true, true)" // amsr to smiles
+            title="Enter an AMSR (ASCII Molecular String Representation) string to convert to SMILES and visualize"
         ></input></td>
     </tr>
     <tr><td>SMILES:</td>
@@ -58,6 +59,7 @@
             autocorrect="off"
             autocomplete="on"
             onkeyup="mol_changed(true, true, true)" // smiles to amsr
+            title="Enter a SMILES (Simplified Molecular Input Line Entry System) string to convert to AMSR and visualize"
         ></input>
     </td></tr>
     </table>
@@ -69,26 +71,29 @@
         id="generate"
         name="generate"
         onclick="generate()"
+        title="Generate a new AMSR string using the LSTM model based on the seed in the AMSR field"
         >generate
     </button>
     <button
             id="invertView"
             name="invertView"
             onclick="invertView()"
-            <i class="fas fa-camera-rotate"></i>
+            title="Flip the 2D molecule view horizontally (180° rotation around vertical axis)"
+            ><i class="fas fa-camera-rotate"></i>
     </button>
     <button
             id="counterClockwise"
             name="counterClockwise"
             onclick="rotateCounterClockwise()"
-            <i class="fas fa-rotate-left"></i>
+            title="Rotate the 2D molecule view counter-clockwise by 30°"
+            ><i class="fas fa-rotate-left"></i>
     </button>
     <button
             id="clockwise"
             name="clockwise"
             onclick="rotateClockwise()"
-            <i class="fas fa-rotate-right"></i>
-
+            title="Rotate the 2D molecule view clockwise by 30°"
+            ><i class="fas fa-rotate-right"></i>
     </button>
     <input
             type="checkbox"
@@ -96,6 +101,7 @@
             name="stringent"
             checked
             onclick="mol_changed(false, true, true)"
+            title="Enable stringent mode for more strict AMSR encoding/decoding"
             >stringent
     <input
             type="checkbox"
@@ -103,6 +109,7 @@
             name="threeD"
             checked
             onclick="mol_changed(true, false, true)"
+            title="Show 3D molecular viewer and calculate conformer energy"
             >3D
     </td>
     <td>
@@ -110,11 +117,13 @@
         id="newConformer"
         name="newConformer"
         onclick="mol_changed(true, false, true)"
+        title="Generate a new 3D conformer with different geometry and recalculate energy"
         >new conformer</button>
     <button
         id="saveAsSDF"
         name="saveAsSDF"
         onclick="save_as_SDF()"
+        title="Download the current 3D molecular structure as an SDF (Structure Data File) file"
         >save as SDF</button>
     </td></tr>
 
