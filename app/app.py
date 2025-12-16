@@ -7,7 +7,14 @@ import rdkit.Chem.AllChem
 import rdkit.Chem.Draw
 from flask import Flask, render_template, request
 from rdkit import Chem
-from rdkit.Chem.Descriptors import TPSA
+from rdkit.Chem.Crippen import MolLogP
+from rdkit.Chem.Descriptors import TPSA, MolWt
+from rdkit.Chem.Lipinski import (
+    HeavyAtomCount,
+    NumHAcceptors,
+    NumHDonors,
+    NumRotatableBonds,
+)
 from rdkit.Chem.QED import qed
 
 import amsr
@@ -105,6 +112,7 @@ def mol_changed():
     flipMol = request.form.get("flipMol") == "true"
     rotationValue = int(request.form.get("rotationValue"))  # degrees
     svg, sdf, outString, ener, QED, tpsa, sa = [""] * 7
+    hac, mw, clogp, hbd, hba, n_rot_bonds, passes_ro5 = [""] * 7
     dih = {}
     mol = (
         Chem.MolFromSmiles(inString)
@@ -116,6 +124,23 @@ def mol_changed():
         QED = f"QED score: {qed(mol):.3f}"
         tpsa = f"TPSA: {TPSA(mol):.3f} &#8491;<sup>2</sup>"
         sa = f"SA score: {sascorer.calculateScore(mol):.3f}"
+        # Additional properties from props.py
+        hac_val = HeavyAtomCount(mol)
+        mw_val = MolWt(mol)
+        clogp_val = MolLogP(mol)
+        hbd_val = NumHDonors(mol)
+        hba_val = NumHAcceptors(mol)
+        n_rot_bonds_val = NumRotatableBonds(mol)
+        passes_ro5_val = mw_val <= 500 and clogp_val <= 5 and hbd_val <= 5 and hba_val <= 10
+
+        hac = f"Heavy atom count: {hac_val}"
+        mw = f"Molecular weight: {mw_val:.2f} Da"
+        clogp = f"LogP: {clogp_val:.3f}"
+        hbd = f"H-bond donors: {hbd_val}"
+        hba = f"H-bond acceptors: {hba_val}"
+        n_rot_bonds = f"Rotatable bonds: {n_rot_bonds_val}"
+        passes_ro5 = f"Passes Rule of 5: {'Yes' if passes_ro5_val else 'No'}"
+
         if threeD:
             mol, ener = amsr.GetConformerAndEnergy(mol, dihedral=dih)
             sdf = Chem.MolToMolBlock(mol)
@@ -133,6 +158,13 @@ def mol_changed():
             "qed": QED,
             "tpsa": tpsa,
             "sa": sa,
+            "hac": hac,
+            "mw": mw,
+            "clogp": clogp,
+            "hbd": hbd,
+            "hba": hba,
+            "n_rot_bonds": n_rot_bonds,
+            "passes_ro5": passes_ro5,
         }
     )
 

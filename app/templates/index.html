@@ -133,9 +133,39 @@
         </tr>
         <tr>
             <td id="tpsa"></td>
+            <td></td>
         </tr>
         <tr>
             <td id="SA"></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td id="hac"></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td id="mw"></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td id="clogp"></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td id="hbd"></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td id="hba"></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td id="n_rot_bonds"></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td id="passes_ro5"></td>
+            <td></td>
         </tr>
     </table>
 
@@ -163,11 +193,18 @@
         element('ener').innerHTML = ener
     }
 
-    function refresh_viewer2d(svg, qed, tpsa, sa) {
+    function refresh_viewer2d(svg, qed, tpsa, sa, hac, mw, clogp, hbd, hba, n_rot_bonds, passes_ro5) {
         viewer2d.innerHTML = svg;
         element('qed').innerHTML= qed;
         element('tpsa').innerHTML = tpsa;
         element('SA').innerHTML = sa;
+        element('hac').innerHTML = hac;
+        element('mw').innerHTML = mw;
+        element('clogp').innerHTML = clogp;
+        element('hbd').innerHTML = hbd;
+        element('hba').innerHTML = hba;
+        element('n_rot_bonds').innerHTML = n_rot_bonds;
+        element('passes_ro5').innerHTML = passes_ro5;
     }
 
     function invertView() {
@@ -235,7 +272,7 @@
                 var data = JSON.parse(response);
                 (smiles_to_amsr ? element('amsr') : element('smiles')).value = data.outString
                 if (update2D) {
-                    refresh_viewer2d(data.svg, data.qed, data.tpsa, data.sa);
+                    refresh_viewer2d(data.svg, data.qed, data.tpsa, data.sa, data.hac, data.mw, data.clogp, data.hbd, data.hba, data.n_rot_bonds, data.passes_ro5);
                 }
                 if (threeD) {
                     sdf = data.sdf
