@@ -1,0 +1,12 @@
+# Installed binaries
+bin/
+
+# Temporary files
+tmp-*
+
+# Aligned output files
+*-aligned-to-*.pdb
+
+# Python
+__pycache__/
+*.pyc
