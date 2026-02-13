@@ -24,7 +24,7 @@ pip install -r requirements.txt
 ## Run the app
 
 ```bash
-streamlit run app.py
+streamlit run morph_app.py
 ```
 
 1. Optionally edit names and SMILES (defaults: Epithilone, Rocaglamide).

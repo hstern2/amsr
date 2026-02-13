@@ -1,51 +1,53 @@
 #!/usr/bin/env python3
 """Pytest suite for morph app."""
 
+import builtins
 import sys
 from pathlib import Path
+from unittest import mock
 
 import pytest
 
-# Add project root so "import app" works
+# Add morph-app dir so "import morph_app" works
 sys.path.insert(0, str(Path(__file__).parent.resolve()))
 
 
 def test_default_constants():
     """Default SMILES are non-empty and valid-looking."""
-    import app
+    import morph_app
 
-    assert len(app.DEFAULT_SMILES_1) > 0
-    assert len(app.DEFAULT_SMILES_2) > 0
-    assert "C" in app.DEFAULT_SMILES_1
-    assert "C" in app.DEFAULT_SMILES_2
+    assert len(morph_app.DEFAULT_SMILES_1) > 0
+    assert len(morph_app.DEFAULT_SMILES_2) > 0
+    assert "C" in morph_app.DEFAULT_SMILES_1
+    assert "C" in morph_app.DEFAULT_SMILES_2
 
 
 def test_run_morph_requires_amsr():
-    """run_morph raises ImportError when amsr is not installed."""
-    import app
+    """run_morph raises ImportError when amsr is not available."""
+    import morph_app
 
-    try:
-        import amsr
-    except ImportError:
-        amsr = None
+    real_import = builtins.__import__
 
-    if amsr is None:
+    def fake_import(name, *args, **kwargs):
+        if name == "amsr":
+            raise ImportError("No module named 'amsr'")
+        return real_import(name, *args, **kwargs)
+
+    with mock.patch.object(builtins, "__import__", side_effect=fake_import):
         with pytest.raises(ImportError):
-            app.run_morph("C", "CC")
-    else:
-        pytest.skip("amsr is installed; run_morph is tested in test_run_morph_integration")
+            morph_app.run_morph("C", "CC")
 
 
 def test_run_morph_integration():
     """With amsr installed, run_morph returns (morph, smiles_text); morph.mol are RDKit Mols."""
     pytest.importorskip("amsr")
 
-    import app
+    import morph_app
 
-    smiles_1 = app.DEFAULT_SMILES_1
-    smiles_2 = app.DEFAULT_SMILES_2
+    smiles_1 = morph_app.DEFAULT_SMILES_1
+    smiles_2 = morph_app.DEFAULT_SMILES_2
 
-    morph, smiles_text = app.run_morph(smiles_1, smiles_2)
+    morph, smiles_text = morph_app.run_morph(smiles_1, smiles_2)
 
     assert isinstance(smiles_text, str)
     assert hasattr(morph, "mol")
