@@ -16,6 +16,12 @@
             width: 396px;
             border: solid black 1px;
             padding: 1px;
+            cursor: grab;
+            user-select: none;
+            overflow: hidden;
+        }
+        #viewer2d.dragging {
+            cursor: grabbing;
         }
         #viewer3d {
             position: relative;
@@ -80,20 +86,6 @@
             onclick="invertView()"
             title="Flip the 2D molecule view horizontally (180° rotation around vertical axis)"
             ><i class="fas fa-camera-rotate"></i>
-    </button>
-    <button
-            id="counterClockwise"
-            name="counterClockwise"
-            onclick="rotateCounterClockwise()"
-            title="Rotate the 2D molecule view counter-clockwise by 30°"
-            ><i class="fas fa-rotate-left"></i>
-    </button>
-    <button
-            id="clockwise"
-            name="clockwise"
-            onclick="rotateClockwise()"
-            title="Rotate the 2D molecule view clockwise by 30°"
-            ><i class="fas fa-rotate-right"></i>
     </button>
     <input
             type="checkbox"
@@ -190,7 +182,10 @@
     let pending = null;
     let rotationValue = 0;
     let flipMol = false;
-    const rotationIncrement = 30; // degrees
+    let isDragging = false;
+    let dragLastAngle = 0;
+    let dragDelta = 0;
+    let cssRotation = 0;
 
     function refresh_viewer3d(ener) {
         viewer3d.removeAllModels();
@@ -204,6 +199,7 @@
 
     function refresh_viewer2d(svg, qed, tpsa, sa, hac, mw, clogp, hbd, hba, n_rot_bonds, passes_ro5) {
         viewer2d.innerHTML = svg;
+        cssRotation = 0;
         element('qed').innerHTML = qed;
         element('tpsa').innerHTML = tpsa;
         element('SA').innerHTML = sa;
@@ -221,15 +217,52 @@
         mol_changed(false, true, false);
     }
 
-    function rotateClockwise() {
-        rotationValue -= rotationIncrement
-        mol_changed(false, true, false);
+    function mouseAngle(e) {
+        let rect = viewer2d.getBoundingClientRect();
+        let cx = rect.left + rect.width / 2;
+        let cy = rect.top + rect.height / 2;
+        return Math.atan2(e.clientY - cy, e.clientX - cx) * 180 / Math.PI;
     }
 
-    function rotateCounterClockwise() {
-        rotationValue += rotationIncrement
+    viewer2d.addEventListener('mousedown', function(e) {
+        isDragging = true;
+        dragLastAngle = mouseAngle(e);
+        dragDelta = 0;
+        // remove text counter-rotations so labels rotate with molecule during drag
+        viewer2d.querySelectorAll('svg text').forEach(function(t) {
+            t.removeAttribute('transform');
+        });
+        viewer2d.classList.add('dragging');
+        e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', function(e) {
+        if (!isDragging) return;
+        let angle = mouseAngle(e);
+        let diff = angle - dragLastAngle;
+        // handle wraparound at +-180
+        if (diff > 180) diff -= 360;
+        if (diff < -180) diff += 360;
+        dragDelta += diff;
+        dragLastAngle = angle;
+        let svg = viewer2d.querySelector('svg');
+        if (svg) svg.style.transform = 'rotate(' + (cssRotation + dragDelta) + 'deg)';
+    });
+
+    document.addEventListener('mouseup', function(e) {
+        if (!isDragging) return;
+        isDragging = false;
+        viewer2d.classList.remove('dragging');
+        cssRotation += dragDelta;
+        rotationValue -= dragDelta;
+        // counter-rotate text elements so labels stay horizontal
+        viewer2d.querySelectorAll('svg text').forEach(function(t) {
+            let x = parseFloat(t.getAttribute('x')) || 0;
+            let y = parseFloat(t.getAttribute('y')) || 0;
+            t.setAttribute('transform', 'rotate(' + (-cssRotation) + ',' + x + ',' + y + ')');
+        });
         mol_changed(false, true, false);
-    }
+    });
 
     function save_as_SDF() {
         var blob = new Blob([sdf], { type: 'text/plain' });

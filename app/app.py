@@ -89,7 +89,7 @@ def flip_mol(m):
     Chem.AssignStereochemistry(m, force=True, cleanIt=True)
 
 
-def rotate_mol(m, rotationValue: int):
+def rotate_mol(m, rotationValue: float):
     "rotate molecule in XY plane"
     conf = m.GetConformer()
     radians = math.radians(rotationValue)
@@ -168,7 +168,10 @@ def mol_changed():
     threeD = request.form.get("threeD") == "true"
     stringent = request.form.get("stringent") == "true"
     flipMol = request.form.get("flipMol") == "true"
-    rotationValue = int(request.form.get("rotationValue"))  # degrees
+    try:
+        rotationValue = float(request.form.get("rotationValue", "0"))
+    except (ValueError, TypeError):
+        rotationValue = 0.0
     svg, sdf, outString, ener, QED, tpsa, sa = [""] * 7
     hac, mw, clogp, hbd, hba, n_rot_bonds, passes_ro5 = [""] * 7
     dih = {}
