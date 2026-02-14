@@ -24,6 +24,60 @@ import amsr
 sys.path.append(os.path.join(Chem.RDConfig.RDContribDir, "SA_Score"))
 import sascorer
 
+# store the last rendered molecule (with 2D coords) for alignment
+prev_mol = None
+
+
+def _align_2d(mol, ref):
+    """Align mol's 2D coords to ref's using identity atom mapping.
+
+    Uses least-squares rigid alignment on shared atoms (by index),
+    and picks the better of no-flip vs X-flip to handle mirror images.
+    """
+    n = min(mol.GetNumAtoms(), ref.GetNumAtoms())
+    if n < 2:
+        return
+    ref_conf = ref.GetConformer()
+    conf = mol.GetConformer()
+    px, py, qx, qy = [], [], [], []
+    for i in range(n):
+        p = ref_conf.GetAtomPosition(i)
+        q = conf.GetAtomPosition(i)
+        px.append(p.x)
+        py.append(p.y)
+        qx.append(q.x)
+        qy.append(q.y)
+    cpx = sum(px) / n
+    cpy = sum(py) / n
+    cqx = sum(qx) / n
+    cqy = sum(qy) / n
+    dpx = [x - cpx for x in px]
+    dpy = [y - cpy for y in py]
+    dqx = [x - cqx for x in qx]
+    dqy = [y - cqy for y in qy]
+
+    def _best_rotation(fqx, fqy):
+        num = sum(fqx[i] * dpy[i] - fqy[i] * dpx[i] for i in range(n))
+        den = sum(fqx[i] * dpx[i] + fqy[i] * dpy[i] for i in range(n))
+        theta = math.atan2(num, den)
+        c, s = math.cos(theta), math.sin(theta)
+        ssd = sum(
+            (c * fqx[i] - s * fqy[i] - dpx[i]) ** 2 + (s * fqx[i] + c * fqy[i] - dpy[i]) ** 2
+            for i in range(n)
+        )
+        return c, s, ssd
+
+    c0, s0, ssd0 = _best_rotation(dqx, dqy)
+    c1, s1, ssd1 = _best_rotation([-x for x in dqx], dqy)
+    use_flip = ssd1 < ssd0
+    cos_r, sin_r = (c1, s1) if use_flip else (c0, s0)
+    for i in range(mol.GetNumAtoms()):
+        pos = conf.GetAtomPosition(i)
+        x, y = pos.x - cqx, pos.y - cqy
+        if use_flip:
+            x = -x
+        conf.SetAtomPosition(i, (cos_r * x - sin_r * y + cpx, sin_r * x + cos_r * y + cpy, 0))
+
 
 def flip_mol(m):
     "flip a molecule i.e. 180 degree rotation around vertical axis"
@@ -65,7 +119,11 @@ def get_svg(mol, flip: bool, rotationValue: int):
         elif bond.GetStereo() == Chem.BondStereo.STEREOZ:
             bond.SetProp("bondNote", "(Z)")
 
+    global prev_mol
     rdkit.Chem.AllChem.Compute2DCoords(mol)
+    if prev_mol is not None:
+        _align_2d(mol, prev_mol)
+    prev_mol = Chem.RWMol(mol)
     if flip:
         flip_mol(mol)
     rotate_mol(mol, rotationValue)
