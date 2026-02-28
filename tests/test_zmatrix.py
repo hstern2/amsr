@@ -6,7 +6,7 @@ from rdkit.Chem import rdMolAlign
 import amsr
 
 _data_dir = os.path.join(os.path.dirname(__file__), "data")
-_out_dir = os.path.join(os.path.dirname(__file__), "data", "output")
+_out_dir = os.path.join(os.path.dirname(__file__), "output")
 
 
 def _load_sdf(name):
