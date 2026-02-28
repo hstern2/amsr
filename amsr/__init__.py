@@ -15,6 +15,7 @@ __all__ = [
     "Markov",
     "Modifier",
     "GetConformerAndEnergy",
+    "GetConformer",
     "LSTMModel",
     "__version__",
 ]
@@ -30,3 +31,4 @@ from .modifier import Modifier
 from .morph import Morph
 from .tokens import ToTokens
 from .version import __version__
+from .zmatrix import GetConformer

@@ -13,7 +13,12 @@ def _is_rotatable(b):
     if b.GetBeginAtom().GetDegree() == 1 or b.GetEndAtom().GetDegree() == 1:
         return False
     if b.IsInRing():
-        return False
+        a1 = b.GetBeginAtom()
+        a2 = b.GetEndAtom()
+        return (
+            a1.GetHybridization() == Chem.HybridizationType.SP3
+            and a2.GetHybridization() == Chem.HybridizationType.SP3
+        )
     return True
 
 

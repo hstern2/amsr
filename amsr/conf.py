@@ -1,6 +1,7 @@
 from typing import Optional
 
 from rdkit import Chem
+from rdkit.Chem import rdMolTransforms
 
 
 def GetConformerAndEnergy(
@@ -19,10 +20,10 @@ def GetConformerAndEnergy(
     if dihedral is not None:
         for (i, j, k, last), v in dihedral.items():
             if not mol.GetBondBetweenAtoms(j, k).IsInRing():
-                Chem.rdMolTransforms.SetDihedralDeg(mol.GetConformer(0), i, j, k, last, v)
+                rdMolTransforms.SetDihedralDeg(mol.GetConformer(0), i, j, k, last, v)
                 ff.MMFFAddTorsionConstraint(i, j, k, last, False, v, v, 1e3)
     ff.Minimize(maxIts=100000)
-    Chem.rdMolTransforms.CanonicalizeConformer(mol.GetConformer())
+    rdMolTransforms.CanonicalizeConformer(mol.GetConformer())
     ener = ff.CalcEnergy()  # kcal/mol
     return Chem.RemoveHs(mol), ener
 
@@ -35,4 +36,4 @@ def GetRoundedDihedral(mol: Chem.Mol, dihedral: tuple[int, int, int, int], ndeg:
     :param ndeg: int
     :return: rounded dihedral angle
     """
-    return round(Chem.rdMolTransforms.GetDihedralDeg(mol.GetConformer(0), *dihedral) / ndeg) * ndeg
+    return round(rdMolTransforms.GetDihedralDeg(mol.GetConformer(0), *dihedral) / ndeg) * ndeg
