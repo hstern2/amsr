@@ -1,5 +1,7 @@
+import csv
 import os
 
+import pytest
 from rdkit import Chem
 from rdkit.Chem import rdMolAlign
 
@@ -7,6 +9,8 @@ import amsr
 
 _data_dir = os.path.join(os.path.dirname(__file__), "data")
 _out_dir = os.path.join(os.path.dirname(__file__), "output")
+
+_rmsd_results = []
 
 
 def _load_sdf(name):
@@ -34,9 +38,25 @@ def _roundtrip(mol, name):
     Chem.MolToMolFile(mol, os.path.join(_out_dir, f"{name}_original.sdf"))
     Chem.MolToMolFile(mol3, os.path.join(_out_dir, f"{name}_zmatrix.sdf"))
 
+    _rmsd_results.append({"name": name, "amsr": s, "rmsd": f"{rmsd:.3f}"})
+
     print(f"  RMSD: {rmsd:.3f} Å")
     assert mol3.GetConformer().Is3D()
+    assert rmsd < 1.0, f"RMSD {rmsd:.3f} Å too large for {name}"
     return rmsd
+
+
+@pytest.fixture(autouse=True, scope="session")
+def _write_rmsd_csv():
+    """Write collected RMSD results to CSV after all tests complete."""
+    yield
+    if _rmsd_results:
+        os.makedirs(_out_dir, exist_ok=True)
+        csv_path = os.path.join(_out_dir, "test_out.csv")
+        with open(csv_path, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=["name", "amsr", "rmsd"])
+            writer.writeheader()
+            writer.writerows(_rmsd_results)
 
 
 # --- Simple chains ---
