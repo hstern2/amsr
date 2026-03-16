@@ -143,6 +143,21 @@ def _synthetic_ref(coords, g, p):
     return coords[g] - perp
 
 
+def _kabsch(P, Q, real_center, ideal_center):
+    """Kabsch rotation: find R minimizing ||R @ (P - ideal_center) - (Q - real_center)||.
+
+    P: (N, 3) ideal points, Q: (N, 3) real points.
+    Returns rotation matrix R.
+    """
+    P_c = P - ideal_center
+    Q_c = Q - real_center
+    H = P_c.T @ Q_c
+    U, _, Vt = np.linalg.svd(H)
+    d = np.linalg.det(Vt.T @ U.T)
+    D = np.diag([1.0, 1.0, d])
+    return Vt.T @ D @ U.T
+
+
 def _measure_torsion(p0, p1, p2, p3):
     """Torsion angle (degrees) from four 3-D points."""
     b1 = p1 - p0
@@ -194,6 +209,72 @@ def _is_planar(mol, system):
     )
 
 
+def _ideal_ring_coords_3d(mol, system_atoms):
+    """3D ideal coordinates for a non-planar ring system using RDKit embedding.
+
+    Returns dict {atom_idx: np.array([x, y, z])}.
+    """
+    from rdkit.Chem import AllChem
+
+    atom_list = sorted(system_atoms)
+    idx_map = {}  # original -> fragment
+    emol = Chem.RWMol(Chem.Mol())
+    for a in atom_list:
+        orig_atom = mol.GetAtomWithIdx(a)
+        new_atom = Chem.Atom(orig_atom.GetAtomicNum())
+        new_atom.SetFormalCharge(orig_atom.GetFormalCharge())
+        new_atom.SetNoImplicit(True)
+        new_atom.SetNumExplicitHs(0)
+        new_atom.SetChiralTag(orig_atom.GetChiralTag())
+        idx_map[a] = emol.AddAtom(new_atom)
+
+    for bond in mol.GetBonds():
+        a1, a2 = bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()
+        if a1 in system_atoms and a2 in system_atoms:
+            bt = bond.GetBondType()
+            if bond.GetIsAromatic():
+                bt = Chem.BondType.AROMATIC
+            emol.AddBond(idx_map[a1], idx_map[a2], bt)
+
+    # Set aromaticity flags on fragment atoms
+    for a in atom_list:
+        if mol.GetAtomWithIdx(a).GetIsAromatic():
+            emol.GetAtomWithIdx(idx_map[a]).SetIsAromatic(True)
+
+    # Clear chiral tags on atoms with too few neighbors in the fragment
+    for a in atom_list:
+        fi = idx_map[a]
+        if emol.GetAtomWithIdx(fi).GetDegree() < 3:
+            emol.GetAtomWithIdx(fi).SetChiralTag(Chem.ChiralType.CHI_UNSPECIFIED)
+
+    frag = emol.GetMol()
+    try:
+        Chem.SanitizeMol(frag)
+    except Exception:
+        # Kekulization may fail for fragments; sanitize without kekulization
+        try:
+            Chem.SanitizeMol(
+                frag,
+                Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_KEKULIZE,
+            )
+        except Exception:
+            return _ideal_ring_coords(mol, system_atoms)
+    frag_h = Chem.AddHs(frag)
+    res = AllChem.EmbedMolecule(frag_h, randomSeed=42)
+    if res < 0:
+        res = AllChem.EmbedMolecule(frag_h, randomSeed=42, useRandomCoords=True)
+    if res < 0:
+        return _ideal_ring_coords(mol, system_atoms)
+    AllChem.MMFFOptimizeMolecule(frag_h)
+
+    conf = frag_h.GetConformer()
+    ideal = {}
+    for a in atom_list:
+        pos = conf.GetAtomPosition(idx_map[a])
+        ideal[a] = np.array([pos.x, pos.y, pos.z])
+    return ideal
+
+
 def _ideal_ring_coords(mol, system_atoms):
     """Ideal planar coordinates for a ring system (single or fused).
 
@@ -238,6 +319,7 @@ def _ideal_ring_coords(mol, system_atoms):
             if edge_k is None:
                 continue
 
+            ring_set = set(ring)
             ring = ring[edge_k:] + ring[:edge_k]
             a, b = ring[0], ring[1]
             bl = avg_bl(ring)
@@ -251,7 +333,7 @@ def _ideal_ring_coords(mol, system_atoms):
 
             # new ring goes on opposite side of shared edge from existing ring
             for pr in rings:
-                if a in pr and b in pr and pr is not ring:
+                if a in pr and b in pr and set(pr) != ring_set:
                     other = [x for x in pr if x in placed and x != a and x != b]
                     if other and np.dot(ideal[other[0]] - mid, perp) > 0:
                         perp = -perp
@@ -298,37 +380,206 @@ def _default_torsion(mol, p, nth_child, in_ring, gg_in_ring):
     return 180.0
 
 
+def _pick_torsion_by_ring_closure(mol, p, i, g, gg, t_plus, t_minus, coords, bond_dihedral):
+    """Try both candidate torsions for atom i, build the ring, pick best closure.
+
+    Returns the better torsion or None if the check doesn't apply.
+    """
+    # Find the ring containing both p and i
+    ri = mol.GetRingInfo()
+    target_ring = None
+    for ring in ri.AtomRings():
+        if p in ring and i in ring:
+            target_ring = list(ring)
+            break
+    if target_ring is None:
+        return None
+
+    # Find ring closure: a bond in the ring where neither end is parent of the other
+    # Build parent chain within the ring starting from i
+    ring_set = set(target_ring)
+    # Trace the ring path from i back to p (through ring atoms)
+    # The closure atom is the ring neighbor of p that isn't i
+    closure_atom = None
+    for nb in mol.GetAtomWithIdx(p).GetNeighbors():
+        nidx = nb.GetIdx()
+        if nidx in ring_set and nidx != i:
+            closure_atom = nidx
+            break
+    if closure_atom is None:
+        return None
+
+    # Build the ring path from i to closure_atom (excluding p)
+    # BFS through ring bonds, excluding p
+    from collections import deque as _deque
+
+    path_parent = {i: None}
+    bfs_q = _deque([i])
+    found = False
+    while bfs_q and not found:
+        u = bfs_q.popleft()
+        for nb in mol.GetAtomWithIdx(u).GetNeighbors():
+            v = nb.GetIdx()
+            if v == p or v not in ring_set or v in path_parent:
+                continue
+            path_parent[v] = u
+            if v == closure_atom:
+                found = True
+                break
+            bfs_q.append(v)
+    if not found:
+        return None
+
+    # Get ordered path from i to closure_atom
+    path = []
+    v = closure_atom
+    while v is not None:
+        path.append(v)
+        v = path_parent[v]
+    path.reverse()  # path[0] = i, path[-1] = closure_atom
+
+    ref_pt = coords[gg] if gg is not None else _synthetic_ref(coords, g, p)
+    angle_gpi = _get_bond_angle(mol, g, p, i)
+    bl_pi = _get_bond_length(mol, p, i)
+
+    best_t = None
+    best_dist = float("inf")
+
+    for t_cand in (t_plus, t_minus):
+        # Place atom i at candidate torsion
+        tmp_coords = (
+            dict(coords)
+            if isinstance(coords, dict)
+            else {k: coords[k].copy() for k in range(len(coords))}
+        )
+        tmp_coords[i] = _place_atom(ref_pt, coords[g], coords[p], bl_pi, angle_gpi, t_cand)
+
+        # Build out the ring path using AMSR dihedrals where available
+        prev_prev = coords[g]
+        prev = coords[p]
+        curr = tmp_coords[i]
+        for k in range(1, len(path)):
+            a_prev = path[k - 1]
+            a_curr = path[k]
+            bl = _get_bond_length(mol, a_prev, a_curr)
+            ang = _get_bond_angle(mol, path[k - 2] if k >= 2 else p, a_prev, a_curr)
+
+            # Look for AMSR dihedral on bond (prev_atom, a_prev)
+            gp_key = (path[k - 2] if k >= 2 else p, a_prev)
+            torsion = None
+            if gp_key in bond_dihedral:
+                mi_d, mj_d, angle_d = bond_dihedral[gp_key]
+                if mj_d == a_curr:
+                    torsion = angle_d
+            if torsion is None:
+                bp = mol.GetBondBetweenAtoms(a_prev, a_curr)
+                ir = bp is not None and bp.IsInRing()
+                bp2 = (
+                    mol.GetBondBetweenAtoms(gp_key[0], gp_key[1]) if gp_key[0] is not None else None
+                )
+                gg_ir = bp2 is not None and bp2.IsInRing() if bp2 else False
+                torsion = _default_torsion(mol, a_prev, 0, ir, gg_ir)
+
+            new_pos = _place_atom(prev_prev, prev, curr, bl, ang, torsion)
+            tmp_coords[a_curr] = new_pos
+            prev_prev = prev
+            prev = curr
+            curr = new_pos
+
+        # Check tetrahedral angle deviation at p: closure_atom should form
+        # proper tetrahedral angles with p's other neighbors.
+        placed_nbrs = []
+        for nb in mol.GetAtomWithIdx(p).GetNeighbors():
+            nidx = nb.GetIdx()
+            if nidx != i and nidx != closure_atom and (np.any(coords[nidx]) or nidx == 0):
+                placed_nbrs.append(coords[nidx])
+        # Add i and closure_atom from this candidate
+        placed_nbrs.append(tmp_coords[i])
+        placed_nbrs.append(tmp_coords[closure_atom])
+        total_dev = 0.0
+        for ia in range(len(placed_nbrs)):
+            for ib in range(ia + 1, len(placed_nbrs)):
+                va = placed_nbrs[ia] - coords[p]
+                vb = placed_nbrs[ib] - coords[p]
+                na, nb_ = np.linalg.norm(va), np.linalg.norm(vb)
+                if na < 1e-10 or nb_ < 1e-10:
+                    continue
+                cos_a = np.dot(va, vb) / (na * nb_)
+                ang = np.degrees(np.arccos(np.clip(cos_a, -1, 1)))
+                total_dev += abs(ang - 109.5)
+        if total_dev < best_dist:
+            best_dist = total_dev
+            best_t = t_cand
+
+    return best_t
+
+
 def _choose_torsion(
     mol, p, i, g, gg, nth_child, first_child_torsion, in_ring, coords, bond_dihedral
 ):
-    """Pick torsion for placing atom i as the nth child of p."""
+    """Pick torsion for placing atom i as the nth child of p.
+
+    Returns (torsion_angle, ref_override) where ref_override is the atom index
+    to use as the torsion reference point, or None to use the default (gg).
+    """
     hyb_p = mol.GetAtomWithIdx(p).GetHybridization()
 
     if nth_child == 0:
-        # check AMSR dihedral for g-p bond
         if (g, p) in bond_dihedral:
             mi, mj, angle = bond_dihedral[(g, p)]
-            if mj == i and (gg is None or gg == mi):
-                return angle
+            if mj == i:
+                return angle, mi if mi != gg else None
+            # The dihedral on g-p has mj != i.  mj is a different neighbor
+            # of p whose torsion (mi-g-p-mj) is known.  Use it as the
+            # reference to compute the torsion for atom i.
+            if np.any(coords[mj]) or mj == 0:
+                # Compute the AMSR torsion of mj relative to ref, then offset
+                # to get the torsion for i
+                actual_mj = _measure_torsion(
+                    coords[gg] if gg is not None else _synthetic_ref(coords, g, p),
+                    coords[g],
+                    coords[p],
+                    coords[mj],
+                )
+                hyb_p = mol.GetAtomWithIdx(p).GetHybridization()
+                if hyb_p == Chem.HybridizationType.SP3:
+                    return actual_mj + 120.0, None
+                elif hyb_p == Chem.HybridizationType.SP2:
+                    return actual_mj + 180.0, None
+                else:
+                    return actual_mj + 120.0, None
+
         gg_in_ring = True
         if gg is not None:
             b = mol.GetBondBetweenAtoms(gg, g)
             gg_in_ring = b is not None and b.IsInRing()
-        return _default_torsion(mol, p, 0, in_ring, gg_in_ring)
+        return _default_torsion(mol, p, 0, in_ring, gg_in_ring), None
 
     base = first_child_torsion[p]
+    if base is None:
+        base = 0.0
     if hyb_p == Chem.HybridizationType.SP3:
         chiral = mol.GetAtomWithIdx(p).GetChiralTag()
         if chiral == Chem.ChiralType.CHI_TETRAHEDRAL_CW:
-            return base + 120.0 * nth_child
+            return base + 120.0 * nth_child, None
         if chiral == Chem.ChiralType.CHI_TETRAHEDRAL_CCW:
-            return base - 120.0 * nth_child
-        # Non-chiral: place H anti, heavy-atom children in gauche positions
-        # Second child goes to the opposite gauche position from the first
+            return base - 120.0 * nth_child, None
+        # Non-chiral: try both ±120° and pick the sign that gives better
+        # ring closure when atom i is in a ring containing p.
+        t_plus = base + 120.0 * nth_child
+        t_minus = base - 120.0 * nth_child
+        bp_pi = mol.GetBondBetweenAtoms(p, i)
+        if bp_pi is not None and bp_pi.IsInRing() and g is not None and gg is not None:
+            best_t = _pick_torsion_by_ring_closure(
+                mol, p, i, g, gg, t_plus, t_minus, coords, bond_dihedral
+            )
+            if best_t is not None:
+                return best_t, None
+        # Fallback heuristic
         if base > 0:
-            return base - 120.0 * nth_child
-        return base + 120.0 * nth_child
-    return base + 180.0
+            return base - 120.0 * nth_child, None
+        return base + 120.0 * nth_child, None
+    return base + 180.0, None
 
 
 # ---------------------------------------------------------------------------
@@ -375,15 +626,20 @@ def _place_rigid_ring(
         angle = _get_bond_angle(mol, g, p, i)
         bp = mol.GetBondBetweenAtoms(p, i)
         in_ring = bp is not None and bp.IsInRing()
-        torsion = _choose_torsion(
+        torsion, ref_override = _choose_torsion(
             mol, p, i, g, gg, child_count[p], first_child_torsion, in_ring, coords, bond_dihedral
         )
         if child_count[p] == 0:
             first_child_torsion[p] = torsion
-        ref = coords[gg] if gg is not None else _synthetic_ref(coords, g, p)
+        if ref_override is not None:
+            ref = coords[ref_override]
+        elif gg is not None:
+            ref = coords[gg]
+        else:
+            ref = _synthetic_ref(coords, g, p)
         coords[i] = _place_atom(ref, coords[g], coords[p], bond_len, angle, torsion)
 
-    if first_child_idx[p] is None:
+    if first_child_idx[p] is None and p not in sys_atoms:
         first_child_idx[p] = i
 
     # --- pick a ring neighbor j of i and place it to fix orientation -------
@@ -394,43 +650,67 @@ def _place_rigid_ring(
     # prefer the neighbor specified in an AMSR dihedral for the p-i axis
     j = ring_nbrs[0]
     orient_torsion = 0.0  # default: ring in plane of g-p-i
+    orient_ref = None  # AMSR reference atom for orient_torsion
     if (p, i) in bond_dihedral:
         mi, mj, angle = bond_dihedral[(p, i)]
         if mj in sys_atoms:
             j = mj
             orient_torsion = angle
+            orient_ref = mi  # the AMSR's reference atom
 
     bl_ij = _get_bond_length(mol, i, j)
     ang_pij = _get_bond_angle(mol, p, i, j)
-    if g is not None:
+    # Use the AMSR reference atom if available; otherwise fall back to g or synthetic
+    if orient_ref is not None and orient_ref in coords and np.any(coords[orient_ref]):
+        ref_j = coords[orient_ref]
+    elif g is not None:
         ref_j = coords[g]
     else:
         ref_j = _synthetic_ref(coords, p, i)
     coords_j = _place_atom(ref_j, coords[p], coords[i], bl_ij, ang_pij, orient_torsion)
 
     # --- build rotation: ideal frame → real frame -------------------------
-    ideal_v = ideal[j] - ideal[i]
-    ideal_d = ideal_v / np.linalg.norm(ideal_v)
-    ideal_n = np.array([0.0, 0.0, 1.0])
-    ideal_p = np.cross(ideal_n, ideal_d)
-    ideal_p /= np.linalg.norm(ideal_p)
-
-    real_v = coords_j - coords[i]
-    real_d = real_v / np.linalg.norm(real_v)
-    pi_vec = coords[i] - coords[p]
-    real_n = np.cross(pi_vec, real_v)
-    rn = np.linalg.norm(real_n)
-    if rn < 1e-10:
-        real_n = np.array([0.0, 0.0, 1.0])
+    # Use Kabsch alignment when we have 3+ known points (e.g., ext_parent
+    # is in the ring system — spiro case), otherwise use 2-vector frame.
+    if p in sys_atoms and p in ideal:
+        # 3-point Kabsch: entry (i), orient neighbor (j), and anchored parent (p)
+        ideal_pts = np.array([ideal[i], ideal[j], ideal[p]])
+        real_pts = np.array([coords[i], coords_j, coords[p]])
+        R = _kabsch(ideal_pts, real_pts, coords[i], ideal[i])
     else:
-        real_n /= rn
-    real_p = np.cross(real_n, real_d)
-    real_p /= np.linalg.norm(real_p)
-    real_n = np.cross(real_d, real_p)
+        ideal_v = ideal[j] - ideal[i]
+        ideal_d = ideal_v / np.linalg.norm(ideal_v)
+        # Check if ideal coords are planar (z ≈ 0)
+        z_spread = max(abs(ideal[a][2]) for a in sys_atoms)
+        if z_spread < 0.01:
+            ideal_n = np.array([0.0, 0.0, 1.0])
+        else:
+            pts = np.array([ideal[a] for a in sys_atoms])
+            centroid = pts.mean(axis=0)
+            _, _, Vt = np.linalg.svd(pts - centroid)
+            ideal_n = Vt[-1]
+            ideal_n = ideal_n - np.dot(ideal_n, ideal_d) * ideal_d
+            nn = np.linalg.norm(ideal_n)
+            ideal_n = ideal_n / nn if nn > 1e-10 else np.array([0.0, 0.0, 1.0])
+        ideal_p_vec = np.cross(ideal_n, ideal_d)
+        ideal_p_vec /= np.linalg.norm(ideal_p_vec)
 
-    M_ideal = np.column_stack([ideal_d, ideal_p, ideal_n])
-    M_real = np.column_stack([real_d, real_p, real_n])
-    R = M_real @ np.linalg.inv(M_ideal)
+        real_v = coords_j - coords[i]
+        real_d = real_v / np.linalg.norm(real_v)
+        pi_vec = coords[i] - coords[p]
+        real_n = np.cross(pi_vec, real_v)
+        rn = np.linalg.norm(real_n)
+        if rn < 1e-10:
+            real_n = np.array([0.0, 0.0, 1.0])
+        else:
+            real_n /= rn
+        real_p_vec = np.cross(real_n, real_d)
+        real_p_vec /= np.linalg.norm(real_p_vec)
+        real_n = np.cross(real_d, real_p_vec)
+
+        M_ideal = np.column_stack([ideal_d, ideal_p_vec, ideal_n])
+        M_real = np.column_stack([real_d, real_p_vec, real_n])
+        R = M_real @ np.linalg.inv(M_ideal)
 
     for a in sys_atoms:
         coords[a] = R @ (ideal[a] - ideal[i]) + coords[i]
@@ -454,14 +734,24 @@ def _place_rigid_ring(
         pa = bfs_parent[a]
         if pa not in sys_atoms:
             continue
+        # Skip the entry atom — its relationship with ext_parent is handled
+        # by the main loop, not the ring BFS.
+        if a == i and pa == p:
+            continue
         child_count[pa] += 1
         if first_child_idx[pa] is None:
             first_child_idx[pa] = a
             ga = bfs_parent.get(pa)
             if ga is not None:
                 gga = bfs_parent.get(ga)
-                ref_a = coords[gga] if gga is not None else _synthetic_ref(coords, ga, pa)
-                first_child_torsion[pa] = _measure_torsion(ref_a, coords[ga], coords[pa], coords[a])
+                # Avoid degenerate torsion from cyclic parent pointers
+                if gga is not None and gga == pa:
+                    first_child_torsion[pa] = 0.0
+                else:
+                    ref_a = coords[gga] if gga is not None else _synthetic_ref(coords, ga, pa)
+                    first_child_torsion[pa] = _measure_torsion(
+                        ref_a, coords[ga], coords[pa], coords[a]
+                    )
 
 
 # ---------------------------------------------------------------------------
@@ -496,15 +786,43 @@ def GetConformer(
             bond_dihedral[(i, j)] = (mi, mj, angle)
             bond_dihedral[(j, i)] = (mj, mi, angle)
 
-    # find planar fused ring systems that need rigid placement
+    # find ring systems that need rigid placement
     all_systems = _find_ring_systems(mol)
     ri = mol.GetRingInfo()
     atom_to_rigid = {}  # atom -> frozenset
     rigid_ideal = {}  # frozenset -> {atom: coord}
     for sys in all_systems:
         n_rings = sum(1 for r in ri.AtomRings() if set(r) <= sys)
-        if n_rings > 1 and _is_planar(mol, sys):
-            ideal = _ideal_ring_coords(mol, sys)
+        planar = _is_planar(mol, sys)
+        # Rigid placement for multi-ring systems.  For non-planar single
+        # rings without AMSR dihedrals, also use rigid 3D placement since
+        # the atom-by-atom ring closure correction distorts bond lengths.
+        # Planar single rings and non-planar single rings WITH AMSR
+        # dihedrals (e.g. cyclohexane in spiro systems) are handled
+        # atom-by-atom.
+        if n_rings > 1:
+            do_rigid = True
+        elif n_rings == 1 and not planar:
+            has_dih = any(
+                (a, b) in bond_dihedral
+                for a in sys
+                for b in sys
+                if mol.GetBondBetweenAtoms(a, b) is not None
+            )
+            do_rigid = not has_dih
+        else:
+            do_rigid = False
+        if do_rigid:
+            # Count non-SP2 atoms; rings with at most 1 are ~planar.
+            n_non_sp2 = sum(
+                1
+                for a in sys
+                if mol.GetAtomWithIdx(a).GetHybridization() != Chem.HybridizationType.SP2
+            )
+            if planar or n_non_sp2 <= 1:
+                ideal = _ideal_ring_coords(mol, sys)
+            else:
+                ideal = _ideal_ring_coords_3d(mol, sys)
             rigid_ideal[sys] = ideal
             for a in sys:
                 atom_to_rigid[a] = sys
@@ -557,6 +875,16 @@ def GetConformer(
             child_count[p] += 1
             if first_child_idx[p] is None:
                 first_child_idx[p] = i
+                # Measure first child torsion if possible
+                g_p = parent[p]
+                if g_p is not None:
+                    gg_p = parent[g_p]
+                    ref_p = coords[gg_p] if gg_p is not None else _synthetic_ref(coords, g_p, p)
+                    first_child_torsion[p] = _measure_torsion(
+                        ref_p, coords[g_p], coords[p], coords[i]
+                    )
+                else:
+                    first_child_torsion[p] = 0.0
             continue
 
         # --- single atom z-matrix placement ----------------------------
@@ -587,7 +915,7 @@ def GetConformer(
         else:
             gg = parent[g]
             angle = _get_bond_angle(mol, g, p, i)
-            torsion = _choose_torsion(
+            torsion, ref_override = _choose_torsion(
                 mol,
                 p,
                 i,
@@ -599,7 +927,9 @@ def GetConformer(
                 coords,
                 bond_dihedral,
             )
-            if gg is not None:
+            if ref_override is not None:
+                ref = coords[ref_override]
+            elif gg is not None:
                 ref = coords[gg]
             elif child_count[p] == 0 and (g, p) in bond_dihedral:
                 mi, mj, _ = bond_dihedral[(g, p)]
@@ -621,6 +951,60 @@ def GetConformer(
         placed.add(i)
         child_count[p] += 1
 
+    # --- ring closure correction for single rings placed atom-by-atom ------
+    for sys in all_systems:
+        if sys in placed_rigid:
+            continue
+        # Find closure bond: a ring bond where neither atom is parent of the other
+        closure = None
+        for bond in mol.GetBonds():
+            a1, a2 = bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()
+            if a1 in sys and a2 in sys and bond.IsInRing():
+                if parent[a1] != a2 and parent[a2] != a1:
+                    closure = (a1, a2)
+                    break
+        if closure is None:
+            continue
+        a, b = closure
+        ideal_bl = _get_bond_length(mol, a, b)
+        actual = np.linalg.norm(coords[b] - coords[a])
+        gap = actual - ideal_bl
+        if abs(gap) < 0.05:
+            continue
+        # BFS path from a to b through ring bonds (avoiding the closure bond)
+        prev = {a: None}
+        q = deque([a])
+        found = False
+        while q and not found:
+            u = q.popleft()
+            for nb in mol.GetAtomWithIdx(u).GetNeighbors():
+                v = nb.GetIdx()
+                if v not in sys or v in prev:
+                    continue
+                if (u, v) == closure or (v, u) == closure:
+                    continue
+                prev[v] = u
+                if v == b:
+                    found = True
+                    break
+                q.append(v)
+        if not found:
+            continue
+        path = []
+        v = b
+        while v is not None:
+            path.append(v)
+            v = prev[v]
+        path.reverse()  # path[0]=a, path[-1]=b
+        # Shift each ring atom along the a→b direction to close the gap.
+        # a moves +gap/2 toward b, b moves -gap/2 toward a, linear interp.
+        gap_dir = (coords[b] - coords[a]) / actual
+        n_path = len(path)
+        for k, atom in enumerate(path):
+            frac = k / (n_path - 1) if n_path > 1 else 0.5
+            shift = (0.5 - frac) * gap
+            coords[atom] += shift * gap_dir
+
     # build RDKit conformer
     conf = Chem.Conformer(n_atoms)
     conf.Set3D(True)
@@ -629,4 +1013,5 @@ def GetConformer(
     mol = Chem.RWMol(mol)
     mol.RemoveAllConformers()
     mol.AddConformer(conf, assignId=True)
+
     return mol.GetMol()
