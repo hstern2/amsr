@@ -143,4 +143,4 @@ Cargo.lock
 
 # Test output files
 test_failures_*.txt
-tests/data/output/
+tests/out/
