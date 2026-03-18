@@ -951,59 +951,111 @@ def GetConformer(
         placed.add(i)
         child_count[p] += 1
 
-    # --- ring closure correction for single rings placed atom-by-atom ------
+    # --- ring closure: re-place ring atoms with optimized bond angles ------
     for sys in all_systems:
         if sys in placed_rigid:
             continue
-        # Find closure bond: a ring bond where neither atom is parent of the other
-        closure = None
+        # Find ALL closure bonds in this ring system
+        closures = []
         for bond in mol.GetBonds():
             a1, a2 = bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()
             if a1 in sys and a2 in sys and bond.IsInRing():
                 if parent[a1] != a2 and parent[a2] != a1:
-                    closure = (a1, a2)
-                    break
-        if closure is None:
+                    closures.append((a1, a2, _get_bond_length(mol, a1, a2)))
+        if not closures:
             continue
-        a, b = closure
-        ideal_bl = _get_bond_length(mol, a, b)
-        actual = np.linalg.norm(coords[b] - coords[a])
-        gap = actual - ideal_bl
-        if abs(gap) < 0.05:
+        # Check if any closure needs fixing
+        max_gap = max(abs(np.linalg.norm(coords[a] - coords[b]) - bl) for a, b, bl in closures)
+        if max_gap < 0.05:
             continue
-        # BFS path from a to b through ring bonds (avoiding the closure bond)
-        prev = {a: None}
-        q = deque([a])
-        found = False
-        while q and not found:
-            u = q.popleft()
+
+        # Build tree path through ring system (BFS from entry)
+        entry = None
+        for a in sorted(sys):
+            if parent[a] is None or parent[a] not in sys:
+                entry = a
+                break
+        if entry is None:
+            continue
+        # BFS to get all ring atoms in tree order
+        ring_path = [entry]
+        visited = {entry}
+        bfs_q = deque([entry])
+        while bfs_q:
+            u = bfs_q.popleft()
             for nb in mol.GetAtomWithIdx(u).GetNeighbors():
                 v = nb.GetIdx()
-                if v not in sys or v in prev:
-                    continue
-                if (u, v) == closure or (v, u) == closure:
-                    continue
-                prev[v] = u
-                if v == b:
-                    found = True
-                    break
-                q.append(v)
-        if not found:
+                if v in sys and v not in visited and parent[v] == u:
+                    ring_path.append(v)
+                    visited.add(v)
+                    bfs_q.append(v)
+
+        atoms_to_replace = ring_path[1:]  # entry stays fixed
+        if not atoms_to_replace:
             continue
-        path = []
-        v = b
-        while v is not None:
-            path.append(v)
-            v = prev[v]
-        path.reverse()  # path[0]=a, path[-1]=b
-        # Shift each ring atom along the a→b direction to close the gap.
-        # a moves +gap/2 toward b, b moves -gap/2 toward a, linear interp.
-        gap_dir = (coords[b] - coords[a]) / actual
-        n_path = len(path)
-        for k, atom in enumerate(path):
-            frac = k / (n_path - 1) if n_path > 1 else 0.5
-            shift = (0.5 - frac) * gap
-            coords[atom] += shift * gap_dir
+        n_repl = len(atoms_to_replace)
+        saved_coords = {a: coords[a].copy() for a in atoms_to_replace}
+
+        def _replace_with_offsets(offsets):
+            """Re-place ring atoms using original torsions but adjusted angles."""
+            for a in atoms_to_replace:
+                coords[a] = saved_coords[a]  # reset
+            for k, a in enumerate(atoms_to_replace):
+                p_a = parent[a]
+                g_a = parent[p_a] if p_a is not None else None
+                if g_a is None:
+                    continue
+                gg_a = parent[g_a] if g_a is not None else None
+                bl = _get_bond_length(mol, p_a, a)
+                angle = _get_bond_angle(mol, g_a, p_a, a) + offsets[k]
+                # Re-use the same torsion as original placement
+                bp_a = mol.GetBondBetweenAtoms(p_a, a)
+                in_ring_a = bp_a is not None and bp_a.IsInRing()
+                torsion, ref_override = _choose_torsion(
+                    mol,
+                    p_a,
+                    a,
+                    g_a,
+                    gg_a,
+                    0,  # treat as first child for torsion lookup
+                    first_child_torsion,
+                    in_ring_a,
+                    coords,
+                    bond_dihedral,
+                )
+                if ref_override is not None:
+                    ref = coords[ref_override]
+                elif gg_a is not None:
+                    ref = coords[gg_a]
+                else:
+                    ref = _synthetic_ref(coords, g_a, p_a)
+                coords[a] = _place_atom(ref, coords[g_a], coords[p_a], bl, angle, torsion)
+
+        # Gauss-Newton: minimize sum of closure distance errors
+        offsets = np.zeros(n_repl)
+        eps = 0.1
+        n_closures = len(closures)
+
+        for _ in range(10):
+            _replace_with_offsets(offsets)
+            residual = np.array(
+                [np.linalg.norm(coords[a] - coords[b]) - bl for a, b, bl in closures]
+            )
+            if np.max(np.abs(residual)) < 0.05:
+                break
+            # Jacobian
+            J = np.zeros((n_closures, n_repl))
+            for k in range(n_repl):
+                offsets_k = offsets.copy()
+                offsets_k[k] += eps
+                _replace_with_offsets(offsets_k)
+                for ci, (a, b, bl) in enumerate(closures):
+                    J[ci, k] = (np.linalg.norm(coords[a] - coords[b]) - bl - residual[ci]) / eps
+            _replace_with_offsets(offsets)  # restore
+            delta, _, _, _ = np.linalg.lstsq(J, -residual, rcond=None)
+            offsets = offsets + delta
+
+        _replace_with_offsets(offsets)
 
     # build RDKit conformer
     conf = Chem.Conformer(n_atoms)
