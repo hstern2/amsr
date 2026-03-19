@@ -14,12 +14,19 @@ _csv_path = os.path.join(_out_dir, "test_out.csv")
 _sdf_files = sorted(glob.glob(os.path.join(_data_dir, "*.sdf")))
 
 
+_csv_rows: list[list[str]] = []
+
+
 @pytest.fixture(scope="session", autouse=True)
-def _csv_header():
-    os.makedirs(_out_dir, exist_ok=True)
-    with open(_csv_path, "w", newline="") as f:
-        csv.writer(f).writerow(["name", "amsr", "rmsd_raw", "rmsd_refined"])
+def _csv_output():
+    _csv_rows.clear()
     yield
+    os.makedirs(_out_dir, exist_ok=True)
+    _csv_rows.sort(key=lambda r: -float(r[3]))
+    with open(_csv_path, "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["name", "amsr", "rmsd_raw", "rmsd_refined"])
+        w.writerows(_csv_rows)
 
 
 @pytest.mark.parametrize("sdf_path", _sdf_files, ids=[os.path.basename(f) for f in _sdf_files])
@@ -41,8 +48,7 @@ def test_roundtrip(sdf_path):
     Chem.MolToMolFile(mol_raw, os.path.join(_out_dir, f"{name}_raw.sdf"))
     Chem.MolToMolFile(mol_refined, os.path.join(_out_dir, f"{name}_refined.sdf"))
 
-    with open(_csv_path, "a", newline="") as f:
-        csv.writer(f).writerow([name, s, f"{rmsd_raw:.3f}", f"{rmsd_refined:.3f}"])
+    _csv_rows.append([name, s, f"{rmsd_raw:.3f}", f"{rmsd_refined:.3f}"])
 
     assert mol_refined.GetConformer().Is3D()
     assert (
