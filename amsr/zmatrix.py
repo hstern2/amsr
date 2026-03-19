@@ -184,6 +184,8 @@ def _choose_dihedral(
             chiral = mol.GetAtomWithIdx(p).GetChiralTag()
             if chiral == Chem.ChiralType.CHI_TETRAHEDRAL_CCW:
                 return actual_mj - 120.0, None
+            if chiral == Chem.ChiralType.CHI_TETRAHEDRAL_CW:
+                return actual_mj + 120.0, None
             return actual_mj + 120.0, None
 
     if nth_child == 0:
@@ -334,31 +336,42 @@ def _ring_visit_order(mol, system, parent):
     return ordered
 
 
-def _close_ring_system(mol, system, coords, parent):
-    """Adjust torsions of ring-system atoms to minimize closure bond gaps.
+def _has_clash(mol, atoms, coords, placed, ring_set, threshold=0.8):
+    """Check if any atom in `atoms` clashes with a placed atom outside the ring."""
+    for i in atoms:
+        for j in placed:
+            if j in ring_set or mol.GetBondBetweenAtoms(i, j) is not None:
+                continue
+            if np.linalg.norm(coords[i] - coords[j]) < threshold:
+                return True
+    return False
+
+
+def _close_ring(mol, ring, new_atoms, coords, parent, placed):
+    """Adjust torsions of new_atoms to close a single ring.
 
     Only torsions are varied (bond angles stay at ideal values).
-    The objective is sum of squared deviations of closure bond lengths from ideal.
+    Only atoms in new_atoms are moved (atoms from previously closed rings are frozen).
+
+    Before optimizing, check for steric clashes with already-placed atoms.
+    If a new atom collides, flip its torsion by 240° (chirality flip) and re-place
+    downstream atoms in the ring.
     """
     from scipy.optimize import minimize
 
+    ring_set = set(ring)
+
     # Find closure bonds: ring bonds that are not parent-child
     closures = []
-    for bond in mol.GetBonds():
-        a1, a2 = bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()
-        if a1 in system and a2 in system and bond.IsInRing():
-            if parent[a1] != a2 and parent[a2] != a1:
-                closures.append((a1, a2, _get_bond_length(mol, a1, a2)))
-    if not closures:
-        return
+    for idx in range(len(ring)):
+        a, b = ring[idx], ring[(idx + 1) % len(ring)]
+        bond = mol.GetBondBetweenAtoms(a, b)
+        if bond and parent[a] != b and parent[b] != a:
+            closures.append((a, b, _get_bond_length(mol, a, b)))
 
-    max_gap = max(abs(np.linalg.norm(coords[a] - coords[b]) - bl) for a, b, bl in closures)
-    if max_gap < 0.1:
-        return
-
-    # Collect adjustable atoms: ring atoms with a grandparent
+    # Collect adjustable atoms: new_atoms that have a grandparent
     adjustable = []
-    for i in sorted(system):
+    for i in sorted(new_atoms):
         p = parent[i]
         if p is None or parent[p] is None:
             continue
@@ -371,8 +384,59 @@ def _close_ring_system(mol, system, coords, parent):
     if not adjustable:
         return
 
+    # Before optimizing, check for steric clashes. If any new atom collides
+    # with an already-placed atom, and the first adjustable atom's parent is SP3
+    # (chirality ambiguity), flip chirality (shift torsion by -240°) and re-place.
+    adj_atoms = [i for i, _ in adjustable]
+    i0, _t0 = adjustable[0]
+    do_flip = (
+        _has_clash(mol, adj_atoms, coords, placed, ring_set)
+        and mol.GetAtomWithIdx(parent[i0]).GetHybridization() == Chem.HybridizationType.SP3
+    )
+    if do_flip:
+        p = parent[i0]
+        g = parent[p]
+        gg = parent[g]
+        ref = coords[gg] if gg is not None else _synthetic_ref(coords, g, p)
+        old_t = _measure_torsion(ref, coords[g], coords[p], coords[i0])
+        new_t = old_t - 240.0
+        coords[i0] = _place_atom(
+            ref,
+            coords[g],
+            coords[p],
+            _get_bond_length(mol, p, i0),
+            _get_bond_angle(mol, g, p, i0),
+            new_t,
+        )
+        adjustable[0] = (i0, new_t)
+        # Re-place all downstream atoms
+        for k2 in range(1, len(adjustable)):
+            j = adjustable[k2][0]
+            pj = parent[j]
+            gj = parent[pj]
+            ggj = parent[gj] if gj is not None else None
+            ref_j = coords[ggj] if ggj is not None else _synthetic_ref(coords, gj, pj)
+            t_j = _measure_torsion(ref_j, coords[gj], coords[pj], coords[j])
+            coords[j] = _place_atom(
+                ref_j,
+                coords[gj],
+                coords[pj],
+                _get_bond_length(mol, pj, j),
+                _get_bond_angle(mol, gj, pj, j),
+                t_j,
+            )
+            adjustable[k2] = (j, t_j)
+
+    # Check if closure optimization is needed
+    if not closures:
+        return
+    max_gap = max(abs(np.linalg.norm(coords[a] - coords[b]) - bl) for a, b, bl in closures)
+    if max_gap < 0.1:
+        return
+
     init = np.array([t for _, t in adjustable])
-    saved = coords.copy()
+    saved = coords[sorted(new_atoms)].copy()
+    new_list = sorted(new_atoms)
 
     def _replace(torsions):
         for k, (i, _) in enumerate(adjustable):
@@ -389,9 +453,33 @@ def _close_ring_system(mol, system, coords, parent):
                 torsions[k],
             )
 
+    # Find new angles formed by closure bonds (not set by z-matrix)
+    angle_targets = []
+    for a, b, _bl in closures:
+        for nb in mol.GetAtomWithIdx(a).GetNeighbors():
+            c = nb.GetIdx()
+            if c != b and c in ring_set:
+                angle_targets.append((c, a, b, _get_bond_angle(mol, c, a, b)))
+        for nb in mol.GetAtomWithIdx(b).GetNeighbors():
+            c = nb.GetIdx()
+            if c != a and c in ring_set:
+                angle_targets.append((a, b, c, _get_bond_angle(mol, a, b, c)))
+
+    def _measure_angle(a, b, c):
+        v1, v2 = coords[a] - coords[b], coords[c] - coords[b]
+        cos_a = np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2) + 1e-10)
+        return np.degrees(np.arccos(np.clip(cos_a, -1, 1)))
+
     def cost(torsions):
         _replace(torsions)
-        return sum((np.linalg.norm(coords[a] - coords[b]) - bl) ** 2 for a, b, bl in closures)
+        closure_cost = sum(
+            (np.linalg.norm(coords[a] - coords[b]) - bl) ** 2 for a, b, bl in closures
+        )
+        reg_cost = 3e-4 * np.sum((torsions - init) ** 2)
+        angle_cost = 3e-4 * sum(
+            (_measure_angle(a, b, c) - ideal) ** 2 for a, b, c, ideal in angle_targets
+        )
+        return closure_cost + reg_cost + angle_cost
 
     init_cost = cost(init)
     result = minimize(cost, init, method="L-BFGS-B", options={"maxiter": 200, "ftol": 1e-10})
@@ -399,7 +487,8 @@ def _close_ring_system(mol, system, coords, parent):
     if result.fun < init_cost:
         _replace(result.x)
     else:
-        coords[:] = saved
+        for k, i in enumerate(new_list):
+            coords[i] = saved[k]
 
 
 # ---------------------------------------------------------------------------
@@ -410,11 +499,12 @@ def _close_ring_system(mol, system, coords, parent):
 def GetConformer(
     mol: Chem.Mol,
     dihedral: Optional[dict[tuple[int, int, int, int], int]] = None,
+    refine_rings: bool = True,
 ) -> Chem.Mol:
     """Generate 3D conformer by z-matrix atom-by-atom placement.
 
     1. Place ring atoms first (completing one ring before starting the next).
-    2. When a ring closes, adjust new atoms' torsions/angles to close it.
+    2. Optionally refine ring-system torsions to close rings.
     3. Place non-ring atoms.
     """
     n = mol.GetNumAtoms()
@@ -447,8 +537,14 @@ def GetConformer(
         for a in sys:
             atom_to_system[a] = si
 
+    # All individual rings (for per-ring closure)
+    ri = mol.GetRingInfo()
+    all_rings = [tuple(r) for r in ri.AtomRings()]
+
     placed = {0}
     placed_systems = set()
+    closed_rings = set()
+    closed_atoms: set[int] = set()
 
     for i in range(1, n):
         if parent[i] is None:
@@ -477,8 +573,17 @@ def GetConformer(
                 )
                 placed.add(j)
 
-            # Refine closure bonds for this ring system
-            _close_ring_system(mol, ring_systems[si], coords, parent)
+                # Close any ring that just completed
+                if refine_rings:
+                    for ri_idx, ring in enumerate(all_rings):
+                        if ri_idx in closed_rings:
+                            continue
+                        if set(ring).issubset(placed):
+                            new_atoms = set(ring) - closed_atoms
+                            _close_ring(mol, ring, new_atoms, coords, parent, placed)
+                            closed_rings.add(ri_idx)
+                            closed_atoms.update(ring)
+
             placed_systems.add(si)
         else:
             _place_one(

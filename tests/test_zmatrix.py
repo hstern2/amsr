@@ -18,7 +18,7 @@ _sdf_files = sorted(glob.glob(os.path.join(_data_dir, "*.sdf")))
 def _csv_header():
     os.makedirs(_out_dir, exist_ok=True)
     with open(_csv_path, "w", newline="") as f:
-        csv.writer(f).writerow(["name", "amsr", "rmsd"])
+        csv.writer(f).writerow(["name", "amsr", "rmsd_raw", "rmsd_refined"])
     yield
 
 
@@ -28,20 +28,23 @@ def test_roundtrip(sdf_path):
     mol = Chem.MolFromMolFile(sdf_path, removeHs=True)
     assert mol is not None, f"Could not parse {sdf_path}"
 
-    s, rmsd, mol3 = amsr.Roundtrip(mol)
+    s, rmsd_raw, mol_raw, rmsd_refined, mol_refined = amsr.Roundtrip(mol)
 
     os.makedirs(_out_dir, exist_ok=True)
-    # Reorder original to match mol3's atom ordering for easy comparison
-    match = mol.GetSubstructMatch(mol3)
+    # Reorder original to match mol_raw's atom ordering for easy comparison
+    match = mol.GetSubstructMatch(mol_raw)
     if match:
         mol_reordered = Chem.RenumberAtoms(mol, list(match))
     else:
         mol_reordered = mol
     Chem.MolToMolFile(mol_reordered, os.path.join(_out_dir, f"{name}_original.sdf"))
-    Chem.MolToMolFile(mol3, os.path.join(_out_dir, f"{name}_zmatrix.sdf"))
+    Chem.MolToMolFile(mol_raw, os.path.join(_out_dir, f"{name}_raw.sdf"))
+    Chem.MolToMolFile(mol_refined, os.path.join(_out_dir, f"{name}_refined.sdf"))
 
     with open(_csv_path, "a", newline="") as f:
-        csv.writer(f).writerow([name, s, f"{rmsd:.3f}"])
+        csv.writer(f).writerow([name, s, f"{rmsd_raw:.3f}", f"{rmsd_refined:.3f}"])
 
-    assert mol3.GetConformer().Is3D()
-    assert rmsd < 1.0, f"RMSD {rmsd:.3f} Å too large for {name}"
+    assert mol_refined.GetConformer().Is3D()
+    assert (
+        rmsd_refined < 1.0
+    ), f"RMSD raw={rmsd_raw:.3f} refined={rmsd_refined:.3f} Å too large for {name}"
