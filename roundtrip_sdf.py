@@ -18,12 +18,8 @@ app = typer.Typer()
 def _roundtrip(mol, name, out_dir: Path):
     """Encode 3D mol to AMSR, decode, generate z-matrix conformer.
     Align to original, write both SDFs, return RMSD."""
-    dihedral: dict[tuple[int, int, int, int], int] = {}
-    s = amsr.FromMol(mol)
-    mol2 = amsr.ToMol(s, dihedral=dihedral)
-    mol3 = amsr.GetConformer(mol2, dihedral=dihedral)
+    s, rmsd, mol3 = amsr.Roundtrip(mol)
 
-    rmsd = rdMolAlign.GetBestRMS(mol3, mol)
     match = mol.GetSubstructMatch(mol3)
     if match:
         atom_map = [(i, match[i]) for i in range(mol3.GetNumAtoms())]

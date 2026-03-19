@@ -16,6 +16,7 @@ __all__ = [
     "Modifier",
     "GetConformerAndEnergy",
     "GetConformer",
+    "Roundtrip",
     "LSTMModel",
     "__version__",
 ]
@@ -29,6 +30,7 @@ from .lstm import LSTMModel
 from .markov import Markov
 from .modifier import Modifier
 from .morph import Morph
+from .roundtrip import Roundtrip
 from .tokens import ToTokens
 from .version import __version__
 from .zmatrix import GetConformer

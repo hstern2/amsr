@@ -4,7 +4,6 @@ import os
 
 import pytest
 from rdkit import Chem
-from rdkit.Chem import rdMolAlign
 
 import amsr
 
@@ -29,12 +28,7 @@ def test_roundtrip(sdf_path):
     mol = Chem.MolFromMolFile(sdf_path, removeHs=True)
     assert mol is not None, f"Could not parse {sdf_path}"
 
-    dihedral = {}
-    s = amsr.FromMol(mol)
-    mol2 = amsr.ToMol(s, dihedral=dihedral)
-    mol3 = amsr.GetConformer(mol2, dihedral=dihedral)
-
-    rmsd = rdMolAlign.GetBestRMS(mol3, mol)
+    s, rmsd, mol3 = amsr.Roundtrip(mol)
 
     os.makedirs(_out_dir, exist_ok=True)
     Chem.MolToMolFile(mol, os.path.join(_out_dir, f"{name}_original.sdf"))
