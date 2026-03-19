@@ -31,7 +31,13 @@ def test_roundtrip(sdf_path):
     s, rmsd, mol3 = amsr.Roundtrip(mol)
 
     os.makedirs(_out_dir, exist_ok=True)
-    Chem.MolToMolFile(mol, os.path.join(_out_dir, f"{name}_original.sdf"))
+    # Reorder original to match mol3's atom ordering for easy comparison
+    match = mol.GetSubstructMatch(mol3)
+    if match:
+        mol_reordered = Chem.RenumberAtoms(mol, list(match))
+    else:
+        mol_reordered = mol
+    Chem.MolToMolFile(mol_reordered, os.path.join(_out_dir, f"{name}_original.sdf"))
     Chem.MolToMolFile(mol3, os.path.join(_out_dir, f"{name}_zmatrix.sdf"))
 
     with open(_csv_path, "a", newline="") as f:

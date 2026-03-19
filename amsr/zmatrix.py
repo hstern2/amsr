@@ -184,6 +184,7 @@ def _choose_dihedral(
             if mj == i:
                 return angle, mi if mi != gg else None
             # AMSR dihedral exists but for a different neighbor mj.
+            # Offset from mj's torsion based on hybridization and chirality.
             if np.any(coords[mj]) or mj == 0:
                 actual_mj = _measure_torsion(
                     coords[gg] if gg is not None else _synthetic_ref(coords, g, p),
@@ -191,8 +192,12 @@ def _choose_dihedral(
                     coords[p],
                     coords[mj],
                 )
-                offset = 180.0 if hyb_p == Chem.HybridizationType.SP2 else 120.0
-                return actual_mj + offset, None
+                if hyb_p == Chem.HybridizationType.SP2:
+                    return actual_mj + 180.0, None
+                chiral = mol.GetAtomWithIdx(p).GetChiralTag()
+                if chiral == Chem.ChiralType.CHI_TETRAHEDRAL_CCW:
+                    return actual_mj - 120.0, None
+                return actual_mj + 120.0, None
 
         # Default torsion: check if gg-g-p-i are all in the same ring
         same_ring = False
