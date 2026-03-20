@@ -9,13 +9,10 @@ cost function use only numpy arrays (no RDKit), making them suitable for
 reimplementation in C.
 """
 
-import logging
 from typing import Optional
 
 import numpy as np
 from rdkit import Chem
-
-log = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Ideal geometry tables
@@ -126,60 +123,6 @@ def measure_angle(coords, a, b, c):
     v1, v2 = coords[a] - coords[b], coords[c] - coords[b]
     cos_a = np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2) + 1e-10)
     return np.degrees(np.arccos(np.clip(cos_a, -1, 1)))
-
-
-def replace_atoms(
-    torsions, atom_indices, ref_indices, g_indices, p_indices, bond_lens, bond_angles, coords
-):
-    """Re-place atoms given new torsion angles.  Pure-numpy, C-portable.
-
-    For each k: place atom_indices[k] using ref ref_indices[k],
-    grandparent g_indices[k], parent p_indices[k], with bond_lens[k],
-    bond_angles[k], torsions[k].  Atoms are placed in order so that
-    earlier atoms' updated positions are used by later ones.
-    """
-    for k in range(len(atom_indices)):
-        coords[atom_indices[k]] = place_atom(
-            coords[ref_indices[k]],
-            coords[g_indices[k]],
-            coords[p_indices[k]],
-            bond_lens[k],
-            bond_angles[k],
-            torsions[k],
-        )
-
-
-def ring_closure_cost(
-    torsions,
-    init_torsions,
-    atom_indices,
-    ref_indices,
-    g_indices,
-    p_indices,
-    bond_lens,
-    bond_angles,
-    coords,
-    closure_pairs,
-    closure_ideals,
-    angle_triples,
-    angle_ideals,
-):
-    """Cost function for ring closure optimization.  Pure-numpy, C-portable.
-
-    Returns: closure_gap² + regularization on torsions + regularization on angles.
-    """
-    replace_atoms(
-        torsions, atom_indices, ref_indices, g_indices, p_indices, bond_lens, bond_angles, coords
-    )
-    cost = 0.0
-    for k in range(len(closure_pairs)):
-        a, b = closure_pairs[k]
-        cost += (np.linalg.norm(coords[a] - coords[b]) - closure_ideals[k]) ** 2
-    cost += 3e-4 * np.sum((torsions - init_torsions) ** 2)
-    for k in range(len(angle_triples)):
-        a, b, c = angle_triples[k]
-        cost += 3e-4 * (measure_angle(coords, a, b, c) - angle_ideals[k]) ** 2
-    return cost
 
 
 # ---------------------------------------------------------------------------
@@ -478,6 +421,54 @@ def _has_bad_closure(mol, coords, placed, parent, threshold=1.5):
     return False
 
 
+def _save_state(coords, child_count, first_child_torsion, first_child_idx, placed):
+    """Snapshot mutable placement state for backtracking."""
+    return (
+        coords.copy(),
+        child_count[:],
+        first_child_torsion[:],
+        first_child_idx[:],
+        placed.copy(),
+    )
+
+
+def _restore_state(snap, coords, child_count, first_child_torsion, first_child_idx, placed):
+    """Restore mutable placement state from snapshot."""
+    coords[:] = snap[0]
+    child_count[:] = list(snap[1])
+    first_child_torsion[:] = list(snap[2])
+    first_child_idx[:] = list(snap[3])
+    placed.clear()
+    placed.update(snap[4])
+
+
+def _place_all_default(
+    mol,
+    visit_order,
+    coords,
+    parent,
+    child_count,
+    first_child_torsion,
+    first_child_idx,
+    bond_dihedral,
+    placed,
+):
+    """Place all unplaced atoms in visit_order with default torsions (no backtracking)."""
+    for j in visit_order:
+        if j not in placed and parent[j] is not None:
+            _place_one(
+                mol,
+                j,
+                coords,
+                parent,
+                child_count,
+                first_child_torsion,
+                first_child_idx,
+                bond_dihedral,
+            )
+            placed.add(j)
+
+
 def _place_ring_system_dfs(
     mol,
     visit_order,
@@ -489,24 +480,9 @@ def _place_ring_system_dfs(
     bond_dihedral,
     placed,
 ):
-    """Place ring system atoms using DFS with backtracking.
-
-    After each atom is placed, check for:
-    1. Collisions with previously placed atoms (< 0.5 Å)
-    2. Catastrophically bad ring closure bonds (> 1.0 Å from ideal)
-    If either is detected, backtrack to the most recent atom with untried
-    alternative torsions and try the next one.
-    """
-    # Stack entries: (atom, alternatives_remaining, snapshot)
-    # snapshot = (coords_copy, child_count_copy, fct_copy, fci_copy, placed_copy)
-    # Save clean state before any placement for full revert if needed
-    clean_snap = (
-        coords.copy(),
-        child_count[:],
-        first_child_torsion[:],
-        first_child_idx[:],
-        placed.copy(),
-    )
+    """Place ring system atoms with backtracking on collisions/bad closures."""
+    clean = _save_state(coords, child_count, first_child_torsion, first_child_idx, placed)
+    # Stack: (atom_idx, remaining_alternatives, pre-placement_snapshot)
     stack: list[tuple[int, list[float], tuple]] = []
     k = 0
 
@@ -516,100 +492,87 @@ def _place_ring_system_dfs(
             k += 1
             continue
 
-        # Save state before placing
-        snap = (
-            coords.copy(),
-            child_count[:],
-            first_child_torsion[:],
-            first_child_idx[:],
-            placed.copy(),
-        )
-
+        snap = _save_state(coords, child_count, first_child_torsion, first_child_idx, placed)
         alts = _place_one(
-            mol,
-            j,
-            coords,
-            parent,
-            child_count,
-            first_child_torsion,
-            first_child_idx,
-            bond_dihedral,
+            mol, j, coords, parent, child_count, first_child_torsion, first_child_idx, bond_dihedral
         )
         placed.add(j)
         stack.append((j, alts, snap))
 
-        if _has_collision(mol, j, coords, placed) or _has_bad_closure(mol, coords, placed, parent):
-            # Backtrack: find most recent stack entry with alternatives
-            resolved = False
-            while stack and not resolved:
-                bj, balts, bsnap = stack[-1]
-                if balts:
-                    alt = balts.pop(0)
-                    # Restore state to just before bj was placed
-                    coords[:], child_count[:], first_child_torsion[:], first_child_idx[:] = (
-                        bsnap[0],
-                        list(bsnap[1]),
-                        list(bsnap[2]),
-                        list(bsnap[3]),
-                    )
-                    placed.clear()
-                    placed.update(bsnap[4])
-                    # Re-place bj with alternative torsion
-                    _place_one(
-                        mol,
-                        bj,
-                        coords,
-                        parent,
-                        child_count,
-                        first_child_torsion,
-                        first_child_idx,
-                        bond_dihedral,
-                        torsion_override=alt,
-                    )
-                    placed.add(bj)
-                    # Update stack: bj now has remaining alternatives
-                    stack[-1] = (bj, balts, bsnap)
-                    # Resume from the atom after bj
-                    k = visit_order.index(bj) + 1
-                    resolved = True
-                else:
-                    # No alternatives left for this atom — pop and keep backtracking
-                    stack.pop()
-
-            if not resolved:
-                # Exhausted all alternatives — restore clean state and
-                # re-place everything with defaults (no backtracking).
-                coords[:] = clean_snap[0]
-                child_count[:] = list(clean_snap[1])
-                first_child_torsion[:] = list(clean_snap[2])
-                first_child_idx[:] = list(clean_snap[3])
-                placed.clear()
-                placed.update(clean_snap[4])
-                for j2 in visit_order:
-                    if j2 in placed or parent[j2] is None:
-                        continue
-                    _place_one(
-                        mol,
-                        j2,
-                        coords,
-                        parent,
-                        child_count,
-                        first_child_torsion,
-                        first_child_idx,
-                        bond_dihedral,
-                    )
-                    placed.add(j2)
-                return  # all placed with defaults, skip rest of DFS
-        else:
+        if not (
+            _has_collision(mol, j, coords, placed) or _has_bad_closure(mol, coords, placed, parent)
+        ):
             k += 1
+            continue
+
+        # Backtrack to most recent atom with untried alternatives
+        resolved = False
+        while stack and not resolved:
+            bj, balts, bsnap = stack[-1]
+            if not balts:
+                stack.pop()
+                continue
+            alt = balts.pop(0)
+            _restore_state(bsnap, coords, child_count, first_child_torsion, first_child_idx, placed)
+            _place_one(
+                mol,
+                bj,
+                coords,
+                parent,
+                child_count,
+                first_child_torsion,
+                first_child_idx,
+                bond_dihedral,
+                torsion_override=alt,
+            )
+            placed.add(bj)
+            stack[-1] = (bj, balts, bsnap)
+            k = visit_order.index(bj) + 1
+            resolved = True
+
+        if not resolved:
+            _restore_state(clean, coords, child_count, first_child_torsion, first_child_idx, placed)
+            _place_all_default(
+                mol,
+                visit_order,
+                coords,
+                parent,
+                child_count,
+                first_child_torsion,
+                first_child_idx,
+                bond_dihedral,
+                placed,
+            )
+            return
+
+
+def _get_ref(coords, ref_idx, g, p):
+    """Get reference point: coords[ref_idx] if valid, else synthetic."""
+    if ref_idx >= 0:
+        return coords[ref_idx]
+    return _synthetic_ref(coords, g, p)
+
+
+def _replace_atoms(
+    torsions, atom_indices, ref_indices, g_indices, p_indices, bond_lens, bond_angles, coords
+):
+    """Re-place atoms given new torsion angles. Handles synthetic refs (ref_index == -1)."""
+    for k in range(len(atom_indices)):
+        coords[atom_indices[k]] = place_atom(
+            _get_ref(coords, ref_indices[k], g_indices[k], p_indices[k]),
+            coords[g_indices[k]],
+            coords[p_indices[k]],
+            bond_lens[k],
+            bond_angles[k],
+            torsions[k],
+        )
 
 
 def _prepare_adjustable(mol, new_atoms, coords, parent):
     """Precompute arrays for adjustable ring atoms (those with a grandparent).
 
     Returns (atom_indices, ref_indices, g_indices, p_indices, bond_lens,
-    bond_angles, torsions) — all numpy arrays suitable for replace_atoms().
-    Returns empty arrays if no atoms are adjustable.
+    bond_angles, torsions) as numpy arrays for _replace_atoms().
     """
     atoms, refs, gs, ps, bls, bas, torsions = [], [], [], [], [], [], []
     for i in sorted(new_atoms):
@@ -617,10 +580,8 @@ def _prepare_adjustable(mol, new_atoms, coords, parent):
         if p is None or parent[p] is None:
             continue
         g = parent[p]
-        gg = parent[g]
-        ref_idx = gg if gg is not None else -1
-        ref_pt = coords[gg] if gg is not None else _synthetic_ref(coords, g, p)
-        t = measure_torsion(ref_pt, coords[g], coords[p], coords[i])
+        ref_idx = parent[g] if parent[g] is not None else -1
+        t = measure_torsion(_get_ref(coords, ref_idx, g, p), coords[g], coords[p], coords[i])
         atoms.append(i)
         refs.append(ref_idx)
         gs.append(g)
@@ -639,83 +600,6 @@ def _prepare_adjustable(mol, new_atoms, coords, parent):
     )
 
 
-def _replace_with_synth_refs(
-    torsions, atom_indices, ref_indices, g_indices, p_indices, bond_lens, bond_angles, coords
-):
-    """Like replace_atoms but handles synthetic refs (ref_index == -1)."""
-    for k in range(len(atom_indices)):
-        ref = (
-            coords[ref_indices[k]]
-            if ref_indices[k] >= 0
-            else _synthetic_ref(coords, g_indices[k], p_indices[k])
-        )
-        coords[atom_indices[k]] = place_atom(
-            ref,
-            coords[g_indices[k]],
-            coords[p_indices[k]],
-            bond_lens[k],
-            bond_angles[k],
-            torsions[k],
-        )
-
-
-def _fix_clashes(
-    mol,
-    ring_set,
-    atom_indices,
-    ref_indices,
-    g_indices,
-    p_indices,
-    bond_lens,
-    bond_angles,
-    torsions,
-    coords,
-    parent,
-    placed,
-):
-    """If any new ring atom clashes with a placed atom, flip the first
-    adjustable SP3 atom's chirality (-240° torsion shift) and re-place chain."""
-    if len(atom_indices) == 0:
-        return torsions
-
-    # Check for clashes
-    has_clash = False
-    for i in atom_indices:
-        for j in placed:
-            if j in ring_set or mol.GetBondBetweenAtoms(int(i), int(j)) is not None:
-                continue
-            if np.linalg.norm(coords[i] - coords[j]) < 0.8:
-                has_clash = True
-                break
-        if has_clash:
-            break
-
-    if not has_clash:
-        return torsions
-
-    # Only flip SP3 centers (chirality ambiguity).
-    # SP2 overlaps in fused planar rings are fixed by ring closure optimization.
-    i0 = atom_indices[0]
-    if mol.GetAtomWithIdx(parent[i0]).GetHybridization() != SP3:
-        return torsions
-
-    torsions = torsions.copy()
-    torsions[0] -= 240.0
-    _replace_with_synth_refs(
-        torsions, atom_indices, ref_indices, g_indices, p_indices, bond_lens, bond_angles, coords
-    )
-    # Re-measure torsions after re-placement (downstream atoms shifted)
-    for k in range(1, len(atom_indices)):
-        i = atom_indices[k]
-        ref = (
-            coords[ref_indices[k]]
-            if ref_indices[k] >= 0
-            else _synthetic_ref(coords, g_indices[k], p_indices[k])
-        )
-        torsions[k] = measure_torsion(ref, coords[g_indices[k]], coords[p_indices[k]], coords[i])
-    return torsions
-
-
 def _close_ring(mol, ring, new_atoms, coords, parent, placed):
     """Fix chirality clashes, then optimize torsions to close a ring."""
     from scipy.optimize import minimize
@@ -729,21 +613,32 @@ def _close_ring(mol, ring, new_atoms, coords, parent, placed):
     if len(atom_indices) == 0:
         return
 
-    # Fix chirality clashes before optimization
-    torsions = _fix_clashes(
-        mol,
-        ring_set,
-        atom_indices,
-        ref_indices,
-        g_indices,
-        p_indices,
-        bond_lens,
-        bond_angles,
-        torsions,
-        coords,
-        parent,
-        placed,
+    # Fix chirality clashes: if any new atom clashes with a placed atom,
+    # flip the first adjustable SP3 atom's chirality (-240° torsion shift).
+    has_clash = any(
+        np.linalg.norm(coords[i] - coords[j]) < 0.8
+        for i in atom_indices
+        for j in placed
+        if j not in ring_set and mol.GetBondBetweenAtoms(int(i), int(j)) is None
     )
+    if has_clash and mol.GetAtomWithIdx(parent[atom_indices[0]]).GetHybridization() == SP3:
+        torsions = torsions.copy()
+        torsions[0] -= 240.0
+        _replace_atoms(
+            torsions,
+            atom_indices,
+            ref_indices,
+            g_indices,
+            p_indices,
+            bond_lens,
+            bond_angles,
+            coords,
+        )
+        for k in range(1, len(atom_indices)):
+            ref = _get_ref(coords, ref_indices[k], g_indices[k], p_indices[k])
+            torsions[k] = measure_torsion(
+                ref, coords[g_indices[k]], coords[p_indices[k]], coords[atom_indices[k]]
+            )
 
     # Find closure bonds
     closures_pairs = []
@@ -791,7 +686,7 @@ def _close_ring(mol, ring, new_atoms, coords, parent, placed):
     new_list = sorted(new_atoms)
 
     def cost(t):
-        _replace_with_synth_refs(
+        _replace_atoms(
             t, atom_indices, ref_indices, g_indices, p_indices, bond_lens, bond_angles, coords
         )
         c = 0.0
@@ -816,7 +711,7 @@ def _close_ring(mol, ring, new_atoms, coords, parent, placed):
                 best = r
 
     if best.fun < init_cost:
-        _replace_with_synth_refs(
+        _replace_atoms(
             best.x,
             atom_indices,
             ref_indices,
