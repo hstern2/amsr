@@ -15,7 +15,7 @@ from rdkit import Chem
 
 import amsr
 
-app = typer.Typer()
+app = typer.Typer(context_settings={"help_option_names": ["-h", "--help"]})
 
 
 def _process_one(mol, name, out_dir: Path):
