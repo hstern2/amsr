@@ -726,6 +726,142 @@ def _close_ring(mol, ring, new_atoms, coords, parent, placed):
             coords[i] = saved[k]
 
 
+def _close_ring_system(mol, system_atoms, all_rings, coords, parent, orig_torsions, bond_dihedral):
+    """Joint optimization of ALL closure bonds across a ring system simultaneously.
+
+    Uses orig_torsions (pre-per-ring-closure torsions) as both the starting point
+    and regularization target, avoiding local minima from per-ring closures.
+    Adds AMSR dihedral constraints for closure bonds.
+    """
+    from scipy.optimize import minimize
+
+    # Collect all closure bonds across all rings in the system (deduplicated)
+    closure_set = set()
+    closures_pairs = []
+    closures_ideals = []
+    system_set = set(system_atoms)
+    for ring in all_rings:
+        ring_set = set(ring)
+        if not ring_set.issubset(system_set):
+            continue
+        for idx in range(len(ring)):
+            a, b = ring[idx], ring[(idx + 1) % len(ring)]
+            key = (min(a, b), max(a, b))
+            if key in closure_set:
+                continue
+            if mol.GetBondBetweenAtoms(a, b) and parent[a] != b and parent[b] != a:
+                closure_set.add(key)
+                closures_pairs.append((a, b))
+                closures_ideals.append(_get_bond_length(mol, a, b))
+
+    if not closures_pairs or len(closures_pairs) < 2:
+        return
+
+    # Use pre-closure arrays
+    atom_indices, ref_indices, g_indices, p_indices, bond_lens, bond_angles = orig_torsions[:6]
+    torsions = orig_torsions[6]
+    if len(atom_indices) == 0:
+        return
+
+    # Angle constraints at closure bonds
+    angle_triples = []
+    angle_ideals = []
+    for a, b in closures_pairs:
+        for nb in mol.GetAtomWithIdx(a).GetNeighbors():
+            c = nb.GetIdx()
+            if c != b and c in system_set:
+                angle_triples.append((c, a, b))
+                angle_ideals.append(_get_bond_angle(mol, c, a, b))
+        for nb in mol.GetAtomWithIdx(b).GetNeighbors():
+            c = nb.GetIdx()
+            if c != a and c in system_set:
+                angle_triples.append((a, b, c))
+                angle_ideals.append(_get_bond_angle(mol, a, b, c))
+
+    # AMSR dihedral constraints involving closure bonds
+    dihedral_quads = []  # (a, b, c, d) four atom indices
+    dihedral_targets = []  # target angles in degrees
+    for (i, j), (mi, mj, angle) in bond_dihedral.items():
+        if i >= j:
+            continue  # avoid duplicates
+        a_key = (min(i, j), max(i, j))
+        # Include if this bond touches a closure bond atom
+        if a_key in closure_set or (i in system_set and j in system_set):
+            # Check all four atoms are placed in system or are valid
+            if mi in system_set and mj in system_set:
+                dihedral_quads.append((mi, i, j, mj))
+                dihedral_targets.append(float(angle))
+
+    cp = np.array(closures_pairs, dtype=np.intp)
+    ci = np.array(closures_ideals)
+    at = (
+        np.array(angle_triples, dtype=np.intp) if angle_triples else np.empty((0, 3), dtype=np.intp)
+    )
+    ai = np.array(angle_ideals) if angle_ideals else np.empty(0)
+    dq = (
+        np.array(dihedral_quads, dtype=np.intp)
+        if dihedral_quads
+        else np.empty((0, 4), dtype=np.intp)
+    )
+    dt = np.array(dihedral_targets) if dihedral_targets else np.empty(0)
+
+    init = torsions.copy()
+    saved = coords[sorted(system_atoms)].copy()
+    sys_list = sorted(system_atoms)
+
+    def cost(t):
+        _replace_atoms(
+            t, atom_indices, ref_indices, g_indices, p_indices, bond_lens, bond_angles, coords
+        )
+        c = 0.0
+        for k in range(len(cp)):
+            c += (np.linalg.norm(coords[cp[k, 0]] - coords[cp[k, 1]]) - ci[k]) ** 2
+        c += 3e-4 * np.sum((t - init) ** 2)
+        for k in range(len(at)):
+            c += 3e-4 * (measure_angle(coords, at[k, 0], at[k, 1], at[k, 2]) - ai[k]) ** 2
+        # AMSR dihedral constraints
+        for k in range(len(dq)):
+            measured = measure_torsion(
+                coords[dq[k, 0]], coords[dq[k, 1]], coords[dq[k, 2]], coords[dq[k, 3]]
+            )
+            diff = (measured - dt[k] + 180.0) % 360.0 - 180.0
+            c += 3e-3 * diff**2
+        return c
+
+    init_cost = cost(init)
+    best = minimize(cost, init, method="L-BFGS-B", options={"maxiter": 200, "ftol": 1e-10})
+
+    if best.fun >= init_cost - 1e-8:
+        for delta in [15.0, -15.0, 30.0, -30.0]:
+            perturbed = init + delta
+            r = minimize(
+                cost, perturbed, method="L-BFGS-B", options={"maxiter": 200, "ftol": 1e-10}
+            )
+            if r.fun < best.fun:
+                best = r
+
+    # Also try starting from per-ring-closure torsions (current coords)
+    post_torsions = _prepare_adjustable(mol, system_atoms, coords, parent)[6]
+    r = minimize(cost, post_torsions, method="L-BFGS-B", options={"maxiter": 200, "ftol": 1e-10})
+    if r.fun < best.fun:
+        best = r
+
+    if best.fun < init_cost:
+        _replace_atoms(
+            best.x,
+            atom_indices,
+            ref_indices,
+            g_indices,
+            p_indices,
+            bond_lens,
+            bond_angles,
+            coords,
+        )
+    else:
+        for k, i in enumerate(sys_list):
+            coords[i] = saved[k]
+
+
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
@@ -804,11 +940,25 @@ def GetConformer(
 
             # Close any rings that completed during placement
             if refine_rings:
+                # Save pre-closure torsions for joint optimization
+                orig_torsions = _prepare_adjustable(mol, ring_systems[si], coords, parent)
+
                 for ri_idx, ring in enumerate(all_rings):
                     if ri_idx not in closed_rings and set(ring).issubset(placed):
                         _close_ring(mol, ring, set(ring) - closed_atoms, coords, parent, placed)
                         closed_rings.add(ri_idx)
                         closed_atoms.update(ring)
+
+                # Joint optimization of all closure bonds in the ring system
+                _close_ring_system(
+                    mol,
+                    ring_systems[si],
+                    all_rings,
+                    coords,
+                    parent,
+                    orig_torsions,
+                    bond_dihedral,
+                )
 
             placed_systems.add(si)
         else:
