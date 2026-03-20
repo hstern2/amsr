@@ -313,6 +313,9 @@ def _choose_dihedral(
             # Fused SP2 ring junctions: gg may not share a ring with i,
             # but the bond is still planar.  Only applies when gg is also
             # a ring atom (otherwise we're entering the ring from outside).
+            # The torsion is 0° when gg's ring has ≥6 members (e.g. 6-6
+            # naphthalene fusion) and 180° for smaller rings (e.g. 5-6
+            # indole fusion) due to the tighter interior angles.
             if (
                 not coplanar
                 and gg is not None
@@ -321,6 +324,12 @@ def _choose_dihedral(
                 and mol.GetAtomWithIdx(i).GetHybridization() == SP2
             ):
                 coplanar = True
+                # Find the ring containing gg and g but not i
+                for ring in mol.GetRingInfo().AtomRings():
+                    if gg in ring and g in ring and i not in ring:
+                        if len(ring) < 6:
+                            coplanar = False  # use 180° for small-ring side
+                        break
         torsion = 0.0 if coplanar else 180.0
         return torsion, None, [torsion + 180.0]
 
