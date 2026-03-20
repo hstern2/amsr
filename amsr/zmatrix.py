@@ -87,25 +87,37 @@ CCW = Chem.ChiralType.CHI_TETRAHEDRAL_CCW
 # ---------------------------------------------------------------------------
 
 
+def _cross3(a, b):
+    """Cross product for 3-element arrays (avoids numpy.cross overhead)."""
+    return np.array(
+        [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
+    )
+
+
+def _norm3(v):
+    """Euclidean norm for 3-element array (avoids numpy.linalg.norm overhead)."""
+    return np.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2])
+
+
 def place_atom(A, B, C, d, theta_deg, omega_deg):
     """Place atom D given refs A, B, C, bond length d, angle B-C-D, torsion A-B-C-D."""
     theta = np.radians(theta_deg)
     omega = np.radians(omega_deg)
     BC = C - B
-    bc = np.linalg.norm(BC)
+    bc = _norm3(BC)
     if bc > 1e-10:
         BC = BC / bc
     else:
         BC = np.array([1.0, 0.0, 0.0])
-    n = np.cross(B - A, BC)
-    nn = np.linalg.norm(n)
+    n = _cross3(B - A, BC)
+    nn = _norm3(n)
     if nn < 1e-10:
         perp = np.array([1.0, 0.0, 0.0]) if abs(BC[0]) < 0.9 else np.array([0.0, 1.0, 0.0])
-        n = np.cross(BC, perp)
-        n /= np.linalg.norm(n)
+        n = _cross3(BC, perp)
+        n /= _norm3(n)
     else:
         n /= nn
-    m = np.cross(n, BC)
+    m = _cross3(n, BC)
     st = np.sin(theta)
     return C + d * (-np.cos(theta) * BC + st * np.cos(omega) * m + st * np.sin(omega) * n)
 
@@ -113,18 +125,18 @@ def place_atom(A, B, C, d, theta_deg, omega_deg):
 def measure_torsion(p0, p1, p2, p3):
     """Torsion angle (degrees) for four 3-D points."""
     b1, b2, b3 = p1 - p0, p2 - p1, p3 - p2
-    n1, n2 = np.cross(b1, b2), np.cross(b2, b3)
-    n1n, n2n = np.linalg.norm(n1), np.linalg.norm(n2)
+    n1, n2 = _cross3(b1, b2), _cross3(b2, b3)
+    n1n, n2n = _norm3(n1), _norm3(n2)
     if n1n < 1e-10 or n2n < 1e-10:
         return 0.0
     n1, n2 = n1 / n1n, n2 / n2n
-    return np.degrees(np.arctan2(np.dot(np.cross(n1, n2), b2 / np.linalg.norm(b2)), np.dot(n1, n2)))
+    return np.degrees(np.arctan2(np.dot(_cross3(n1, n2), b2 / _norm3(b2)), np.dot(n1, n2)))
 
 
 def measure_angle(coords, a, b, c):
     """Angle a-b-c (degrees) from coordinates."""
     v1, v2 = coords[a] - coords[b], coords[c] - coords[b]
-    cos_a = np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2) + 1e-10)
+    cos_a = np.dot(v1, v2) / (_norm3(v1) * _norm3(v2) + 1e-10)
     return np.degrees(np.arccos(np.clip(cos_a, -1, 1)))
 
 
@@ -179,14 +191,14 @@ def _get_bond_angle(mol, a, b, c):
 def _synthetic_ref(coords, b, c):
     """Synthetic reference point when no great-grandparent exists."""
     bc = coords[c] - coords[b]
-    bc_n = np.linalg.norm(bc)
+    bc_n = _norm3(bc)
     if bc_n > 1e-10:
         bc = bc / bc_n
     else:
         bc = np.array([1.0, 0.0, 0.0])
     perp = np.array([1.0, 0.0, 0.0]) if abs(bc[0]) < 0.9 else np.array([0.0, 1.0, 0.0])
-    perp = np.cross(bc, perp)
-    perp /= np.linalg.norm(perp)
+    perp = _cross3(bc, perp)
+    perp /= _norm3(perp)
     return coords[b] - perp
 
 
@@ -457,7 +469,7 @@ def _has_collision(mol, j, coords, placed, threshold=0.5):
     for other in placed:
         if other == j or mol.GetBondBetweenAtoms(j, other) is not None:
             continue
-        if np.linalg.norm(coords[j] - coords[other]) < threshold:
+        if _norm3(coords[j] - coords[other]) < threshold:
             return True
     return False
 
@@ -483,7 +495,7 @@ def _has_bad_closure(
             if bond and parent[a] != b and parent[b] != a:
                 if just_placed is not None and just_placed != a and just_placed != b:
                     continue
-                dist = np.linalg.norm(coords[a] - coords[b])
+                dist = _norm3(coords[a] - coords[b])
                 ideal = _get_bond_length(mol, a, b)
                 if abs(dist - ideal) > dist_threshold:
                     return True
@@ -635,7 +647,8 @@ def _place_ring_system_dfs(
 #
 # The cost function is a sum of squared residuals — natural for future
 # gradient-based (analytical Jacobian) or Gauss-Newton/LM solvers.
-# Currently uses L-BFGS-B with numerical gradients.
+# Currently uses L-BFGS-B with numerical gradients.  A single optimization
+# from the initial z-matrix placement is sufficient.
 # ---------------------------------------------------------------------------
 
 
@@ -813,7 +826,7 @@ def _closure_residuals(
     # Closure bond gaps (weight 1.0)
     for k in range(len(closure_pairs)):
         a, b = closure_pairs[k]
-        gap = np.linalg.norm(coords[a] - coords[b]) - closure_ideals[k]
+        gap = _norm3(coords[a] - coords[b]) - closure_ideals[k]
         residuals.append(gap)
 
     # Torsion regularization (weight sqrt(3e-4) ≈ 0.0173)
@@ -912,17 +925,8 @@ def _close_ring_system(mol, system_atoms, all_rings, coords, parent, bond_dihedr
         ang_resid = w_ang_reg * (angles - init_angles)
         return np.dot(r, r) + np.dot(ang_resid, ang_resid)
 
-    # Multi-start optimization: try initial values + perturbations
     init_cost = cost(init_x)
     best = minimize(cost, init_x, method="L-BFGS-B", options={"maxiter": 200, "ftol": 1e-10})
-
-    if best.fun >= init_cost - 1e-8:
-        for delta in [15.0, -15.0, 30.0, -30.0]:
-            x0 = init_x.copy()
-            x0[:n_free_tor] += delta  # perturb torsions only
-            r = minimize(cost, x0, method="L-BFGS-B", options={"maxiter": 200, "ftol": 1e-10})
-            if r.fun < best.fun:
-                best = r
 
     if best.fun < init_cost:
         cost(best.x)  # apply the best solution to coords
