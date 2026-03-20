@@ -52,5 +52,5 @@ def test_roundtrip(sdf_path):
 
     assert mol_refined.GetConformer().Is3D()
     assert (
-        rmsd_refined < 1.0
+        rmsd_refined < 0.5
     ), f"RMSD raw={rmsd_raw:.3f} refined={rmsd_refined:.3f} Å too large for {name}"

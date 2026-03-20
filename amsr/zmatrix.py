@@ -297,25 +297,45 @@ def _ring_visit_order(mol, system, parent):
 def _choose_dihedral(
     mol, i, p, g, gg, nth_child, first_child_torsion, in_ring, coords, bond_dihedral
 ):
-    """Choose the dihedral angle for placing atom i from parent p."""
+    """Choose the dihedral angle for placing atom i from parent p.
+
+    Returns (torsion, ref_override, alternatives) where alternatives is a
+    list of other torsion values to try if the first causes a collision.
+    """
     hyb_p = mol.GetAtomWithIdx(p).GetHybridization()
 
     # Check for AMSR dihedral on backward bond (g, p)
     if (g, p) in bond_dihedral:
         mi, mj, angle = bond_dihedral[(g, p)]
         if mj == i:
-            return angle, mi if mi != gg else None
+            return angle, mi if mi != gg else None, []
         # Offset from mj — only for first child placed
         if nth_child == 0 and (np.any(coords[mj]) or mj == 0):
             ref = coords[gg] if gg is not None else _synthetic_ref(coords, g, p)
             actual_mj = measure_torsion(ref, coords[g], coords[p], coords[mj])
             if hyb_p == SP2:
-                return actual_mj + 180.0, None
+                return actual_mj + 180.0, None, []
             chiral = mol.GetAtomWithIdx(p).GetChiralTag()
-            offset = -120.0 if chiral == CCW else 120.0
-            return actual_mj + offset, None
+            if chiral == CCW:
+                return actual_mj - 120.0, None, []
+            if chiral == CW:
+                return actual_mj + 120.0, None, []
+            # Unspecified chirality — ambiguous
+            return actual_mj + 120.0, None, [actual_mj - 120.0]
 
-    # No AMSR — first child uses default torsion
+    # No AMSR — first child: search placed neighbors of g for a reference
+    # atom that gives a known dihedral (same-ring → 0°).
+    if nth_child == 0 and in_ring:
+        for nb in mol.GetAtomWithIdx(g).GetNeighbors():
+            gg_c = nb.GetIdx()
+            if gg_c == p or not (np.any(coords[gg_c]) or gg_c == 0):
+                continue
+            for ring in mol.GetRingInfo().AtomRings():
+                if gg_c in ring and g in ring and p in ring and i in ring:
+                    ref_ovr = gg_c if gg_c != gg else None
+                    return 0.0, ref_ovr, []
+
+    # Fallback: default torsion (ambiguous)
     if nth_child == 0:
         same_ring = False
         if gg is not None and in_ring:
@@ -324,21 +344,21 @@ def _choose_dihedral(
                     same_ring = True
                     break
         torsion = 0.0 if (in_ring and same_ring) else 180.0
-        return torsion, None
+        return torsion, None, [torsion + 180.0]
 
     # Subsequent children: offset from first child
     base = first_child_torsion[p] if first_child_torsion[p] is not None else 0.0
     if hyb_p == SP2:
-        return base + 180.0, None
+        return base + 180.0, None, []
     if hyb_p == SP3:
         chiral = mol.GetAtomWithIdx(p).GetChiralTag()
         if chiral == CW:
-            return base + 120.0 * nth_child, None
+            return base + 120.0 * nth_child, None, []
         if chiral == CCW:
-            return base - 120.0 * nth_child, None
+            return base - 120.0 * nth_child, None, []
         sign = -1 if base > 0 else 1
-        return base + sign * 120.0 * nth_child, None
-    return base + 180.0, None
+        return base + sign * 120.0 * nth_child, None, [base - sign * 120.0 * nth_child]
+    return base + 180.0, None, []
 
 
 # ---------------------------------------------------------------------------
@@ -347,17 +367,30 @@ def _choose_dihedral(
 
 
 def _place_one(
-    mol, i, coords, parent, child_count, first_child_torsion, first_child_idx, bond_dihedral
+    mol,
+    i,
+    coords,
+    parent,
+    child_count,
+    first_child_torsion,
+    first_child_idx,
+    bond_dihedral,
+    torsion_override=None,
 ):
-    """Place atom i using z-matrix from its parent chain."""
+    """Place atom i using z-matrix from its parent chain.
+
+    If torsion_override is given, use it instead of _choose_dihedral.
+    Returns list of alternative torsions (empty if placement is unambiguous).
+    """
     p = parent[i]
     if p is None:
-        return
+        return []
 
     g = parent[p]
     bond_len = _get_bond_length(mol, p, i)
     bp = mol.GetBondBetweenAtoms(p, i)
     in_ring = bp is not None and bp.IsInRing()
+    alternatives: list[float] = []
 
     if g is None:
         # No grandparent — special cases for first/second child
@@ -380,9 +413,22 @@ def _place_one(
     else:
         gg = parent[g]
         bond_angle = _get_bond_angle(mol, g, p, i)
-        torsion, ref_override = _choose_dihedral(
-            mol, i, p, g, gg, child_count[p], first_child_torsion, in_ring, coords, bond_dihedral
-        )
+        if torsion_override is not None:
+            torsion = torsion_override
+            ref_override = None
+        else:
+            torsion, ref_override, alternatives = _choose_dihedral(
+                mol,
+                i,
+                p,
+                g,
+                gg,
+                child_count[p],
+                first_child_torsion,
+                in_ring,
+                coords,
+                bond_dihedral,
+            )
         if ref_override is not None:
             ref = coords[ref_override]
         else:
@@ -396,11 +442,166 @@ def _place_one(
     if first_child_idx[p] is None:
         first_child_idx[p] = i
     child_count[p] += 1
+    return alternatives
 
 
 # ---------------------------------------------------------------------------
 # Ring closure
 # ---------------------------------------------------------------------------
+
+
+def _has_collision(mol, j, coords, placed, threshold=0.5):
+    """Check if atom j collides with any placed non-bonded atom."""
+    for other in placed:
+        if other == j or mol.GetBondBetweenAtoms(j, other) is not None:
+            continue
+        if np.linalg.norm(coords[j] - coords[other]) < threshold:
+            return True
+    return False
+
+
+def _has_bad_closure(mol, coords, placed, parent, threshold=1.5):
+    """Check if any ring that just closed has a catastrophically bad closure bond."""
+    ri = mol.GetRingInfo()
+    for ring in ri.AtomRings():
+        ring_set = set(ring)
+        if not ring_set.issubset(placed):
+            continue
+        for idx in range(len(ring)):
+            a, b = ring[idx], ring[(idx + 1) % len(ring)]
+            bond = mol.GetBondBetweenAtoms(a, b)
+            if bond and parent[a] != b and parent[b] != a:
+                dist = np.linalg.norm(coords[a] - coords[b])
+                ideal = _get_bond_length(mol, a, b)
+                if abs(dist - ideal) > threshold:
+                    return True
+    return False
+
+
+def _place_ring_system_dfs(
+    mol,
+    visit_order,
+    coords,
+    parent,
+    child_count,
+    first_child_torsion,
+    first_child_idx,
+    bond_dihedral,
+    placed,
+):
+    """Place ring system atoms using DFS with backtracking.
+
+    After each atom is placed, check for:
+    1. Collisions with previously placed atoms (< 0.5 Å)
+    2. Catastrophically bad ring closure bonds (> 1.0 Å from ideal)
+    If either is detected, backtrack to the most recent atom with untried
+    alternative torsions and try the next one.
+    """
+    # Stack entries: (atom, alternatives_remaining, snapshot)
+    # snapshot = (coords_copy, child_count_copy, fct_copy, fci_copy, placed_copy)
+    # Save clean state before any placement for full revert if needed
+    clean_snap = (
+        coords.copy(),
+        child_count[:],
+        first_child_torsion[:],
+        first_child_idx[:],
+        placed.copy(),
+    )
+    stack: list[tuple[int, list[float], tuple]] = []
+    k = 0
+
+    while k < len(visit_order):
+        j = visit_order[k]
+        if j in placed or parent[j] is None:
+            k += 1
+            continue
+
+        # Save state before placing
+        snap = (
+            coords.copy(),
+            child_count[:],
+            first_child_torsion[:],
+            first_child_idx[:],
+            placed.copy(),
+        )
+
+        alts = _place_one(
+            mol,
+            j,
+            coords,
+            parent,
+            child_count,
+            first_child_torsion,
+            first_child_idx,
+            bond_dihedral,
+        )
+        placed.add(j)
+        stack.append((j, alts, snap))
+
+        if _has_collision(mol, j, coords, placed) or _has_bad_closure(mol, coords, placed, parent):
+            # Backtrack: find most recent stack entry with alternatives
+            resolved = False
+            while stack and not resolved:
+                bj, balts, bsnap = stack[-1]
+                if balts:
+                    alt = balts.pop(0)
+                    # Restore state to just before bj was placed
+                    coords[:], child_count[:], first_child_torsion[:], first_child_idx[:] = (
+                        bsnap[0],
+                        list(bsnap[1]),
+                        list(bsnap[2]),
+                        list(bsnap[3]),
+                    )
+                    placed.clear()
+                    placed.update(bsnap[4])
+                    # Re-place bj with alternative torsion
+                    _place_one(
+                        mol,
+                        bj,
+                        coords,
+                        parent,
+                        child_count,
+                        first_child_torsion,
+                        first_child_idx,
+                        bond_dihedral,
+                        torsion_override=alt,
+                    )
+                    placed.add(bj)
+                    # Update stack: bj now has remaining alternatives
+                    stack[-1] = (bj, balts, bsnap)
+                    # Resume from the atom after bj
+                    k = visit_order.index(bj) + 1
+                    resolved = True
+                else:
+                    # No alternatives left for this atom — pop and keep backtracking
+                    stack.pop()
+
+            if not resolved:
+                # Exhausted all alternatives — restore clean state and
+                # re-place everything with defaults (no backtracking).
+                coords[:] = clean_snap[0]
+                child_count[:] = list(clean_snap[1])
+                first_child_torsion[:] = list(clean_snap[2])
+                first_child_idx[:] = list(clean_snap[3])
+                placed.clear()
+                placed.update(clean_snap[4])
+                for j2 in visit_order:
+                    if j2 in placed or parent[j2] is None:
+                        continue
+                    _place_one(
+                        mol,
+                        j2,
+                        coords,
+                        parent,
+                        child_count,
+                        first_child_torsion,
+                        first_child_idx,
+                        bond_dihedral,
+                    )
+                    placed.add(j2)
+                return  # all placed with defaults, skip rest of DFS
+        else:
+            k += 1
 
 
 def _prepare_adjustable(mol, new_atoms, coords, parent):
@@ -692,29 +893,27 @@ def GetConformer(
             if si in placed_systems:
                 continue
 
-            # Place all atoms in this ring system
-            for j in _ring_visit_order(mol, ring_systems[si], parent):
-                if j in placed or parent[j] is None:
-                    continue
-                _place_one(
-                    mol,
-                    j,
-                    coords,
-                    parent,
-                    child_count,
-                    first_child_torsion,
-                    first_child_idx,
-                    bond_dihedral,
-                )
-                placed.add(j)
+            # Place all atoms with DFS backtracking on collisions
+            visit = _ring_visit_order(mol, ring_systems[si], parent)
+            _place_ring_system_dfs(
+                mol,
+                visit,
+                coords,
+                parent,
+                child_count,
+                first_child_torsion,
+                first_child_idx,
+                bond_dihedral,
+                placed,
+            )
 
-                # Close any ring that just completed
-                if refine_rings:
-                    for ri_idx, ring in enumerate(all_rings):
-                        if ri_idx not in closed_rings and set(ring).issubset(placed):
-                            _close_ring(mol, ring, set(ring) - closed_atoms, coords, parent, placed)
-                            closed_rings.add(ri_idx)
-                            closed_atoms.update(ring)
+            # Close any rings that completed during placement
+            if refine_rings:
+                for ri_idx, ring in enumerate(all_rings):
+                    if ri_idx not in closed_rings and set(ring).issubset(placed):
+                        _close_ring(mol, ring, set(ring) - closed_atoms, coords, parent, placed)
+                        closed_rings.add(ri_idx)
+                        closed_atoms.update(ring)
 
             placed_systems.add(si)
         else:
