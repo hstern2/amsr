@@ -290,13 +290,25 @@ def _choose_dihedral(
 
     # Fallback: default torsion (ambiguous)
     if nth_child == 0:
-        same_ring = False
-        if gg is not None and in_ring:
-            for ring in mol.GetRingInfo().AtomRings():
-                if gg in ring and g in ring and p in ring and i in ring:
-                    same_ring = True
-                    break
-        torsion = 0.0 if (in_ring and same_ring) else 180.0
+        coplanar = False
+        if in_ring:
+            if gg is not None:
+                for ring in mol.GetRingInfo().AtomRings():
+                    if gg in ring and g in ring and p in ring and i in ring:
+                        coplanar = True
+                        break
+            # Fused SP2 ring junctions: gg may not share a ring with i,
+            # but the bond is still planar.  Only applies when gg is also
+            # a ring atom (otherwise we're entering the ring from outside).
+            if (
+                not coplanar
+                and gg is not None
+                and mol.GetAtomWithIdx(gg).IsInRing()
+                and hyb_p == SP2
+                and mol.GetAtomWithIdx(i).GetHybridization() == SP2
+            ):
+                coplanar = True
+        torsion = 0.0 if coplanar else 180.0
         return torsion, None, [torsion + 180.0]
 
     # Subsequent children: offset from first child
