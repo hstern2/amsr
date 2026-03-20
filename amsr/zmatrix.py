@@ -238,7 +238,17 @@ def _ring_visit_order(mol, system, parent):
 
 
 def _choose_dihedral(
-    mol, i, p, g, gg, nth_child, first_child_torsion, in_ring, coords, bond_dihedral
+    mol,
+    i,
+    p,
+    g,
+    gg,
+    nth_child,
+    first_child_torsion,
+    first_child_idx,
+    in_ring,
+    coords,
+    bond_dihedral,
 ):
     """Choose the dihedral angle for placing atom i from parent p.
 
@@ -295,10 +305,22 @@ def _choose_dihedral(
         return base + 180.0, None, []
     if hyb_p == SP3:
         chiral = mol.GetAtomWithIdx(p).GetChiralTag()
-        if chiral == CW:
-            return base + 120.0 * nth_child, None, []
-        if chiral == CCW:
-            return base - 120.0 * nth_child, None, []
+        if chiral in (CW, CCW):
+            # CW/CCW is defined relative to graph neighbor order.  If
+            # ring-system placement caused the first child to be placed
+            # out of graph order, flip the sign.
+            fc = first_child_idx[p]
+            children = [
+                nb.GetIdx() for nb in mol.GetAtomWithIdx(p).GetNeighbors() if nb.GetIdx() != g
+            ]
+            swapped = (
+                len(children) >= 2 and fc is not None and children.index(fc) > children.index(i)
+            )
+            if chiral == CW:
+                sign = -1 if swapped else 1
+            else:
+                sign = 1 if swapped else -1
+            return base + sign * 120.0 * nth_child, None, []
         sign = -1 if base > 0 else 1
         return base + sign * 120.0 * nth_child, None, [base - sign * 120.0 * nth_child]
     return base + 180.0, None, []
@@ -368,6 +390,7 @@ def _place_one(
                 gg,
                 child_count[p],
                 first_child_torsion,
+                first_child_idx,
                 in_ring,
                 coords,
                 bond_dihedral,
