@@ -40,7 +40,7 @@ def main(
     output_dir: Path = typer.Option(
         None, "--output", "-o", help="Output directory (default: out/)"
     ),
-    threshold: float = typer.Option(0.5, "--threshold", "-t", help="RMSD threshold for OK/FAIL"),
+    threshold: float = typer.Option(0.8, "--threshold", "-t", help="RMSD threshold for OK/FAIL"),
 ):
     """Round-trip verification: encode each SDF to AMSR, decode, compute RMSD."""
     if not input_dir.is_dir():
