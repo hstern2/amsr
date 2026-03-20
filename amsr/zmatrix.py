@@ -45,6 +45,8 @@ _BOND_LENGTHS = {
     ("N", "O", 1.5): 1.28,
     ("N", "O", 2): 1.21,
     ("N", "S", 1): 1.65,
+    ("N", "S", 1.5): 1.63,
+    ("N", "S", 2): 1.54,
     ("O", "O", 1): 1.48,
     ("O", "P", 1): 1.63,
     ("O", "P", 2): 1.48,
@@ -147,9 +149,20 @@ def _get_bond_length(mol, i, j):
     return _COVALENT_RADII.get(s1, 1.5) + _COVALENT_RADII.get(s2, 1.5)
 
 
+_ELEMENT_ANGLES = {
+    # Heteroatoms with bond angles smaller than the regular polygon formula
+    "S": {SP2: 102.0, SP3: 96.0},
+    "Se": {SP2: 100.0, SP3: 95.0},
+}
+
+
 def _get_bond_angle(mol, a, b, c):
     """Ideal bond angle a-b-c in degrees."""
-    hyb = mol.GetAtomWithIdx(b).GetHybridization()
+    atom_b = mol.GetAtomWithIdx(b)
+    hyb = atom_b.GetHybridization()
+    sym = atom_b.GetSymbol()
+    if sym in _ELEMENT_ANGLES and hyb in _ELEMENT_ANGLES[sym]:
+        return _ELEMENT_ANGLES[sym][hyb]
     if hyb == SP2:
         ri = mol.GetRingInfo()
         b_ab = mol.GetBondBetweenAtoms(a, b)
