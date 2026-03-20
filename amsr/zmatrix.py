@@ -492,7 +492,8 @@ def _fix_clashes(
     if not has_clash:
         return torsions
 
-    # Only flip SP3 centers (SP2 has no chirality ambiguity)
+    # Only flip SP3 centers (chirality ambiguity).
+    # SP2 overlaps in fused planar rings are fixed by ring closure optimization.
     i0 = atom_indices[0]
     if mol.GetAtomWithIdx(parent[i0]).GetHybridization() != SP3:
         return torsions
@@ -601,11 +602,21 @@ def _close_ring(mol, ring, new_atoms, coords, parent, placed):
         return c
 
     init_cost = cost(init)
-    result = minimize(cost, init, method="L-BFGS-B", options={"maxiter": 200, "ftol": 1e-10})
+    best = minimize(cost, init, method="L-BFGS-B", options={"maxiter": 200, "ftol": 1e-10})
 
-    if result.fun < init_cost:
+    # If stuck (no improvement), try perturbed starting points to escape saddle points
+    if best.fun >= init_cost - 1e-8:
+        for delta in [15.0, -15.0, 30.0, -30.0]:
+            perturbed = init + delta
+            r = minimize(
+                cost, perturbed, method="L-BFGS-B", options={"maxiter": 200, "ftol": 1e-10}
+            )
+            if r.fun < best.fun:
+                best = r
+
+    if best.fun < init_cost:
         _replace_with_synth_refs(
-            result.x,
+            best.x,
             atom_indices,
             ref_indices,
             g_indices,
