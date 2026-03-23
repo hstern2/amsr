@@ -288,19 +288,24 @@ def _choose_dihedral(
         mi, mj, angle = bond_dihedral[(g, p)]
         if mj == i:
             return angle, mi if mi != gg else None, []
-        # Offset from mj — only for first child placed
+        # Offset from mj based on graph-order position of i relative to mj
         if nth_child == 0 and (np.any(coords[mj]) or mj == 0):
             ref = coords[gg] if gg is not None else _synthetic_ref(coords, g, p)
             actual_mj = measure_torsion(ref, coords[g], coords[p], coords[mj])
             if hyb_p == SP2:
                 return actual_mj + 180.0, None, []
+            children = [
+                nb.GetIdx() for nb in mol.GetAtomWithIdx(p).GetNeighbors() if nb.GetIdx() != g
+            ]
+            steps = (children.index(i) - children.index(mj)) % len(children)
             chiral = mol.GetAtomWithIdx(p).GetChiralTag()
+            alt_steps = len(children) - steps
             if chiral == CCW:
-                return actual_mj - 120.0, None, []
+                return actual_mj - 120.0 * steps, None, [actual_mj + 120.0 * alt_steps]
             if chiral == CW:
-                return actual_mj + 120.0, None, []
+                return actual_mj + 120.0 * steps, None, [actual_mj - 120.0 * alt_steps]
             # Unspecified chirality — ambiguous
-            return actual_mj + 120.0, None, [actual_mj - 120.0]
+            return actual_mj + 120.0 * steps, None, [actual_mj - 120.0 * steps]
 
     # No AMSR — first child: search placed neighbors of g for a reference
     # atom that gives a known dihedral (same-ring → 0°).
@@ -368,7 +373,7 @@ def _choose_dihedral(
                 sign = -1 if swapped else 1
             else:
                 sign = 1 if swapped else -1
-            return base + sign * 120.0 * nth_child, None, []
+            return base + sign * 120.0 * nth_child, None, [base - sign * 120.0 * nth_child]
         sign = -1 if base > 0 else 1
         return base + sign * 120.0 * nth_child, None, [base - sign * 120.0 * nth_child]
     return base + 180.0, None, []
@@ -1014,7 +1019,7 @@ def GetConformer(
 
             placed_systems.add(si)
         else:
-            _place_one(
+            alts = _place_one(
                 mol,
                 i,
                 coords,
@@ -1025,6 +1030,23 @@ def GetConformer(
                 bond_dihedral,
             )
             placed.add(i)
+            p = parent[i]
+            if alts and p is not None and _has_collision(mol, i, coords, placed, threshold=1.0):
+                for alt in alts:
+                    child_count[p] -= 1
+                    _place_one(
+                        mol,
+                        i,
+                        coords,
+                        parent,
+                        child_count,
+                        first_child_torsion,
+                        first_child_idx,
+                        bond_dihedral,
+                        torsion_override=alt,
+                    )
+                    if not _has_collision(mol, i, coords, placed, threshold=1.0):
+                        break
 
     # Build RDKit conformer
     conf = Chem.Conformer(n)
