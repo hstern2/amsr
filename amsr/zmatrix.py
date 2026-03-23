@@ -349,6 +349,28 @@ def _choose_dihedral(
                         if len(ring) < 6:
                             coplanar = False
                         break
+        # SP3 parent with already-placed neighbor: offset using chirality.
+        if not coplanar and hyb_p == SP3:
+            for nb in mol.GetAtomWithIdx(p).GetNeighbors():
+                k = nb.GetIdx()
+                if k == g or k == i or not (np.any(coords[k]) or k == 0):
+                    continue
+                ref = coords[gg] if gg is not None else _synthetic_ref(coords, g, p)
+                actual_k = measure_torsion(ref, coords[g], coords[p], coords[k])
+                children = [
+                    nb2.GetIdx()
+                    for nb2 in mol.GetAtomWithIdx(p).GetNeighbors()
+                    if nb2.GetIdx() != g
+                ]
+                steps = (children.index(i) - children.index(k)) % len(children)
+                chiral = mol.GetAtomWithIdx(p).GetChiralTag()
+                alt_steps = len(children) - steps
+                if chiral == CCW:
+                    return actual_k - 120.0 * steps, None, [actual_k + 120.0 * alt_steps]
+                if chiral == CW:
+                    return actual_k + 120.0 * steps, None, [actual_k - 120.0 * alt_steps]
+                return actual_k + 120.0 * steps, None, [actual_k - 120.0 * steps]
+
         torsion = 0.0 if coplanar else 180.0
         return torsion, None, [torsion + 180.0]
 
@@ -622,6 +644,9 @@ def _place_ring_system_dfs(
                 torsion_override=alt,
             )
             placed.add(bj)
+            # Re-check: if alternative still collides, keep backtracking.
+            if _has_collision(mol, bj, coords, placed):
+                continue
             stack[-1] = (bj, balts, bsnap)
             k = visit_order.index(bj) + 1
             resolved = True
@@ -1016,6 +1041,19 @@ def GetConformer(
             # Optimize closure bonds jointly across the ring system
             if refine_rings:
                 _close_ring_system(mol, ring_systems[si], all_rings, coords, parent, bond_dihedral)
+                # Refresh first_child_torsion — closure optimization moved atoms.
+                for p in ring_systems[si]:
+                    fc = first_child_idx[p]
+                    if fc is None:
+                        continue
+                    g = parent[p]
+                    if g is None:
+                        continue
+                    gg = parent[g]
+                    std_ref = coords[gg] if gg is not None else _synthetic_ref(coords, g, p)
+                    first_child_torsion[p] = measure_torsion(
+                        std_ref, coords[g], coords[p], coords[fc]
+                    )
 
             placed_systems.add(si)
         else:
