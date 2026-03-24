@@ -728,13 +728,13 @@ def _place_ring_system_dfs(
 #
 # After z-matrix placement, closure bonds (ring bonds that aren't in the
 # parent chain) may have gaps.  We optimize non-planar torsions and bond
-# angles jointly to close every ring simultaneously.  Planar (aromatic)
-# ring torsions are kept fixed to avoid distorting flat rings.
+# angles jointly to close every ring simultaneously.  Planar (small SP2)
+# ring torsions are kept fixed to avoid distorting flat rings; torsions
+# at junctions with large (>6) rings are free even if one end is in a
+# small SP2 ring.
 #
-# The cost function is a sum of squared residuals — natural for future
-# gradient-based (analytical Jacobian) or Gauss-Newton/LM solvers.
-# Currently uses L-BFGS-B with numerical gradients.  A single optimization
-# from the initial z-matrix placement is sufficient.
+# Uses scipy least_squares (Levenberg-Marquardt) which exploits the
+# residual structure for efficient convergence.
 # ---------------------------------------------------------------------------
 
 
@@ -767,9 +767,11 @@ def _prepare_adjustable(mol, atoms, coords, parent, sp2_rings):
     bond_angles, torsions, planar_mask) as numpy arrays.
 
     planar_mask[k] is True if atom k's torsion is locked (both atom and
-    parent lie in the same fully-SP2 ring).  The optimizer should adjust
-    torsions only for non-planar atoms, but may adjust bond angles for all.
+    parent lie in the same small SP2 ring, and neither is at a junction
+    with a large (>6) ring).
     """
+    ri = mol.GetRingInfo()
+    large_rings = [set(ring) for ring in ri.AtomRings() if len(ring) > 6]
     a_idx, r_idx, g_idx, p_idx, bls, bas, tors, planar = (
         [],
         [],
@@ -787,7 +789,11 @@ def _prepare_adjustable(mol, atoms, coords, parent, sp2_rings):
         g = parent[p]
         ref_idx = parent[g] if parent[g] is not None else -1
 
-        is_planar = any({i, p}.issubset(sr) for sr in sp2_rings)
+        in_small_sp2 = any({i, p}.issubset(sr) for sr in sp2_rings)
+        # Free torsions at junctions with large (>6) rings — they may
+        # be non-planar even if one end is in a small SP2 ring.
+        in_large_ring = any(i in lr and p in lr for lr in large_rings)
+        is_planar = in_small_sp2 and not in_large_ring
 
         t = measure_torsion(_get_ref(coords, ref_idx, g, p), coords[g], coords[p], coords[i])
         a_idx.append(i)
@@ -923,8 +929,11 @@ def _collect_closure_constraints(mol, closure_pairs, system_set, bond_dihedral, 
     )
 
 
-_W_REG = math.sqrt(3e-4)
+# Residual weights (as sqrt so that squaring gives the cost coefficient).
+# Torsion reg is weaker than angle reg to allow larger torsion changes
+# when closing non-planar rings from flat initial placements.
 _W_TOR_REG = math.sqrt(7.5e-5)
+_W_REG = math.sqrt(3e-4)
 _W_DIHEDRAL = math.sqrt(3e-3)
 _W_CHIRAL = math.sqrt(3e-2)
 
@@ -949,11 +958,11 @@ def _closure_residuals(
 
     Components (weights):
       - Closure bond gap (1.0)
-      - Torsion regularization toward initial values (sqrt(3e-4))
-      - Bond angle regularization toward ideal values (sqrt(3e-4))
-      - Bond angle deviation at closure points (sqrt(3e-4))
-      - AMSR dihedral deviation (sqrt(3e-3))
-      - SP3 chirality improper torsion (sqrt(3e-2))
+      - Torsion regularization toward initial values (_W_TOR_REG)
+      - Bond angle regularization toward ideal values (_W_REG)
+      - Bond angle deviation at closure points (_W_REG)
+      - AMSR dihedral + SP2 planarity deviation (_W_DIHEDRAL)
+      - SP3 chirality improper torsion (_W_CHIRAL)
     """
     off = 0
 
@@ -1029,7 +1038,7 @@ def _close_ring_system(mol, system_atoms, all_rings, coords, parent, bond_dihedr
     sp2_rings = [
         set(ring)
         for ring in ri.AtomRings()
-        if all(mol.GetAtomWithIdx(a).GetHybridization() == SP2 for a in ring)
+        if len(ring) <= 6 and all(mol.GetAtomWithIdx(a).GetHybridization() == SP2 for a in ring)
     ]
 
     (
@@ -1056,20 +1065,21 @@ def _close_ring_system(mol, system_atoms, all_rings, coords, parent, bond_dihedr
         mol, closure_pairs, system_set, bond_dihedral, placed, sp2_rings
     )
 
-    def _to_intp(lst, cols):
+    cp = np.array(closure_pairs, dtype=np.intp).reshape(-1, 2)
+    ci = np.array(closure_ideals)
+
+    def _arr(lst, cols):
         return (
             np.array(lst, dtype=np.intp).reshape(-1, cols)
             if lst
             else np.empty((0, cols), dtype=np.intp)
         )
 
-    cp = np.array(closure_pairs, dtype=np.intp).reshape(-1, 2)
-    ci = np.array(closure_ideals)
-    at = _to_intp(angle_triples, 3)
+    at = _arr(angle_triples, 3)
     ai = np.array(angle_ideals) if angle_ideals else np.empty(0)
-    dq = _to_intp(dihedral_quads, 4)
+    dq = _arr(dihedral_quads, 4)
     dt = np.array(dihedral_targets) if dihedral_targets else np.empty(0)
-    cq = _to_intp(chiral_quads, 4)
+    cq = _arr(chiral_quads, 4)
     ct = np.array(chiral_targets) if chiral_targets else np.empty(0)
 
     free_tor_idx = np.where(~planar_mask)[0]
