@@ -10,6 +10,7 @@ cost function use only numpy arrays (no RDKit), making them suitable for
 reimplementation in C.
 """
 
+import math
 from typing import Optional
 
 import numpy as np
@@ -126,8 +127,8 @@ def _norm3(v):
 
 def place_atom(A, B, C, d, theta_deg, omega_deg):
     """Place atom D given refs A, B, C, bond length d, angle B-C-D, torsion A-B-C-D."""
-    theta = np.radians(theta_deg)
-    omega = np.radians(omega_deg)
+    theta = math.radians(theta_deg)
+    omega = math.radians(omega_deg)
     BC = C - B
     bc = _norm3(BC)
     if bc > 1e-10:
@@ -143,8 +144,8 @@ def place_atom(A, B, C, d, theta_deg, omega_deg):
     else:
         n /= nn
     m = _cross3(n, BC)
-    st = np.sin(theta)
-    return C + d * (-np.cos(theta) * BC + st * np.cos(omega) * m + st * np.sin(omega) * n)
+    st = math.sin(theta)
+    return C + d * (-math.cos(theta) * BC + st * math.cos(omega) * m + st * math.sin(omega) * n)
 
 
 def measure_torsion(p0, p1, p2, p3):
@@ -162,6 +163,59 @@ def measure_angle(coords, a, b, c):
     """Angle a-b-c (degrees) from coordinates."""
     v1, v2 = coords[a] - coords[b], coords[c] - coords[b]
     cos_a = np.dot(v1, v2) / (_norm3(v1) * _norm3(v2) + 1e-10)
+    return math.degrees(math.acos(max(-1.0, min(1.0, float(cos_a)))))
+
+
+# ---------------------------------------------------------------------------
+# Batch geometry primitives (vectorized numpy)
+# ---------------------------------------------------------------------------
+
+
+def _batch_norm3(v):
+    """Euclidean norm for Nx3 array, returns shape (N,)."""
+    return np.sqrt(v[:, 0] ** 2 + v[:, 1] ** 2 + v[:, 2] ** 2)
+
+
+def _batch_cross3(a, b):
+    """Cross product for Nx3 arrays, returns Nx3."""
+    return np.column_stack(
+        [
+            a[:, 1] * b[:, 2] - a[:, 2] * b[:, 1],
+            a[:, 2] * b[:, 0] - a[:, 0] * b[:, 2],
+            a[:, 0] * b[:, 1] - a[:, 1] * b[:, 0],
+        ]
+    )
+
+
+def _batch_measure_torsion(p0, p1, p2, p3):
+    """Torsion angles (degrees) for N sets of four 3-D points (each Nx3)."""
+    b1, b2, b3 = p1 - p0, p2 - p1, p3 - p2
+    n1 = _batch_cross3(b1, b2)
+    n2 = _batch_cross3(b2, b3)
+    n1n = _batch_norm3(n1)
+    n2n = _batch_norm3(n2)
+    # Avoid division by zero
+    safe = (n1n > 1e-10) & (n2n > 1e-10)
+    result = np.zeros(len(p0))
+    if not np.any(safe):
+        return result
+    n1s = n1[safe] / n1n[safe, None]
+    n2s = n2[safe] / n2n[safe, None]
+    b2s = b2[safe]
+    b2n = _batch_norm3(b2s)
+    b2s = b2s / b2n[:, None]
+    cross_n = _batch_cross3(n1s, n2s)
+    sin_val = np.sum(cross_n * b2s, axis=1)
+    cos_val = np.sum(n1s * n2s, axis=1)
+    result[safe] = np.degrees(np.arctan2(sin_val, cos_val))
+    return result
+
+
+def _batch_measure_angle(coords, triples):
+    """Angles a-b-c (degrees) from Nx3 index array. Returns shape (N,)."""
+    v1 = coords[triples[:, 0]] - coords[triples[:, 1]]
+    v2 = coords[triples[:, 2]] - coords[triples[:, 1]]
+    cos_a = np.sum(v1 * v2, axis=1) / (_batch_norm3(v1) * _batch_norm3(v2) + 1e-10)
     return np.degrees(np.arccos(np.clip(cos_a, -1, 1)))
 
 
@@ -869,6 +923,11 @@ def _collect_closure_constraints(mol, closure_pairs, system_set, bond_dihedral, 
     )
 
 
+_W_REG = math.sqrt(3e-4)
+_W_DIHEDRAL = math.sqrt(3e-3)
+_W_CHIRAL = math.sqrt(3e-2)
+
+
 def _closure_residuals(
     coords,
     closure_pairs,
@@ -883,10 +942,9 @@ def _closure_residuals(
     init_torsions,
     bond_angles,
     init_angles,
+    residuals,
 ):
-    """Compute residual vector for ring closure.
-
-    Returns array of weighted residuals whose sum-of-squares is the cost.
+    """Compute residual vector for ring closure (writes into pre-allocated residuals array).
 
     Components (weights):
       - Closure bond gap (1.0)
@@ -896,44 +954,61 @@ def _closure_residuals(
       - AMSR dihedral deviation (sqrt(3e-3))
       - SP3 chirality improper torsion (sqrt(3e-2))
     """
-    w_reg = np.sqrt(3e-4)
-    residuals = []
+    off = 0
 
     # Closure bond gaps (weight 1.0)
-    for k in range(len(closure_pairs)):
-        a, b = closure_pairs[k]
-        residuals.append(_norm3(coords[a] - coords[b]) - closure_ideals[k])
+    n_cp = len(closure_pairs)
+    diffs = coords[closure_pairs[:, 0]] - coords[closure_pairs[:, 1]]
+    residuals[off : off + n_cp] = _batch_norm3(diffs) - closure_ideals
+    off += n_cp
 
     # Torsion regularization
-    for k in range(len(torsions)):
-        residuals.append(w_reg * (torsions[k] - init_torsions[k]))
+    n_tor = len(torsions)
+    residuals[off : off + n_tor] = _W_REG * (torsions - init_torsions)
+    off += n_tor
 
     # Bond angle regularization toward ideal values
-    for k in range(len(bond_angles)):
-        residuals.append(w_reg * (bond_angles[k] - init_angles[k]))
+    n_ang = len(bond_angles)
+    residuals[off : off + n_ang] = _W_REG * (bond_angles - init_angles)
+    off += n_ang
 
     # Angle constraints at closure points
-    for k in range(len(angle_triples)):
-        a, b, c = angle_triples[k]
-        residuals.append(w_reg * (measure_angle(coords, a, b, c) - angle_ideals[k]))
+    n_at = len(angle_triples)
+    if n_at > 0:
+        residuals[off : off + n_at] = _W_REG * (
+            _batch_measure_angle(coords, angle_triples) - angle_ideals
+        )
+    off += n_at
 
-    # AMSR dihedral constraints (weight sqrt(3e-3))
-    w_dihedral = np.sqrt(3e-3)
-    for k in range(len(dihedral_quads)):
-        mi, i, j, mj = dihedral_quads[k]
-        measured = measure_torsion(coords[mi], coords[i], coords[j], coords[mj])
-        diff = (measured - dihedral_targets[k] + 180.0) % 360.0 - 180.0
-        residuals.append(w_dihedral * diff)
+    # AMSR dihedral + SP2 planarity constraints
+    n_dq = len(dihedral_quads)
+    if n_dq > 0:
+        measured = _batch_measure_torsion(
+            coords[dihedral_quads[:, 0]],
+            coords[dihedral_quads[:, 1]],
+            coords[dihedral_quads[:, 2]],
+            coords[dihedral_quads[:, 3]],
+        )
+        residuals[off : off + n_dq] = _W_DIHEDRAL * (
+            (measured - dihedral_targets + 180.0) % 360.0 - 180.0
+        )
+    off += n_dq
 
-    # SP3 chirality constraints (weight sqrt(3e-2))
-    w_chiral = np.sqrt(3e-2)
-    for k in range(len(chiral_quads)):
-        n0, center, n1, n2 = chiral_quads[k]
-        measured = measure_torsion(coords[n0], coords[center], coords[n1], coords[n2])
-        diff = (measured - chiral_targets[k] + 180.0) % 360.0 - 180.0
-        residuals.append(w_chiral * diff)
+    # SP3 chirality constraints
+    n_cq = len(chiral_quads)
+    if n_cq > 0:
+        measured = _batch_measure_torsion(
+            coords[chiral_quads[:, 0]],
+            coords[chiral_quads[:, 1]],
+            coords[chiral_quads[:, 2]],
+            coords[chiral_quads[:, 3]],
+        )
+        residuals[off : off + n_cq] = _W_CHIRAL * (
+            (measured - chiral_targets + 180.0) % 360.0 - 180.0
+        )
+    off += n_cq
 
-    return np.array(residuals)
+    return residuals
 
 
 def _close_ring_system(mol, system_atoms, all_rings, coords, parent, bond_dihedral, placed):
@@ -942,7 +1017,7 @@ def _close_ring_system(mol, system_atoms, all_rings, coords, parent, bond_dihedr
     Planar (aromatic) ring torsions are kept fixed.  Bond angles are
     adjustable with regularization toward ideal values.
     """
-    from scipy.optimize import minimize
+    from scipy.optimize import least_squares
 
     closure_pairs, closure_ideals = _find_closure_bonds(mol, system_atoms, all_rings, parent)
     if len(closure_pairs) < 2:
@@ -1003,13 +1078,18 @@ def _close_ring_system(mol, system_atoms, all_rings, coords, parent, bond_dihedr
     init_angles = bond_angles.copy()
     init_x = np.concatenate([init_free_tor, init_angles])
 
+    # Pre-allocate residual and torsion buffers
+    n_residuals = len(cp) + len(torsions) + len(bond_angles) + len(at) + len(dq) + len(cq)
+    residuals_buf = np.empty(n_residuals)
+    full_torsions = torsions.copy()
+
     sys_list = sorted(system_atoms)
     saved = coords[sys_list].copy()
 
-    def cost(x):
+    def residual_fn(x):
         free_t = x[:n_free_tor]
         angles = x[n_free_tor:]
-        full_torsions = torsions.copy()
+        full_torsions[:] = torsions
         full_torsions[free_tor_idx] = free_t
         _replace_atoms(
             full_torsions,
@@ -1021,7 +1101,7 @@ def _close_ring_system(mol, system_atoms, all_rings, coords, parent, bond_dihedr
             angles,
             coords,
         )
-        r = _closure_residuals(
+        _closure_residuals(
             coords,
             cp,
             ci,
@@ -1035,14 +1115,20 @@ def _close_ring_system(mol, system_atoms, all_rings, coords, parent, bond_dihedr
             torsions,
             angles,
             init_angles,
+            residuals_buf,
         )
-        return np.dot(r, r)
+        return residuals_buf
 
-    init_cost = cost(init_x)
-    best = minimize(cost, init_x, method="L-BFGS-B", options={"maxiter": 200, "ftol": 1e-10})
+    def residual_fn_copy(x):
+        """Return a copy for least_squares (which retains references)."""
+        return residual_fn(x).copy()
 
-    if best.fun < init_cost:
-        cost(best.x)  # apply the best solution to coords
+    init_r = residual_fn(init_x)
+    init_cost = np.dot(init_r, init_r)
+    best = least_squares(residual_fn_copy, init_x, method="lm", ftol=1e-10, xtol=1e-10, gtol=1e-10)
+
+    if best.cost * 2.0 < init_cost:
+        residual_fn(best.x)  # apply the best solution to coords
     else:
         coords[sys_list] = saved
 
