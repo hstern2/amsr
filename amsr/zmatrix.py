@@ -452,6 +452,19 @@ def _choose_dihedral(
             else:
                 sign = 1 if swapped else -1
             return base + sign * 120.0 * nth_child, None, [base - sign * 120.0 * nth_child]
+        # If the backward AMSR dihedral targets a later sibling (mj not
+        # yet placed), choose the offset that avoids that sibling's
+        # future position.  This arises at quaternary centers where mj
+        # is the chain continuation, not the first child.
+        if g is not None and (g, p) in bond_dihedral:
+            mi_bwd, mj_bwd, angle_bwd = bond_dihedral[(g, p)]
+            if mj_bwd != i and not _is_placed(coords, mj_bwd) and mi_bwd == gg:
+                # angle_bwd is the torsion mj_bwd will get from std ref
+                for s in (1, -1):
+                    candidate = base + s * 120.0 * nth_child
+                    diff = abs((candidate - angle_bwd + 180.0) % 360.0 - 180.0)
+                    if diff > 30.0:
+                        return candidate, None, [base - s * 120.0 * nth_child]
         sign = -1 if base > 0 else 1
         return base + sign * 120.0 * nth_child, None, [base - sign * 120.0 * nth_child]
     return base + 180.0, None, []

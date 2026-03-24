@@ -12,6 +12,25 @@ from .pibonds import PiBonds
 from .tokens import DIHEDRAL_FOR_BOND_SYMBOL, L_BRACKET, R_BRACKET, SKIP, RegExp
 
 
+def _dihedral_ref(candidates, mol):
+    """Pick dihedral reference: smallest index, but avoid equivalent terminals.
+
+    If the smallest-index candidate is a terminal (degree 1) and there
+    are other terminals among the candidates, prefer the smallest-index
+    non-terminal instead.  This ensures the dihedral encodes the chain
+    continuation, not one of several equivalent terminal groups (e.g.
+    methyls at a quaternary center).  Must match bond.py convention.
+    """
+    pick = min(candidates)
+    if mol.GetAtomWithIdx(pick).GetDegree() == 1:
+        n_terminals = sum(1 for c in candidates if mol.GetAtomWithIdx(c).GetDegree() == 1)
+        if n_terminals > 1:
+            non_terminal = [c for c in candidates if mol.GetAtomWithIdx(c).GetDegree() > 1]
+            if non_terminal:
+                return min(non_terminal)
+    return pick
+
+
 def _addBond(mol, atom, i, j, bond, dihedral_for_bond):
     atom[i].addBondTo(atom[j])
     n = mol.AddBond(i, j, Chem.BondType.SINGLE) - 1
@@ -143,11 +162,11 @@ def ToMol(
             if len(ni) == 0 or len(nj) == 0:
                 b.SetStereo(Chem.BondStereo.STEREONONE)
             else:
-                mi = min(ni)
-                mj = min(nj)
                 if is_EZ:
-                    b.SetStereoAtoms(mi, mj)
+                    b.SetStereoAtoms(min(ni), min(nj))
                 if is_dihedral and dihedral is not None:
+                    mi = _dihedral_ref(ni, mol)
+                    mj = _dihedral_ref(nj, mol)
                     dihedral[mi, i, j, mj] = dihedral_for_bond[k]
     PiBonds(mol, atom, stringent)
     for i, a in enumerate(atom):

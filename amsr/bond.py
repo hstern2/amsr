@@ -23,17 +23,29 @@ def _is_rotatable(b):
 
 
 def _earliestSeenNotIncluding(a, bi):
-    qi = None
-    qSeenIndex = None
+    """Pick dihedral reference neighbor: earliest seen, avoiding equivalent terminals.
+
+    If the earliest-seen candidate is a terminal (degree 1) and there are
+    other terminals, prefer the earliest-seen non-terminal instead.  This
+    ensures the dihedral encodes the chain continuation, not one of several
+    equivalent terminal groups.  Must match decode.py:_dihedral_ref.
+    """
+    nbrs = []
     for c in a.GetNeighbors():
         ci = c.GetIdx()
-        if ci == bi:
-            continue
-        cSeenIndex = GetSeenIndex(c)
-        if qi is None or cSeenIndex < qSeenIndex:
-            qi = ci
-            qSeenIndex = cSeenIndex
-    return qi
+        if ci != bi:
+            nbrs.append((GetSeenIndex(c), c.GetDegree(), ci))
+    if not nbrs:
+        return None
+    nbrs.sort()  # by seenIndex
+    pick_seen, pick_deg, pick_ci = nbrs[0]
+    if pick_deg == 1:
+        n_terminals = sum(1 for _, d, _ in nbrs if d == 1)
+        if n_terminals > 1:
+            for _, d, ci in nbrs:
+                if d > 1:
+                    return ci
+    return pick_ci
 
 
 class Bond:
