@@ -871,7 +871,7 @@ def _collect_closure_constraints(mol, closure_pairs, system_set, bond_dihedral, 
         if (
             mi in placed
             and mj in placed
-            and (key in closure_set or (i in system_set and j in system_set))
+            and (key in closure_set or (i in system_set or j in system_set))
         ):
             dihedral_quads.append((mi, i, j, mj))
             dihedral_targets.append(float(angle))
@@ -924,6 +924,7 @@ def _collect_closure_constraints(mol, closure_pairs, system_set, bond_dihedral, 
 
 
 _W_REG = math.sqrt(3e-4)
+_W_TOR_REG = math.sqrt(7.5e-5)
 _W_DIHEDRAL = math.sqrt(3e-3)
 _W_CHIRAL = math.sqrt(3e-2)
 
@@ -964,7 +965,7 @@ def _closure_residuals(
 
     # Torsion regularization
     n_tor = len(torsions)
-    residuals[off : off + n_tor] = _W_REG * (torsions - init_torsions)
+    residuals[off : off + n_tor] = _W_TOR_REG * (torsions - init_torsions)
     off += n_tor
 
     # Bond angle regularization toward ideal values
