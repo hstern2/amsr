@@ -1231,26 +1231,34 @@ def GetConformer(
                 placed,
             )
 
-            # Temporarily place non-ring children of ring atoms so that
-            # closure constraints can use their angles (important for
-            # bridged ring systems like dibenzazepines).
+            # Temporarily place non-ring neighbors of ring atoms AND
+            # siblings of ring entry points so that closure constraints
+            # (including cross-system AMSR dihedrals) have valid
+            # reference coordinates.
             temp_placed: list[int] = []
+            temp_candidates: set[int] = set()
             for ra in ring_systems[si]:
                 for nb in mol.GetAtomWithIdx(ra).GetNeighbors():
-                    ci = nb.GetIdx()
-                    if ci not in placed and ci not in atom_to_system:
-                        _place_one(
-                            mol,
-                            ci,
-                            coords,
-                            parent,
-                            child_count,
-                            first_child_torsion,
-                            first_child_idx,
-                            bond_dihedral,
-                        )
-                        placed.add(ci)
-                        temp_placed.append(ci)
+                    temp_candidates.add(nb.GetIdx())
+                # Also include siblings: other children of ra's parent
+                rp = parent[ra]
+                if rp is not None:
+                    for nb in mol.GetAtomWithIdx(rp).GetNeighbors():
+                        temp_candidates.add(nb.GetIdx())
+            for ci in sorted(temp_candidates):
+                if ci not in placed and ci not in atom_to_system:
+                    _place_one(
+                        mol,
+                        ci,
+                        coords,
+                        parent,
+                        child_count,
+                        first_child_torsion,
+                        first_child_idx,
+                        bond_dihedral,
+                    )
+                    placed.add(ci)
+                    temp_placed.append(ci)
 
             # Optimize closure bonds jointly across the ring system
             if refine_rings:

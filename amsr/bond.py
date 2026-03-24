@@ -22,13 +22,12 @@ def _is_rotatable(b):
     return True
 
 
-def _earliestSeenNotIncluding(a, bi):
-    """Pick dihedral reference neighbor: earliest seen, avoiding equivalent terminals.
+def _earliestSeenNotIncluding(a, bi, avoid_equiv_terminals=False):
+    """Pick dihedral reference neighbor: earliest seen.
 
-    If the earliest-seen candidate is a terminal (degree 1) and there are
-    other terminals, prefer the earliest-seen non-terminal instead.  This
-    ensures the dihedral encodes the chain continuation, not one of several
-    equivalent terminal groups.  Must match decode.py:_dihedral_ref.
+    If avoid_equiv_terminals is True and the earliest-seen candidate is a
+    terminal (degree 1) with other terminals present, prefer the earliest-
+    seen non-terminal instead.  Must match decode.py:_dihedral_ref.
     """
     nbrs = []
     for c in a.GetNeighbors():
@@ -39,9 +38,8 @@ def _earliestSeenNotIncluding(a, bi):
         return None
     nbrs.sort()  # by seenIndex
     pick_seen, pick_deg, pick_ci = nbrs[0]
-    if pick_deg == 1:
-        n_terminals = sum(1 for _, d, _ in nbrs if d == 1)
-        if n_terminals > 1:
+    if avoid_equiv_terminals and pick_deg == 1:
+        if sum(1 for _, d, _ in nbrs if d == 1) > 1:
             for _, d, ci in nbrs:
                 if d > 1:
                     return ci
@@ -68,8 +66,8 @@ class Bond:
         a2 = b.GetEndAtom()
         i2 = a2.GetIdx()
         if self.isRotatable:
-            j1 = _earliestSeenNotIncluding(a1, i2)
-            j2 = _earliestSeenNotIncluding(a2, i1)
+            j1 = _earliestSeenNotIncluding(a1, i2, avoid_equiv_terminals=True)
+            j2 = _earliestSeenNotIncluding(a2, i1, avoid_equiv_terminals=True)
             return BOND_SYMBOL_FOR_DIHEDRAL[GetRoundedDihedral(m, (j1, i1, i2, j2), 30)]
         n1 = [GetSeenIndex(c) for c in a1.GetNeighbors() if c.GetIdx() != i2]
         n2 = [GetSeenIndex(c) for c in a2.GetNeighbors() if c.GetIdx() != i1]

@@ -165,9 +165,9 @@ def ToMol(
                 if is_EZ:
                     b.SetStereoAtoms(min(ni), min(nj))
                 if is_dihedral and dihedral is not None:
-                    mi = _dihedral_ref(ni, mol)
-                    mj = _dihedral_ref(nj, mol)
-                    dihedral[mi, i, j, mj] = dihedral_for_bond[k]
+                    dihedral[_dihedral_ref(ni, mol), i, j, _dihedral_ref(nj, mol)] = (
+                        dihedral_for_bond[k]
+                    )
     PiBonds(mol, atom, stringent)
     for i, a in enumerate(atom):
         if a.bangs > 0 and a.canBond():
