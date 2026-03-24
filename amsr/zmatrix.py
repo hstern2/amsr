@@ -82,6 +82,37 @@ CW = Chem.ChiralType.CHI_TETRAHEDRAL_CW
 CCW = Chem.ChiralType.CHI_TETRAHEDRAL_CCW
 
 
+def _is_placed(coords, k):
+    """True if atom k has been placed (has nonzero coords, or is atom 0)."""
+    return k == 0 or np.any(coords[k])
+
+
+def _sp3_offset(mol, p, g, gg, i, k, coords):
+    """Compute torsion and alternatives for atom i offset from placed neighbor k.
+
+    Uses graph-order chirality convention at SP3 parent p.
+    Returns (torsion, [alternatives]).
+    """
+    ref = coords[gg] if gg is not None else _synthetic_ref(coords, g, p)
+    actual_k = measure_torsion(ref, coords[g], coords[p], coords[k])
+    children = [nb.GetIdx() for nb in mol.GetAtomWithIdx(p).GetNeighbors() if nb.GetIdx() != g]
+    n_children = len(children)
+    steps = (children.index(i) - children.index(k)) % n_children
+    chiral = mol.GetAtomWithIdx(p).GetChiralTag()
+    if chiral == CW:
+        sign = 1.0
+    elif chiral == CCW:
+        sign = -1.0
+    else:
+        sign = 1.0
+    torsion = actual_k + sign * 120.0 * steps
+    # Alternatives: all other 120° positions around k.
+    alts = [actual_k + sign * 120.0 * s for s in range(1, n_children) if s != steps]
+    # Also include the opposite-chirality positions.
+    alts.extend(actual_k - sign * 120.0 * s for s in range(1, n_children))
+    return torsion, alts
+
+
 # ---------------------------------------------------------------------------
 # Geometry primitives (pure numpy — C-portable)
 # ---------------------------------------------------------------------------
@@ -289,23 +320,13 @@ def _choose_dihedral(
         if mj == i:
             return angle, mi if mi != gg else None, []
         # Offset from mj based on graph-order position of i relative to mj
-        if nth_child == 0 and (np.any(coords[mj]) or mj == 0):
-            ref = coords[gg] if gg is not None else _synthetic_ref(coords, g, p)
-            actual_mj = measure_torsion(ref, coords[g], coords[p], coords[mj])
+        if nth_child == 0 and _is_placed(coords, mj):
             if hyb_p == SP2:
+                ref = coords[gg] if gg is not None else _synthetic_ref(coords, g, p)
+                actual_mj = measure_torsion(ref, coords[g], coords[p], coords[mj])
                 return actual_mj + 180.0, None, []
-            children = [
-                nb.GetIdx() for nb in mol.GetAtomWithIdx(p).GetNeighbors() if nb.GetIdx() != g
-            ]
-            steps = (children.index(i) - children.index(mj)) % len(children)
-            chiral = mol.GetAtomWithIdx(p).GetChiralTag()
-            alt_steps = len(children) - steps
-            if chiral == CCW:
-                return actual_mj - 120.0 * steps, None, [actual_mj + 120.0 * alt_steps]
-            if chiral == CW:
-                return actual_mj + 120.0 * steps, None, [actual_mj - 120.0 * alt_steps]
-            # Unspecified chirality — ambiguous
-            return actual_mj + 120.0 * steps, None, [actual_mj - 120.0 * steps]
+            torsion, alts = _sp3_offset(mol, p, g, gg, i, mj, coords)
+            return torsion, None, alts
 
     # No AMSR — first child: search placed neighbors of g for a reference
     # atom that gives a known dihedral (same-ring → 0°).
@@ -353,23 +374,9 @@ def _choose_dihedral(
         if not coplanar and hyb_p == SP3:
             for nb in mol.GetAtomWithIdx(p).GetNeighbors():
                 k = nb.GetIdx()
-                if k == g or k == i or not (np.any(coords[k]) or k == 0):
-                    continue
-                ref = coords[gg] if gg is not None else _synthetic_ref(coords, g, p)
-                actual_k = measure_torsion(ref, coords[g], coords[p], coords[k])
-                children = [
-                    nb2.GetIdx()
-                    for nb2 in mol.GetAtomWithIdx(p).GetNeighbors()
-                    if nb2.GetIdx() != g
-                ]
-                steps = (children.index(i) - children.index(k)) % len(children)
-                chiral = mol.GetAtomWithIdx(p).GetChiralTag()
-                alt_steps = len(children) - steps
-                if chiral == CCW:
-                    return actual_k - 120.0 * steps, None, [actual_k + 120.0 * alt_steps]
-                if chiral == CW:
-                    return actual_k + 120.0 * steps, None, [actual_k - 120.0 * alt_steps]
-                return actual_k + 120.0 * steps, None, [actual_k - 120.0 * steps]
+                if k != g and k != i and _is_placed(coords, k):
+                    torsion, alts = _sp3_offset(mol, p, g, gg, i, k, coords)
+                    return torsion, None, alts
 
         torsion = 0.0 if coplanar else 180.0
         return torsion, None, [torsion + 180.0]
@@ -738,10 +745,7 @@ def _prepare_adjustable(mol, atoms, coords, parent):
         g = parent[p]
         ref_idx = parent[g] if parent[g] is not None else -1
 
-        check = {i, p, g}
-        if ref_idx >= 0:
-            check.add(ref_idx)
-        is_planar = any(check.issubset(sr) for sr in sp2_rings)
+        is_planar = any({i, p}.issubset(sr) for sr in sp2_rings)
 
         t = measure_torsion(_get_ref(coords, ref_idx, g, p), coords[g], coords[p], coords[i])
         a_idx.append(i)
@@ -791,40 +795,57 @@ def _find_closure_bonds(mol, system_atoms, all_rings, parent):
     return pairs, ideals
 
 
-def _collect_closure_constraints(mol, closure_pairs, system_set, bond_dihedral):
+def _collect_closure_constraints(mol, closure_pairs, system_set, bond_dihedral, placed):
     """Collect angle and dihedral constraints for closure optimization.
 
     Returns (angle_triples, angle_ideals, dihedral_quads, dihedral_targets).
     """
     closure_set = {(min(a, b), max(a, b)) for a, b in closure_pairs}
 
-    # Bond angle constraints at closure points
+    # Bond angle constraints at closure points.  Only include neighbors
+    # that are already placed (have valid coordinates).
     angle_triples = []
     angle_ideals = []
     for a, b in closure_pairs:
         for nb in mol.GetAtomWithIdx(a).GetNeighbors():
             c = nb.GetIdx()
-            if c != b and c in system_set:
+            if c != b and c in placed:
                 angle_triples.append((c, a, b))
                 angle_ideals.append(_get_bond_angle(mol, c, a, b))
         for nb in mol.GetAtomWithIdx(b).GetNeighbors():
             c = nb.GetIdx()
-            if c != a and c in system_set:
+            if c != a and c in placed:
                 angle_triples.append((a, b, c))
                 angle_ideals.append(_get_bond_angle(mol, a, b, c))
 
-    # AMSR dihedral constraints for bonds within the ring system
+    # AMSR dihedral constraints.
     dihedral_quads = []
     dihedral_targets = []
     for (i, j), (mi, mj, angle) in bond_dihedral.items():
         if i >= j:
             continue
         key = (min(i, j), max(i, j))
-        if (key in closure_set or (i in system_set and j in system_set)) and (
-            mi in system_set and mj in system_set
+        if (
+            mi in placed
+            and mj in placed
+            and (key in closure_set or (i in system_set and j in system_set))
         ):
             dihedral_quads.append((mi, i, j, mj))
             dihedral_targets.append(float(angle))
+
+    # SP2 planarity: improper torsion n1-center-n2-n3 = ±180° for SP2
+    # ring atoms with 3 placed neighbors.
+    for a in system_set:
+        atom = mol.GetAtomWithIdx(a)
+        if atom.GetHybridization() != SP2:
+            continue
+        nbrs = [nb.GetIdx() for nb in atom.GetNeighbors()]
+        if len(nbrs) != 3:
+            continue
+        if not all(n in placed for n in nbrs):
+            continue
+        dihedral_quads.append((nbrs[0], a, nbrs[1], nbrs[2]))
+        dihedral_targets.append(180.0)
 
     return angle_triples, angle_ideals, dihedral_quads, dihedral_targets
 
@@ -881,7 +902,7 @@ def _closure_residuals(
     return np.array(residuals)
 
 
-def _close_ring_system(mol, system_atoms, all_rings, coords, parent, bond_dihedral):
+def _close_ring_system(mol, system_atoms, all_rings, coords, parent, bond_dihedral, placed):
     """Optimize non-planar torsions and bond angles to close all rings.
 
     Planar (aromatic) ring torsions are kept fixed.  Bond angles are
@@ -908,7 +929,7 @@ def _close_ring_system(mol, system_atoms, all_rings, coords, parent, bond_dihedr
         return
 
     angle_triples, angle_ideals, dihedral_quads, dihedral_targets = _collect_closure_constraints(
-        mol, closure_pairs, system_set, bond_dihedral
+        mol, closure_pairs, system_set, bond_dihedral, placed
     )
 
     cp = np.array(closure_pairs, dtype=np.intp)
@@ -1040,7 +1061,9 @@ def GetConformer(
 
             # Optimize closure bonds jointly across the ring system
             if refine_rings:
-                _close_ring_system(mol, ring_systems[si], all_rings, coords, parent, bond_dihedral)
+                _close_ring_system(
+                    mol, ring_systems[si], all_rings, coords, parent, bond_dihedral, placed
+                )
                 # Refresh first_child_torsion — closure optimization moved atoms.
                 for p in ring_systems[si]:
                     fc = first_child_idx[p]
