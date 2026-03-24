@@ -1045,6 +1045,13 @@ def _close_ring_system(mol, system_atoms, all_rings, coords, parent, bond_dihedr
     closure_pairs, closure_ideals = _find_closure_bonds(mol, system_atoms, all_rings, parent)
     if len(closure_pairs) < 2:
         return
+    # Skip when all closure bonds are already well-closed.
+    max_gap = max(
+        abs(_norm3(coords[a] - coords[b]) - ideal)
+        for (a, b), ideal in zip(closure_pairs, closure_ideals)
+    )
+    if max_gap < 0.05:
+        return
 
     system_set = set(system_atoms)
     ri = mol.GetRingInfo()
@@ -1153,6 +1160,25 @@ def _close_ring_system(mol, system_atoms, all_rings, coords, parent, bond_dihedr
 
     if best.cost * 2.0 < init_cost:
         residual_fn(best.x)  # apply the best solution to coords
+        # Reject if optimization severely pyramidalized an SP2 atom in a
+        # small planar ring not fused to any large (>6) ring.
+        large_atoms = set()
+        for ring in ri.AtomRings():
+            if len(ring) > 6:
+                large_atoms.update(ring)
+        for a in system_set:
+            if mol.GetAtomWithIdx(a).GetHybridization() != SP2:
+                continue
+            nbrs = [nb.GetIdx() for nb in mol.GetAtomWithIdx(a).GetNeighbors()]
+            if len(nbrs) != 3:
+                continue
+            a_rings = [sr for sr in sp2_rings if a in sr]
+            if not a_rings or any(sr & large_atoms for sr in a_rings):
+                continue
+            imp = abs(measure_torsion(coords[nbrs[0]], coords[a], coords[nbrs[1]], coords[nbrs[2]]))
+            if imp < 140.0:
+                coords[sys_list] = saved
+                break
     else:
         coords[sys_list] = saved
 
