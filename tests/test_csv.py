@@ -25,3 +25,7 @@ def test_ertl() -> None:
 
 def test_DEL() -> None:
     _test_csv("DEL_compounds.csv")
+
+
+def test_chembl() -> None:
+    _test_csv("chembl_35_5000.csv", stringent=False)

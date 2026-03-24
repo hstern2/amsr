@@ -539,8 +539,28 @@ def _place_one(
                 coords,
                 bond_dihedral,
             )
-        if ref_override is not None:
+        if ref_override is not None and _is_placed(coords, ref_override):
             ref = coords[ref_override]
+        elif ref_override is not None and not _is_placed(coords, ref_override):
+            # Ref atom not yet placed — predict its direction from the
+            # tetrahedral geometry at the grandparent (g).  The 4th bond
+            # of an SP3 center points opposite the sum of the other 3.
+            center = coords[g]
+            v_sum = np.zeros(3)
+            n_placed = 0
+            for nb in mol.GetAtomWithIdx(g).GetNeighbors():
+                ni = nb.GetIdx()
+                if ni != ref_override and _is_placed(coords, ni):
+                    v = coords[ni] - center
+                    vn = _norm3(v)
+                    if vn > 1e-10:
+                        v_sum += v / vn
+                        n_placed += 1
+            vn = _norm3(v_sum)
+            if n_placed >= 2 and vn > 1e-10:
+                ref = center - (v_sum / vn) * _get_bond_length(mol, g, ref_override)
+            else:
+                ref, _ = _ref_point(coords, parent, g, p, i, bond_dihedral)
         else:
             ref, _ = _ref_point(coords, parent, g, p, i, bond_dihedral)
         coords[i] = place_atom(ref, coords[g], coords[p], bond_len, bond_angle, torsion)
@@ -1043,7 +1063,7 @@ def _close_ring_system(mol, system_atoms, all_rings, coords, parent, bond_dihedr
     from scipy.optimize import least_squares
 
     closure_pairs, closure_ideals = _find_closure_bonds(mol, system_atoms, all_rings, parent)
-    if len(closure_pairs) < 2:
+    if not closure_pairs:
         return
     # Skip when all closure bonds are already well-closed.
     max_gap = max(
@@ -1156,16 +1176,14 @@ def _close_ring_system(mol, system_atoms, all_rings, coords, parent, bond_dihedr
 
     init_r = residual_fn(init_x)
     init_cost = np.dot(init_r, init_r)
-    best = least_squares(residual_fn_copy, init_x, method="lm", ftol=1e-10, xtol=1e-10, gtol=1e-10)
 
-    if best.cost * 2.0 < init_cost:
-        residual_fn(best.x)  # apply the best solution to coords
-        # Reject if optimization severely pyramidalized an SP2 atom in a
-        # small planar ring not fused to any large (>6) ring.
-        large_atoms = set()
-        for ring in ri.AtomRings():
-            if len(ring) > 6:
-                large_atoms.update(ring)
+    # Identify SP2 atoms to check for pyramidalization.
+    large_atoms = set()
+    for ring in ri.AtomRings():
+        if len(ring) > 6:
+            large_atoms.update(ring)
+
+    def _passes_planarity(skip_junctions=False):
         for a in system_set:
             if mol.GetAtomWithIdx(a).GetHybridization() != SP2:
                 continue
@@ -1175,10 +1193,56 @@ def _close_ring_system(mol, system_atoms, all_rings, coords, parent, bond_dihedr
             a_rings = [sr for sr in sp2_rings if a in sr]
             if not a_rings or any(sr & large_atoms for sr in a_rings):
                 continue
+            if skip_junctions and not all(any(n in sr for sr in a_rings) for n in nbrs):
+                continue
             imp = abs(measure_torsion(coords[nbrs[0]], coords[a], coords[nbrs[1]], coords[nbrs[2]]))
             if imp < 140.0:
-                coords[sys_list] = saved
-                break
+                return False
+        return True
+
+    # When closure gaps are large, scan each free torsion at ±90°
+    # offsets to find torsions that close the ring.  If found, apply
+    # them directly — the LM optimizer tends to re-open gaps to satisfy
+    # soft dihedral/chiral constraints.
+    if max_gap > 0.3:
+        scan_free = init_free_tor.copy()
+        scan_cost = init_cost
+        for fi in range(n_free_tor):
+            for offset in (-90.0, 90.0):
+                trial = scan_free.copy()
+                trial[fi] += offset
+                trial_x = np.concatenate([trial, init_angles])
+                trial_r = residual_fn(trial_x)
+                trial_cost = np.dot(trial_r, trial_r)
+                if trial_cost < scan_cost:
+                    scan_cost = trial_cost
+                    scan_free = trial.copy()
+        coords[sys_list] = saved
+        if scan_cost < init_cost * 0.5:
+            full_torsions[:] = torsions
+            full_torsions[free_tor_idx] = scan_free
+            _replace_atoms(
+                full_torsions,
+                atom_indices,
+                ref_indices,
+                g_indices,
+                p_indices,
+                bond_lens,
+                init_angles,
+                coords,
+            )
+            diffs = coords[cp[:, 0]] - coords[cp[:, 1]]
+            if np.max(np.abs(_batch_norm3(diffs) - ci)) < 0.1:
+                if _passes_planarity(skip_junctions=True):
+                    return
+            coords[sys_list] = saved
+
+    best = least_squares(residual_fn_copy, init_x, method="lm", ftol=1e-10, xtol=1e-10, gtol=1e-10)
+
+    if best.cost * 2.0 < init_cost:
+        residual_fn(best.x)  # apply the best solution to coords
+        if not _passes_planarity():
+            coords[sys_list] = saved
     else:
         coords[sys_list] = saved
 
