@@ -17,9 +17,10 @@ def _dihedral_ref(candidates, mol):
 
     If the smallest-index candidate is a terminal (degree 1) and there
     are other terminals among the candidates, prefer the smallest-index
-    non-terminal instead.  This ensures the dihedral encodes the chain
-    continuation, not one of several equivalent terminal groups (e.g.
-    methyls at a quaternary center).  Must match bond.py convention.
+    non-terminal instead.  When all candidates are terminals, break ties
+    by highest atomic number to stay consistent with bond.py regardless
+    of group-expansion atom ordering.
+    Must match bond.py convention.
     """
     pick = min(candidates)
     if mol.GetAtomWithIdx(pick).GetDegree() == 1:
@@ -28,6 +29,12 @@ def _dihedral_ref(candidates, mol):
             non_terminal = [c for c in candidates if mol.GetAtomWithIdx(c).GetDegree() > 1]
             if non_terminal:
                 return min(non_terminal)
+            # All terminals: pick by highest atomic number (stable across
+            # group-expansion reorderings), then smallest index.
+            return min(
+                candidates,
+                key=lambda c: (-mol.GetAtomWithIdx(c).GetAtomicNum(), c),
+            )
     return pick
 
 

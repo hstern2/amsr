@@ -4,12 +4,10 @@ from rdkit import Chem
 from rdkit.Chem import rdMolAlign
 
 
-def Roundtrip(mol: Chem.Mol) -> tuple[str, float, Chem.Mol, float, Chem.Mol]:
+def Roundtrip(mol: Chem.Mol) -> tuple[str, float, Chem.Mol]:
     """Encode mol to AMSR, decode, generate conformer.
 
-    Returns (amsr_str, rmsd_raw, mol_raw, rmsd_refined, mol_refined).
-    rmsd_raw/mol_raw: z-matrix placement only (no ring refinement).
-    rmsd_refined/mol_refined: with ring closure refinement.
+    Returns (amsr_str, rmsd, mol_conformer).
     """
     from .decode import ToMol
     from .encode import FromMol
@@ -18,8 +16,6 @@ def Roundtrip(mol: Chem.Mol) -> tuple[str, float, Chem.Mol, float, Chem.Mol]:
     dihedral: dict[tuple[int, int, int, int], int] = {}
     s = FromMol(mol)
     mol2 = ToMol(s, dihedral=dihedral)
-    mol_raw = GetConformer(mol2, dihedral=dihedral, refine_rings=False)
-    rmsd_raw = rdMolAlign.GetBestRMS(mol_raw, mol)
-    mol_refined = GetConformer(mol2, dihedral=dihedral, refine_rings=True)
-    rmsd_refined = rdMolAlign.GetBestRMS(mol_refined, mol)
-    return s, rmsd_raw, mol_raw, rmsd_refined, mol_refined
+    mol3 = GetConformer(mol2, dihedral=dihedral)
+    rmsd = rdMolAlign.GetBestRMS(mol3, mol)
+    return s, rmsd, mol3

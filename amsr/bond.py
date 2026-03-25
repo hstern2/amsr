@@ -27,8 +27,12 @@ def _earliestSeenNotIncluding(a, bi, avoid_equiv_terminals=False):
 
     If avoid_equiv_terminals is True and the earliest-seen candidate is a
     terminal (degree 1) with other terminals present, prefer the earliest-
-    seen non-terminal instead.  Must match decode.py:_dihedral_ref.
+    seen non-terminal instead.  When all candidates are terminals, break
+    ties by highest atomic number to stay consistent with decode.py
+    regardless of group-expansion atom ordering.
+    Must match decode.py:_dihedral_ref.
     """
+    mol = a.GetOwningMol()
     nbrs = []
     for c in a.GetNeighbors():
         ci = c.GetIdx()
@@ -39,10 +43,18 @@ def _earliestSeenNotIncluding(a, bi, avoid_equiv_terminals=False):
     nbrs.sort()  # by seenIndex
     pick_seen, pick_deg, pick_ci = nbrs[0]
     if avoid_equiv_terminals and pick_deg == 1:
-        if sum(1 for _, d, _ in nbrs if d == 1) > 1:
+        n_terminals = sum(1 for _, d, _ in nbrs if d == 1)
+        if n_terminals > 1:
             for _, d, ci in nbrs:
                 if d > 1:
                     return ci
+            # All terminals: pick by highest atomic number (stable across
+            # group-expansion reorderings), then smallest seenIndex.
+            terminals = [
+                (-mol.GetAtomWithIdx(ci).GetAtomicNum(), seen, ci) for seen, d, ci in nbrs if d == 1
+            ]
+            terminals.sort()
+            return terminals[0][2]
     return pick_ci
 
 
