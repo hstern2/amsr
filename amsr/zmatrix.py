@@ -159,6 +159,21 @@ def measure_torsion(p0, p1, p2, p3):
     return np.degrees(np.arctan2(np.dot(_cross3(n1, n2), b2 / _norm3(b2)), np.dot(n1, n2)))
 
 
+def _set_dihedral(coords, mi, i, j, mj, target, atoms_to_rotate):
+    """Rotate atoms_to_rotate around bond i-j to set torsion(mi,i,j,mj) = target."""
+    current = measure_torsion(coords[mi], coords[i], coords[j], coords[mj])
+    delta = np.radians(target - current)
+    axis = coords[j] - coords[i]
+    axis = axis / (_norm3(axis) + 1e-10)
+    cos_d, sin_d = np.cos(delta), np.sin(delta)
+    origin = coords[i]
+    for a in atoms_to_rotate:
+        v = coords[a] - origin
+        coords[a] = (
+            origin + v * cos_d + _cross3(axis, v) * sin_d + axis * np.dot(axis, v) * (1 - cos_d)
+        )
+
+
 def measure_angle(coords, a, b, c):
     """Angle a-b-c (degrees) from coordinates."""
     v1, v2 = coords[a] - coords[b], coords[c] - coords[b]
@@ -225,6 +240,11 @@ def _get_bond_length(mol, i, j):
         bo = 3
     else:
         bo = 1
+    # Single C-N bonds between two SP2 atoms have amide resonance character.
+    if bo == 1 and {s1, s2} == {"C", "N"}:
+        ai, aj = mol.GetAtomWithIdx(i), mol.GetAtomWithIdx(j)
+        if ai.GetHybridization() == SP2 and aj.GetHybridization() == SP2:
+            return 0.5 * (_BOND_LENGTHS[("C", "N", 1)] + _BOND_LENGTHS[("C", "N", 1.5)])
     key = (min(s1, s2), max(s1, s2), bo)
     if key in _BOND_LENGTHS:
         return _BOND_LENGTHS[key]
@@ -245,15 +265,26 @@ def _get_bond_angle(mol, a, b, c):
     sym = atom_b.GetSymbol()
     if sym in _ELEMENT_ANGLES and hyb in _ELEMENT_ANGLES[sym]:
         return _ELEMENT_ANGLES[sym][hyb]
-    if hyb == SP2:
-        ri = mol.GetRingInfo()
-        b_ab = mol.GetBondBetweenAtoms(a, b)
-        b_bc = mol.GetBondBetweenAtoms(b, c)
-        if b_ab is not None and b_bc is not None:
-            common = set(ri.BondRingSizes(b_ab.GetIdx())) & set(ri.BondRingSizes(b_bc.GetIdx()))
-            if common:
-                n = min(common)
-                return (n - 2) * 180.0 / n
+    ri = mol.GetRingInfo()
+    b_ab = mol.GetBondBetweenAtoms(a, b)
+    b_bc = mol.GetBondBetweenAtoms(b, c)
+    if b_ab is not None and b_bc is not None:
+        common = set(ri.BondRingSizes(b_ab.GetIdx())) & set(ri.BondRingSizes(b_bc.GetIdx()))
+        if common:
+            n = min(common)
+            poly = (n - 2) * 180.0 / n
+            if hyb in (SP2, Chem.HybridizationType.SP):
+                return poly
+            # SP3 in mixed rings (containing SP2 atoms): use polygon angle
+            # so the ring angle sum is consistent with the SP2 atoms.
+            if hyb == SP3 and n <= 6 and poly < 109.5:
+                for ring in ri.AtomRings():
+                    if len(ring) == n and b in ring:
+                        if any(
+                            mol.GetAtomWithIdx(x).GetHybridization() == SP2 for x in ring if x != b
+                        ):
+                            return poly
+                        break
     return _HYBRID_ANGLES.get(hyb, 109.5)
 
 
@@ -281,6 +312,188 @@ def _ref_point(coords, parent, g, p, i, bond_dihedral):
         if mj == i:
             return coords[mi], mi
     return _synthetic_ref(coords, g, p), None
+
+
+def _find_core_atoms(mol, ring_atoms, n):
+    """Minimal connected subgraph spanning all ring atoms.
+
+    Core = ring atoms + bridging chain atoms between ring systems.
+    Identified by starting with all atoms and iteratively pruning
+    non-ring leaves.
+    """
+    core = set(range(n))
+    changed = True
+    while changed:
+        changed = False
+        for a in list(core):
+            if a in ring_atoms:
+                continue
+            nbrs_in_core = sum(
+                1 for nb in mol.GetAtomWithIdx(a).GetNeighbors() if nb.GetIdx() in core
+            )
+            if nbrs_in_core <= 1:
+                core.discard(a)
+                changed = True
+    return core
+
+
+def _fix_equivalent_terminals(mol, bond_dihedral, coords):
+    """Fix dihedral reference-atom mismatches for equivalent terminals.
+
+    When the reference atom is a degree-1 terminal with an equivalent sibling
+    (same element, also degree-1), the encode/decode may pick different ones.
+    Try each alternative and keep the better match.  Mutates bond_dihedral.
+    """
+    for (i, j), (mi, mj, angle) in list(bond_dihedral.items()):
+        if i > j:
+            continue
+        for side, ref, bond_end, other_end in [(0, mi, i, j), (1, mj, j, i)]:
+            a_ref = mol.GetAtomWithIdx(ref)
+            if a_ref.GetDegree() != 1:
+                continue
+            siblings = [
+                nb.GetIdx()
+                for nb in mol.GetAtomWithIdx(bond_end).GetNeighbors()
+                if nb.GetIdx() != other_end
+                and nb.GetIdx() != ref
+                and nb.GetDegree() == 1
+                and nb.GetAtomicNum() == a_ref.GetAtomicNum()
+            ]
+            if not siblings:
+                continue
+            cur_mi, cur_mj = bond_dihedral[(i, j)][:2]
+            best_ref = ref
+            cur_diff = abs(
+                (
+                    measure_torsion(coords[cur_mi], coords[i], coords[j], coords[cur_mj])
+                    - angle
+                    + 180
+                )
+                % 360
+                - 180
+            )
+            for alt in siblings:
+                alt_mi = alt if side == 0 else cur_mi
+                alt_mj = alt if side == 1 else cur_mj
+                alt_diff = abs(
+                    (
+                        measure_torsion(coords[alt_mi], coords[i], coords[j], coords[alt_mj])
+                        - angle
+                        + 180
+                    )
+                    % 360
+                    - 180
+                )
+                if alt_diff < cur_diff:
+                    best_ref = alt
+                    cur_diff = alt_diff
+            if best_ref != ref:
+                mi_new = best_ref if side == 0 else mi
+                mj_new = best_ref if side == 1 else mj
+                bond_dihedral[(i, j)] = (mi_new, mj_new, angle)
+                bond_dihedral[(j, i)] = (mj_new, mi_new, angle)
+
+
+def _correct_junction_dihedrals(mol, ring_systems, core_atoms, bond_dihedral, coords):
+    """Rotate ring systems in the embedding to match AMSR junction dihedrals.
+
+    RDKit distance geometry often places separate ring systems at arbitrary
+    torsion angles (typically ±90°).  For each AMSR dihedral on a bond
+    connecting different ring systems, BFS to find the downstream atoms
+    and rotate them to match the encoded angle.  Mutates coords in place.
+    """
+    if len(ring_systems) <= 1:
+        return
+    for (i, j), (mi, mj, angle) in bond_dihedral.items():
+        if i > j or i not in core_atoms or j not in core_atoms:
+            continue
+        sys_i = [s for s in ring_systems if i in s]
+        sys_j = [s for s in ring_systems if j in s]
+        if not sys_i or not sys_j or sys_i[0] is sys_j[0]:
+            continue
+        # BFS from j (excluding i) to find all atoms to rotate
+        to_rotate = set()
+        queue = [j]
+        while queue:
+            curr = queue.pop(0)
+            if curr in to_rotate or curr == i:
+                continue
+            to_rotate.add(curr)
+            for nb in mol.GetAtomWithIdx(curr).GetNeighbors():
+                if nb.GetIdx() != i and nb.GetIdx() not in to_rotate:
+                    queue.append(nb.GetIdx())
+        if mi in to_rotate or mj not in to_rotate:
+            continue
+        _set_dihedral(coords, mi, i, j, mj, angle, to_rotate)
+
+
+def _build_outward_tree(mol, placed, n, ring_atoms):
+    """BFS from placed (core) atoms outward to build parent tree and visit order.
+
+    Returns (outward_parent, branch_order).  Mutates placed to include
+    disconnected component seeds.
+    """
+    outward_parent: list[Optional[int]] = [None] * n
+    branch_order: list[int] = []
+
+    # BFS within the core to assign parents
+    core_root = min(ring_atoms) if ring_atoms else (min(placed) if placed else 0)
+    visited = {core_root}
+    bfs = [core_root]
+    qi = 0
+    while qi < len(bfs):
+        curr = bfs[qi]
+        qi += 1
+        for nb in mol.GetAtomWithIdx(curr).GetNeighbors():
+            b = nb.GetIdx()
+            if b in placed and b not in visited:
+                outward_parent[b] = curr
+                visited.add(b)
+                bfs.append(b)
+
+    # BFS outward from core into branches
+    for a in sorted(placed):
+        for nb in mol.GetAtomWithIdx(a).GetNeighbors():
+            b = nb.GetIdx()
+            if b not in placed and outward_parent[b] is None:
+                outward_parent[b] = a
+                branch_order.append(b)
+                bfs.append(b)
+    while qi < len(bfs):
+        curr = bfs[qi]
+        qi += 1
+        for nb in mol.GetAtomWithIdx(curr).GetNeighbors():
+            b = nb.GetIdx()
+            if b not in placed and outward_parent[b] is None:
+                outward_parent[b] = curr
+                branch_order.append(b)
+                bfs.append(b)
+
+    # Handle disconnected components not reachable from the core
+    branch_set = set(branch_order)
+    for i in range(n):
+        if i in placed or i in branch_set:
+            continue
+        placed.add(i)
+        for nb in mol.GetAtomWithIdx(i).GetNeighbors():
+            b = nb.GetIdx()
+            if b not in placed and b not in branch_set:
+                outward_parent[b] = i
+                branch_order.append(b)
+                branch_set.add(b)
+                bfs.append(b)
+        while qi < len(bfs):
+            curr = bfs[qi]
+            qi += 1
+            for nb in mol.GetAtomWithIdx(curr).GetNeighbors():
+                b = nb.GetIdx()
+                if b not in placed and b not in branch_set:
+                    outward_parent[b] = curr
+                    branch_order.append(b)
+                    branch_set.add(b)
+                    bfs.append(b)
+
+    return outward_parent, branch_order
 
 
 def _find_ring_systems(mol):
@@ -313,10 +526,9 @@ def _collect_ring_bonds(mol, sys_set, fixed):
     for a in sorted(sys_set):
         for nb in mol.GetAtomWithIdx(a).GetNeighbors():
             b = nb.GetIdx()
-            if b in sys_set and b > a:
-                pairs.append((a, b))
-                ideals.append(_get_bond_length(mol, a, b))
-            elif b in fixed:
+            # b > a avoids double-counting intra-system bonds; fixed atoms
+            # are external so the guard is unnecessary for them.
+            if (b in sys_set and b > a) or b in fixed:
                 pairs.append((a, b))
                 ideals.append(_get_bond_length(mol, a, b))
     return np.array(pairs, dtype=int), np.array(ideals)
@@ -577,8 +789,6 @@ _W_ANGLE = 2.0
 _W_PLANAR = 3.0
 _W_CHIRAL = 10.0
 _W_DIHEDRAL = 0.1
-
-
 _W_EZ = 0.3
 
 
@@ -1154,12 +1364,14 @@ def GetConformer(
 
     coords = np.zeros((n, 3))
 
+    # Convert quad-keyed dihedrals to bond-keyed for fast lookup.
     bond_dihedral: dict[tuple[int, int], tuple[int, int, int]] = {}
     if dihedral:
         for (mi, i, j, mj), angle in dihedral.items():
             bond_dihedral[(i, j)] = (mi, mj, angle)
             bond_dihedral[(j, i)] = (mj, mi, angle)
 
+    # Default parent tree (used for z-matrix chain placement).
     parent: list[Optional[int]] = [None] * n
     for i in range(1, n):
         nbrs = [nb.GetIdx() for nb in mol.GetAtomWithIdx(i).GetNeighbors() if nb.GetIdx() < i]
@@ -1174,178 +1386,27 @@ def GetConformer(
     ring_atoms: set[int] = set()
     for sys in ring_systems:
         ring_atoms.update(sys)
-
     all_rings = [tuple(r) for r in mol.GetRingInfo().AtomRings()]
 
-    # --- Phase 1: Cartesian optimize the ring core ---
-    # The "core" is the minimal connected subgraph spanning all ring atoms:
-    # ring atoms + chain atoms bridging between ring systems, but NOT
-    # terminal branches.  Identified by iteratively pruning non-ring leaves.
+    # --- Phase 1: Cartesian-optimize the ring core ---
     core_atoms: set[int] = set()
     if ring_atoms:
-        # Core = ring atoms + bridging chain atoms between ring systems.
-        # Identified by pruning non-ring leaves iteratively.
-        core_atoms = set(range(n))
-        changed = True
-        while changed:
-            changed = False
-            for a in list(core_atoms):
-                if a in ring_atoms:
-                    continue
-                nbrs_in_core = sum(
-                    1 for nb in mol.GetAtomWithIdx(a).GetNeighbors() if nb.GetIdx() in core_atoms
-                )
-                if nbrs_in_core <= 1:
-                    core_atoms.discard(a)
-                    changed = True
-
+        core_atoms = _find_core_atoms(mol, ring_atoms, n)
         embeddings = _rdkit_embed(mol, n_confs=1)
         if embeddings:
             coords[:] = embeddings[0]
-            # Fix dihedral reference-atom mismatches for equivalent terminals.
-            # When the reference atom is a degree-1 terminal with an equivalent
-            # sibling (same element, also degree-1), the encode/decode may pick
-            # different ones.  Try the alternative and keep the better match.
-            for (i, j), (mi, mj, angle) in list(bond_dihedral.items()):
-                if i > j:
-                    continue
-                changed = False
-                for side, ref, bond_end, other_end in [(0, mi, i, j), (1, mj, j, i)]:
-                    a_ref = mol.GetAtomWithIdx(ref)
-                    if a_ref.GetDegree() != 1:
-                        continue
-                    # Find equivalent sibling: same element, also degree-1
-                    siblings = [
-                        nb.GetIdx()
-                        for nb in mol.GetAtomWithIdx(bond_end).GetNeighbors()
-                        if nb.GetIdx() != other_end
-                        and nb.GetIdx() != ref
-                        and nb.GetDegree() == 1
-                        and nb.GetAtomicNum() == a_ref.GetAtomicNum()
-                    ]
-                    if not siblings:
-                        continue
-                    # Try each alternative and pick the one closest to AMSR target
-                    cur_mi, cur_mj = bond_dihedral[(i, j)][:2]
-                    best_ref = ref
-                    cur_diff = abs(
-                        (
-                            measure_torsion(coords[cur_mi], coords[i], coords[j], coords[cur_mj])
-                            - angle
-                            + 180
-                        )
-                        % 360
-                        - 180
-                    )
-                    for alt in siblings:
-                        alt_mi = alt if side == 0 else cur_mi
-                        alt_mj = alt if side == 1 else cur_mj
-                        alt_diff = abs(
-                            (
-                                measure_torsion(
-                                    coords[alt_mi], coords[i], coords[j], coords[alt_mj]
-                                )
-                                - angle
-                                + 180
-                            )
-                            % 360
-                            - 180
-                        )
-                        if alt_diff < cur_diff:
-                            best_ref = alt
-                            cur_diff = alt_diff
-                    if best_ref != ref:
-                        mi_new = best_ref if side == 0 else mi
-                        mj_new = best_ref if side == 1 else mj
-                        bond_dihedral[(i, j)] = (mi_new, mj_new, angle)
-                        bond_dihedral[(j, i)] = (mj_new, mi_new, angle)
-                        changed = True
-            # Optimize core atoms; branch atoms from embedding serve as
-            # fixed anchors (though few branches touch the core directly).
+            _fix_equivalent_terminals(mol, bond_dihedral, coords)
+            _correct_junction_dihedrals(mol, ring_systems, core_atoms, bond_dihedral, coords)
             fixed_for_opt = {i: coords[i].copy() for i in range(n) if i not in core_atoms}
             _optimize_ring_system(
-                mol,
-                core_atoms,
-                all_rings,
-                bond_dihedral,
-                coords,
-                fixed_for_opt,
-                parent,
+                mol, core_atoms, all_rings, bond_dihedral, coords, fixed_for_opt, parent
             )
 
     # --- Phase 2: z-matrix place branch atoms outward from core ---
     placed: set[int] = set(core_atoms)
-    # Only seed atom 0 when there are no ring atoms.  When rings exist,
-    # atom 0 will be discovered by BFS from the ring so that branch
-    # chains run outward from the ring — this lets the AMSR dihedrals
-    # (which reference ring atoms) be consumed correctly.
     if not ring_atoms:
         placed.add(0)
-
-    # Build outward parent tree: BFS from core, each branch atom's parent
-    # is its neighbor closest to the core.  The AMSR dihedral for bond
-    # (g, p) gives torsion(mi, g, p, mj) — when mj is the atom being
-    # placed, this is a direct match for _choose_chain_dihedral.
-    outward_parent: list[Optional[int]] = [None] * n
-    branch_order: list[int] = []
-
-    # Within the core, build a BFS tree so core atoms have parents.
-    core_root = min(ring_atoms) if ring_atoms else (min(placed) if placed else 0)
-    core_visited = {core_root}
-    bfs = [core_root]
-    qi = 0
-    while qi < len(bfs):
-        curr = bfs[qi]
-        qi += 1
-        for nb in mol.GetAtomWithIdx(curr).GetNeighbors():
-            b = nb.GetIdx()
-            if b in placed and b not in core_visited:
-                outward_parent[b] = curr
-                core_visited.add(b)
-                bfs.append(b)
-
-    # BFS outward from core into branches
-    for a in sorted(placed):
-        for nb in mol.GetAtomWithIdx(a).GetNeighbors():
-            b = nb.GetIdx()
-            if b not in placed and outward_parent[b] is None:
-                outward_parent[b] = a
-                branch_order.append(b)
-                bfs.append(b)
-    while qi < len(bfs):
-        curr = bfs[qi]
-        qi += 1
-        for nb in mol.GetAtomWithIdx(curr).GetNeighbors():
-            b = nb.GetIdx()
-            if b not in placed and outward_parent[b] is None:
-                outward_parent[b] = curr
-                branch_order.append(b)
-                bfs.append(b)
-
-    # Handle disconnected components not reachable from the core
-    branch_set = set(branch_order)
-    for i in range(n):
-        if i in placed or i in branch_set:
-            continue
-        # Seed this disconnected component
-        placed.add(i)
-        for nb in mol.GetAtomWithIdx(i).GetNeighbors():
-            b = nb.GetIdx()
-            if b not in placed and b not in branch_set:
-                outward_parent[b] = i
-                branch_order.append(b)
-                branch_set.add(b)
-                bfs.append(b)
-        while qi < len(bfs):
-            curr = bfs[qi]
-            qi += 1
-            for nb in mol.GetAtomWithIdx(curr).GetNeighbors():
-                b = nb.GetIdx()
-                if b not in placed and b not in branch_set:
-                    outward_parent[b] = curr
-                    branch_order.append(b)
-                    branch_set.add(b)
-                    bfs.append(b)
+    outward_parent, branch_order = _build_outward_tree(mol, placed, n, ring_atoms)
 
     # Initialize bookkeeping from core atom geometry
     for a in sorted(placed):
