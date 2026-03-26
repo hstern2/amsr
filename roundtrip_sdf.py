@@ -20,18 +20,17 @@ app = typer.Typer(context_settings={"help_option_names": ["-h", "--help"]})
 
 def _process_one(mol, name, out_dir: Path):
     """Round-trip one molecule. Same logic as test_zmatrix.py::test_roundtrip."""
-    s, rmsd_raw, mol_raw, rmsd_refined, mol_refined = amsr.Roundtrip(mol)
+    s, rmsd, mol_out = amsr.Roundtrip(mol)
 
-    match = mol.GetSubstructMatch(mol_raw)
+    match = mol.GetSubstructMatch(mol_out)
     if match:
         mol_reordered = Chem.RenumberAtoms(mol, list(match))
     else:
         mol_reordered = mol
     Chem.MolToMolFile(mol_reordered, str(out_dir / f"{name}_original.sdf"))
-    Chem.MolToMolFile(mol_raw, str(out_dir / f"{name}_raw.sdf"))
-    Chem.MolToMolFile(mol_refined, str(out_dir / f"{name}_refined.sdf"))
+    Chem.MolToMolFile(mol_out, str(out_dir / f"{name}_out.sdf"))
 
-    return s, rmsd_raw, rmsd_refined
+    return s, rmsd
 
 
 @app.command()
@@ -64,32 +63,29 @@ def main(
         mol = Chem.MolFromMolFile(str(input_dir / fname), removeHs=True)
         if mol is None:
             typer.echo(f"[{i+1}/{len(sdf_files)}] {fname}: SKIP (could not parse)")
-            rows.append([name, "", "", "", "parse_error"])
+            rows.append([name, "", "", "parse_error"])
             n_error += 1
             continue
 
         try:
-            s, rmsd_raw, rmsd_refined = _process_one(mol, name, output_dir)
-            status = "OK" if rmsd_refined < threshold else "FAIL"
+            s, rmsd = _process_one(mol, name, output_dir)
+            status = "OK" if rmsd < threshold else "FAIL"
             if status == "OK":
                 n_ok += 1
             else:
                 n_fail += 1
-            typer.echo(
-                f"[{i+1}/{len(sdf_files)}] {fname}:"
-                f" raw={rmsd_raw:.3f} refined={rmsd_refined:.3f} {status}"
-            )
-            rows.append([name, s, f"{rmsd_raw:.3f}", f"{rmsd_refined:.3f}", status])
+            typer.echo(f"[{i+1}/{len(sdf_files)}] {fname}: rmsd={rmsd:.3f} {status}")
+            rows.append([name, s, f"{rmsd:.3f}", status])
         except Exception as e:
             n_error += 1
             typer.echo(f"[{i+1}/{len(sdf_files)}] {fname}: ERROR ({e})")
             traceback.print_exc()
-            rows.append([name, "", "", "", f"error: {e}"])
+            rows.append([name, "", "", f"error: {e}"])
 
     # Sort by rmsd_refined descending (worst first), matching test_zmatrix.py
     def sort_key(row):
         try:
-            return -float(row[3])
+            return -float(row[2])
         except (ValueError, IndexError):
             return 0.0
 
@@ -98,7 +94,7 @@ def main(
     csv_path = output_dir / "roundtrip_results.csv"
     with open(csv_path, "w", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["name", "amsr", "rmsd_raw", "rmsd_refined", "status"])
+        w.writerow(["name", "amsr", "rmsd", "status"])
         w.writerows(rows)
 
     typer.echo(f"\nDone. OK={n_ok} FAIL={n_fail} ERROR={n_error} / {len(sdf_files)} total")
