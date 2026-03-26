@@ -5,8 +5,28 @@ from .conf import GetRoundedDihedral
 from .tokens import BOND_SYMBOL_FOR_DIHEDRAL, E, Z
 
 
+def _kekulized_bond_type(b):
+    """Return the Kekulized bond type, caching the Kekulized mol on first call."""
+    mol = b.GetOwningMol()
+    if not hasattr(mol, "_kekulized"):
+        mol_k = Chem.RWMol(mol)
+        try:
+            Chem.Kekulize(mol_k, clearAromaticFlags=False)
+        except Exception:
+            mol_k = mol
+        mol._kekulized = mol_k
+    return mol._kekulized.GetBondWithIdx(b.GetIdx()).GetBondType()
+
+
 def _is_rotatable(b):
     if b.GetBondType() != Chem.rdchem.BondType.SINGLE:
+        # Aromatic bonds in large (>6) rings may be Kekulized single bonds
+        # that can rotate (e.g. tropone).
+        if b.GetIsAromatic() and b.IsInRing():
+            ri = b.GetOwningMol().GetRingInfo()
+            sizes = set(ri.BondRingSizes(b.GetIdx()))
+            if all(s > 6 for s in sizes) and _kekulized_bond_type(b) == Chem.BondType.SINGLE:
+                return True
         return False
     if b.GetIsAromatic():
         return False

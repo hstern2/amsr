@@ -691,13 +691,21 @@ def _collect_ring_dihedrals(mol, sys_set, bond_dihedral, fixed):
 
 
 def _collect_ring_planarity_dihedrals(mol, sys_set, fixed):
-    """Collect 0° torsion constraints for all-SP2 rings.
+    """Collect 0° torsion constraints for planar ring bonds.
 
-    For each ring where every atom is SP2 (aromatic or conjugated),
-    constrains consecutive 4-atom sequences to 0° torsion.
+    For small (<=6) all-SP2 rings, constrains all consecutive 4-atom
+    sequences to 0° torsion.  For larger all-SP2 rings, only constrains
+    bonds that are double in the Kekulized form — single bonds in large
+    rings can rotate (e.g. 7-membered tropylium-like rings pucker).
     Returns (quads, targets) — Nx4 int, N float.
     """
     available = sys_set | set(fixed)
+    # Kekulize a copy to identify single vs double bonds in aromatic rings.
+    mol_k = Chem.RWMol(mol)
+    try:
+        Chem.Kekulize(mol_k, clearAromaticFlags=False)
+    except Exception:
+        mol_k = mol
     quads, targets = [], []
     seen = set()
     for ring in mol.GetRingInfo().AtomRings():
@@ -707,11 +715,16 @@ def _collect_ring_planarity_dihedrals(mol, sys_set, fixed):
             continue
         n = len(ring)
         for i in range(n):
-            quad = (ring[i], ring[(i + 1) % n], ring[(i + 2) % n], ring[(i + 3) % n])
-            key = (min(quad[1], quad[2]), max(quad[1], quad[2]))
+            b, c = ring[(i + 1) % n], ring[(i + 2) % n]
+            # For large rings, skip Kekulized single bonds (they can rotate).
+            if n > 6:
+                bond_bc = mol_k.GetBondBetweenAtoms(b, c)
+                if bond_bc is not None and bond_bc.GetBondType() == Chem.BondType.SINGLE:
+                    continue
+            key = (min(b, c), max(b, c))
             if key not in seen:
                 seen.add(key)
-                quads.append(quad)
+                quads.append((ring[i], b, c, ring[(i + 3) % n]))
                 targets.append(0.0)
     return (
         np.array(quads, dtype=int) if quads else np.empty((0, 4), dtype=int),
