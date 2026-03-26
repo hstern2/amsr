@@ -35,10 +35,10 @@ def _is_rotatable(b):
     if b.IsInRing():
         a1 = b.GetBeginAtom()
         a2 = b.GetEndAtom()
-        return (
-            a1.GetHybridization() == Chem.HybridizationType.SP3
-            and a2.GetHybridization() == Chem.HybridizationType.SP3
-        )
+        h1, h2 = a1.GetHybridization(), a2.GetHybridization()
+        # At least one SP3 endpoint — excludes rigid SP2-SP2 bonds
+        # but allows SP3-SP2 ring bonds (e.g. C-N in piperidine lactams).
+        return Chem.HybridizationType.SP3 in (h1, h2)
     return True
 
 
