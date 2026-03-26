@@ -68,13 +68,22 @@ def _earliestSeenNotIncluding(a, bi, avoid_equiv_terminals=False):
             for _, d, ci in nbrs:
                 if d > 1:
                     return ci
-            # All terminals: pick by highest atomic number (stable across
-            # group-expansion reorderings), then smallest seenIndex.
+            # All terminals: pick by highest atomic number, then highest
+            # bond order to parent (stable across group-expansion
+            # reorderings where atom index may differ).
+            ai = a.GetIdx()
             terminals = [
-                (-mol.GetAtomWithIdx(ci).GetAtomicNum(), seen, ci) for seen, d, ci in nbrs if d == 1
+                (
+                    -mol.GetAtomWithIdx(ci).GetAtomicNum(),
+                    -int(mol.GetBondBetweenAtoms(ai, ci).GetBondTypeAsDouble() * 10),
+                    seen,
+                    ci,
+                )
+                for seen, d, ci in nbrs
+                if d == 1
             ]
             terminals.sort()
-            return terminals[0][2]
+            return terminals[0][3]
     return pick_ci
 
 
@@ -98,6 +107,11 @@ class Bond:
         a2 = b.GetEndAtom()
         i2 = a2.GetIdx()
         if self.isRotatable:
+            # Order atoms so a1 is the earlier-seen (parent in DFS),
+            # matching the decoder's convention for dihedral references.
+            if GetSeenIndex(a1) > GetSeenIndex(a2):
+                a1, a2 = a2, a1
+                i1, i2 = i2, i1
             j1 = _earliestSeenNotIncluding(a1, i2, avoid_equiv_terminals=True)
             j2 = _earliestSeenNotIncluding(a2, i1, avoid_equiv_terminals=True)
             return BOND_SYMBOL_FOR_DIHEDRAL[GetRoundedDihedral(m, (j1, i1, i2, j2), 30)]

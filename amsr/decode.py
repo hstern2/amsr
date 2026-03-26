@@ -12,15 +12,15 @@ from .pibonds import PiBonds
 from .tokens import DIHEDRAL_FOR_BOND_SYMBOL, L_BRACKET, R_BRACKET, SKIP, RegExp
 
 
-def _dihedral_ref(candidates, mol):
+def _dihedral_ref(candidates, mol, parent=None):
     """Pick dihedral reference: smallest index, but avoid equivalent terminals.
 
     If the smallest-index candidate is a terminal (degree 1) and there
     are other terminals among the candidates, prefer the smallest-index
     non-terminal instead.  When all candidates are terminals, break ties
-    by highest atomic number to stay consistent with bond.py regardless
-    of group-expansion atom ordering.
-    Must match bond.py convention.
+    by highest atomic number, then highest bond order to parent (stable
+    across group-expansion reorderings where atom index may differ).
+    Must match bond.py:_earliestSeenNotIncluding convention.
     """
     pick = min(candidates)
     if mol.GetAtomWithIdx(pick).GetDegree() == 1:
@@ -29,12 +29,18 @@ def _dihedral_ref(candidates, mol):
             non_terminal = [c for c in candidates if mol.GetAtomWithIdx(c).GetDegree() > 1]
             if non_terminal:
                 return min(non_terminal)
-            # All terminals: pick by highest atomic number (stable across
-            # group-expansion reorderings), then smallest index.
-            return min(
-                candidates,
-                key=lambda c: (-mol.GetAtomWithIdx(c).GetAtomicNum(), c),
-            )
+
+            # All terminals: pick by highest atomic number, then highest
+            # bond order to parent.
+            def _sort_key(c):
+                bo = 0.0
+                if parent is not None:
+                    b = mol.GetBondBetweenAtoms(parent, c)
+                    if b is not None:
+                        bo = b.GetBondTypeAsDouble()
+                return (-mol.GetAtomWithIdx(c).GetAtomicNum(), -int(bo * 10), c)
+
+            return min(candidates, key=_sort_key)
     return pick
 
 
@@ -159,9 +165,7 @@ def ToMol(
                 a.InvertChirality()
     for b in mol.GetBonds():
         k = b.GetIdx()
-        is_EZ = b.GetStereo() in (Chem.BondStereo.STEREOZ, Chem.BondStereo.STEREOE)
-        is_dihedral = dihedral is not None and k in dihedral_for_bond
-        if is_EZ or is_dihedral:
+        if b.GetStereo() in (Chem.BondStereo.STEREOZ, Chem.BondStereo.STEREOE):
             ai, aj = b.GetBeginAtom(), b.GetEndAtom()
             i, j = ai.GetIdx(), aj.GetIdx()
             ni = [c.GetIdx() for c in ai.GetNeighbors() if c.GetIdx() != j]
@@ -169,14 +173,23 @@ def ToMol(
             if len(ni) == 0 or len(nj) == 0:
                 b.SetStereo(Chem.BondStereo.STEREONONE)
             else:
-                if is_EZ:
-                    b.SetStereoAtoms(min(ni), min(nj))
-                if is_dihedral:
-                    assert dihedral is not None
-                    dihedral[_dihedral_ref(ni, mol), i, j, _dihedral_ref(nj, mol)] = (
-                        dihedral_for_bond[k]
-                    )
+                b.SetStereoAtoms(min(ni), min(nj))
     PiBonds(mol, atom, stringent)
+    # Extract dihedral angles AFTER PiBonds so bond orders are available
+    # for distinguishing equivalent terminals (e.g. =O vs -OH in COOH).
+    if dihedral is not None:
+        for b in mol.GetBonds():
+            k = b.GetIdx()
+            if k not in dihedral_for_bond:
+                continue
+            ai, aj = b.GetBeginAtom(), b.GetEndAtom()
+            i, j = ai.GetIdx(), aj.GetIdx()
+            ni = [c.GetIdx() for c in ai.GetNeighbors() if c.GetIdx() != j]
+            nj = [c.GetIdx() for c in aj.GetNeighbors() if c.GetIdx() != i]
+            if ni and nj:
+                dihedral[_dihedral_ref(ni, mol, i), i, j, _dihedral_ref(nj, mol, j)] = (
+                    dihedral_for_bond[k]
+                )
     # Clear spurious E/Z stereo on bonds that are not double bonds.
     # The `_` and `^` tokens encode both E/Z stereo (double bonds) and
     # dihedral angles (rotatable single bonds).  After PiBonds assigns

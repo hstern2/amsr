@@ -395,21 +395,20 @@ def _fix_equivalent_terminals(mol, bond_dihedral, coords):
 
 
 def _correct_junction_dihedrals(mol, ring_systems, core_atoms, bond_dihedral, coords):
-    """Rotate ring systems in the embedding to match AMSR junction dihedrals.
+    """Rotate atoms in the embedding to match AMSR dihedrals at non-ring bonds.
 
     RDKit distance geometry often places separate ring systems at arbitrary
-    torsion angles (typically ±90°).  For each AMSR dihedral on a bond
-    connecting different ring systems, BFS to find the downstream atoms
-    and rotate them to match the encoded angle.  Mutates coords in place.
+    torsion angles.  For each AMSR dihedral on a core bond that is not in
+    a ring, BFS to find the downstream atoms and rotate them to match the
+    encoded angle.  Mutates coords in place.
     """
     if len(ring_systems) <= 1:
         return
     for (i, j), (mi, mj, angle) in bond_dihedral.items():
         if i > j or i not in core_atoms or j not in core_atoms:
             continue
-        sys_i = [s for s in ring_systems if i in s]
-        sys_j = [s for s in ring_systems if j in s]
-        if not sys_i or not sys_j or sys_i[0] is sys_j[0]:
+        bond = mol.GetBondBetweenAtoms(i, j)
+        if bond is None or bond.IsInRing():
             continue
         # BFS from j (excluding i) to find all atoms to rotate
         to_rotate = set()
@@ -1498,6 +1497,32 @@ def GetConformer(
                 )
                 if not _has_collision(mol, i, coords, placed, threshold=1.0):
                     break
+
+    # --- Phase 3: correct any unsatisfied AMSR dihedrals ---
+    # Some dihedrals (e.g. on forward bonds not consumed during z-matrix
+    # placement) may not have been applied.  Rotate subtrees to fix them.
+    for (mi, i, j, mj), angle in (dihedral or {}).items():
+        actual = measure_torsion(coords[mi], coords[i], coords[j], coords[mj])
+        diff = abs((actual - angle + 180) % 360 - 180)
+        if diff < 5.0:
+            continue
+        bond = mol.GetBondBetweenAtoms(i, j)
+        if bond is None or bond.IsInRing():
+            continue
+        # BFS from j excluding i to find subtree to rotate
+        to_rotate = set()
+        queue = [j]
+        while queue:
+            curr = queue.pop(0)
+            if curr in to_rotate or curr == i:
+                continue
+            to_rotate.add(curr)
+            for nb in mol.GetAtomWithIdx(curr).GetNeighbors():
+                if nb.GetIdx() != i and nb.GetIdx() not in to_rotate:
+                    queue.append(nb.GetIdx())
+        if mi in to_rotate or mj not in to_rotate:
+            continue
+        _set_dihedral(coords, mi, i, j, mj, angle, to_rotate)
 
     # Build RDKit conformer
     conf = Chem.Conformer(n)

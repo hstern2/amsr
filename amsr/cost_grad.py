@@ -63,11 +63,9 @@ def _load_lib():
         pass
 
 
-# C extension is opt-in: set AMSR_USE_C=1 for ~2x speedup.
-# Slight floating-point differences may cause optimizer to find different
-# local minima for borderline molecules.
-if os.environ.get("AMSR_USE_C"):
-    _load_lib()
+# Use C extension if the shared library is present (built via `make`).
+# Remove it with `make clean` to fall back to pure Python.
+_load_lib()
 
 
 def is_available():
