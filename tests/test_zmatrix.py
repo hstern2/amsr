@@ -57,13 +57,11 @@ def _backend_name():
 
 
 # Seeds: None = default (canonical), then 5 deterministic random seeds
-_seeds = [None] + list(range(1000, 1000 + _N_RANDOM))
+_seeds = [None] + list(range(_N_RANDOM))
 
 
 @pytest.mark.parametrize("sdf_path", _sdf_files, ids=[os.path.basename(f) for f in _sdf_files])
-@pytest.mark.parametrize(
-    "seed", _seeds, ids=["canonical"] + [f"seed{s}" for s in range(1000, 1000 + _N_RANDOM)]
-)
+@pytest.mark.parametrize("seed", _seeds, ids=["canonical"] + [f"seed{s}" for s in range(_N_RANDOM)])
 def test_roundtrip_sdf(sdf_path, seed):
     name = os.path.splitext(os.path.basename(sdf_path))[0]
     mol = Chem.MolFromMolFile(sdf_path, removeHs=True)
@@ -74,15 +72,14 @@ def test_roundtrip_sdf(sdf_path, seed):
 
     os.makedirs(_out_dir, exist_ok=True)
     seed_str = "canonical" if seed is None else str(seed)
-    if seed is None:
-        # Save SDF output for the canonical encoding only
-        match = mol.GetSubstructMatch(mol_out)
-        if match:
-            mol_reordered = Chem.RenumberAtoms(mol, list(match))
-        else:
-            mol_reordered = mol
-        Chem.MolToMolFile(mol_reordered, os.path.join(_out_dir, f"{name}_original.sdf"))
-        Chem.MolToMolFile(mol_out, os.path.join(_out_dir, f"{name}_out.sdf"))
+    # Save SDF output for every encoding
+    match = mol.GetSubstructMatch(mol_out)
+    if match:
+        mol_reordered = Chem.RenumberAtoms(mol, list(match))
+    else:
+        mol_reordered = mol
+    Chem.MolToMolFile(mol_reordered, os.path.join(_out_dir, f"{name}_{seed_str}_orig.sdf"))
+    Chem.MolToMolFile(mol_out, os.path.join(_out_dir, f"{name}_{seed_str}_out.sdf"))
 
     with open(_csv_path, "a", newline="") as f:
         csv.writer(f).writerow([name, backend, seed_str, s, f"{rmsd:.3f}", f"{elapsed:.3f}"])

@@ -1355,11 +1355,9 @@ def _place_chain_atom(
         first_child_idx[p] = i
     child_count[p] += 1
 
-    # After placing a child of a chiral core atom, check volume against
-    # the embedding to catch sign convention mismatches.  If wrong, reflect
-    # the new atom across the plane of the parent's other neighbors.
-    # Only check atoms whose chirality was enforced by the ring optimizer
-    # (recorded in _optimized_chiral_sign).
+    # After placing a child of a chiral atom, check volume to catch sign
+    # convention mismatches.  If wrong, reflect the new atom across the
+    # plane of the parent's other neighbors.
     atom_p = mol.GetAtomWithIdx(p)
     if atom_p.GetChiralTag() in (CW, CCW):
         nbrs = [nb.GetIdx() for nb in atom_p.GetNeighbors()]
@@ -1368,7 +1366,11 @@ def _place_chain_atom(
             vs = [coords[nb] - rp for nb in nbrs[:3]]
             vol = np.dot(vs[0], np.cross(vs[1], vs[2]))
             expected = getattr(mol, "_optimized_chiral_sign", {}).get(p)
-            if expected is not None and np.sign(vol) != expected:
+            if expected is None:
+                # CW → negative volume, CCW → positive (RDKit convention
+                # with GetNeighbors() ordering).
+                expected = -1.0 if atom_p.GetChiralTag() == CW else 1.0
+            if np.sign(vol) != expected:
                 # Reflect atom i across the plane of p's other placed neighbors
                 others = [nb for nb in nbrs if nb != i and _is_placed(coords, nb)]
                 if len(others) >= 2:
