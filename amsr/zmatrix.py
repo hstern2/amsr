@@ -1098,20 +1098,49 @@ def _optimize_ring_system(mol, system_atoms, all_rings, bond_dihedral, coords, p
     if len(ez_quads):
         ez_quads = _remap(ez_quads)
 
-    args = (
-        n_sys,
-        fixed_coords,
-        bonds,
-        ideal_lengths,
-        angle_triples,
-        ideal_angles,
-        planar_groups,
-        chiral_info,
-        dih_quads,
-        dih_targets,
-        ez_quads,
-        ez_targets,
-    )
+    # Build the objective function: C extension if available, else Python.
+    from .cost_grad import CostGradProblem
+    from .cost_grad import is_available as _c_available
+
+    if _c_available():
+        _objective = CostGradProblem(
+            n_sys,
+            fixed_coords,
+            bonds,
+            ideal_lengths,
+            angle_triples,
+            ideal_angles,
+            planar_groups,
+            chiral_info,
+            dih_quads,
+            dih_targets,
+            ez_quads,
+            ez_targets,
+            _W_BOND,
+            _W_ANGLE,
+            _W_PLANAR,
+            _W_CHIRAL,
+            _W_DIHEDRAL,
+            _W_EZ,
+        )
+    else:
+        args = (
+            n_sys,
+            fixed_coords,
+            bonds,
+            ideal_lengths,
+            angle_triples,
+            ideal_angles,
+            planar_groups,
+            chiral_info,
+            dih_quads,
+            dih_targets,
+            ez_quads,
+            ez_targets,
+        )
+
+        def _objective(x):
+            return _cost_and_grad(x, *args)
 
     # Initial coordinates come from the embedding already stored in coords.
     x0 = np.zeros(3 * n_sys)
@@ -1119,18 +1148,18 @@ def _optimize_ring_system(mol, system_atoms, all_rings, bond_dihedral, coords, p
         k = idx_map[a]
         x0[3 * k : 3 * k + 3] = coords[a]
 
-    result = minimize(_cost_and_grad, x0, args=args, method="L-BFGS-B", jac=True)
+    result = minimize(_objective, x0, method="L-BFGS-B", jac=True)
     best_cost = result.fun
     best_x = result.x
 
-    # If cost is still high, try more RDKit embeddings and perturbations
+    # If cost is still high, try more RDKit embeddings.
     if best_cost > 0.5 and n_sys > 0:
         extra = _rdkit_embed(mol, n_confs=10, seed=123)
         for embed_coords in extra:
             x0 = np.zeros(3 * n_sys)
             for a in sys_list:
                 x0[3 * idx_map[a] : 3 * idx_map[a] + 3] = embed_coords[a]
-            r = minimize(_cost_and_grad, x0, args=args, method="L-BFGS-B", jac=True)
+            r = minimize(_objective, x0, method="L-BFGS-B", jac=True)
             if r.fun < best_cost:
                 best_cost = r.fun
                 best_x = r.x

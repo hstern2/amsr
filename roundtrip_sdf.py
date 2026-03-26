@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 """Round-trip verification for SDF files: encode to AMSR, decode, compute RMSD.
 
-Uses the same round-trip logic as test_zmatrix.py but runs on an arbitrary
-directory of SDF files.
+Supports parallel processing with --jobs N for multi-core speedup.
 """
 
 import csv
 import os
-import traceback
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
 import typer
@@ -18,19 +17,29 @@ import amsr
 app = typer.Typer(context_settings={"help_option_names": ["-h", "--help"]})
 
 
-def _process_one(mol, name, out_dir: Path):
-    """Round-trip one molecule. Same logic as test_zmatrix.py::test_roundtrip."""
-    s, rmsd, mol_out = amsr.Roundtrip(mol)
+def _process_one(sdf_path: str, out_dir: str, threshold: float):
+    """Round-trip one SDF file.  Designed to run in a worker process."""
+    name = os.path.splitext(os.path.basename(sdf_path))[0]
+    mol = Chem.MolFromMolFile(sdf_path, removeHs=True)
+    if mol is None:
+        return [name, "", "", "parse_error"]
 
+    try:
+        s, rmsd, mol_out = amsr.Roundtrip(mol)
+    except Exception as e:
+        return [name, "", "", f"error: {e}"]
+
+    # Save output SDF files
     match = mol.GetSubstructMatch(mol_out)
     if match:
         mol_reordered = Chem.RenumberAtoms(mol, list(match))
     else:
         mol_reordered = mol
-    Chem.MolToMolFile(mol_reordered, str(out_dir / f"{name}_original.sdf"))
-    Chem.MolToMolFile(mol_out, str(out_dir / f"{name}_out.sdf"))
+    Chem.MolToMolFile(mol_reordered, os.path.join(out_dir, f"{name}_original.sdf"))
+    Chem.MolToMolFile(mol_out, os.path.join(out_dir, f"{name}_out.sdf"))
 
-    return s, rmsd
+    status = "OK" if rmsd < threshold else "FAIL"
+    return [name, s, f"{rmsd:.3f}", status]
 
 
 @app.command()
@@ -40,6 +49,7 @@ def main(
         None, "--output", "-o", help="Output directory (default: out/)"
     ),
     threshold: float = typer.Option(0.8, "--threshold", "-t", help="RMSD threshold for OK/FAIL"),
+    jobs: int = typer.Option(1, "--jobs", "-j", help="Number of parallel workers"),
 ):
     """Round-trip verification: encode each SDF to AMSR, decode, compute RMSD."""
     if not input_dir.is_dir():
@@ -51,38 +61,59 @@ def main(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     sdf_files = sorted(f for f in os.listdir(input_dir) if f.endswith(".sdf"))
-    typer.echo(f"Found {len(sdf_files)} SDF files in {input_dir}")
+    total = len(sdf_files)
+    typer.echo(f"Found {total} SDF files in {input_dir} (jobs={jobs})")
 
+    sdf_paths = [str(input_dir / f) for f in sdf_files]
+    out_str = str(output_dir)
     rows: list[list[str]] = []
-    n_ok = 0
-    n_fail = 0
-    n_error = 0
+    n_ok = n_fail = n_error = 0
 
-    for i, fname in enumerate(sdf_files):
-        name = os.path.splitext(fname)[0]
-        mol = Chem.MolFromMolFile(str(input_dir / fname), removeHs=True)
-        if mol is None:
-            typer.echo(f"[{i+1}/{len(sdf_files)}] {fname}: SKIP (could not parse)")
-            rows.append([name, "", "", "parse_error"])
-            n_error += 1
-            continue
-
-        try:
-            s, rmsd = _process_one(mol, name, output_dir)
-            status = "OK" if rmsd < threshold else "FAIL"
+    if jobs <= 1:
+        # Sequential processing
+        for i, path in enumerate(sdf_paths):
+            row = _process_one(path, out_str, threshold)
+            rows.append(row)
+            status = row[3]
             if status == "OK":
                 n_ok += 1
-            else:
+            elif status == "FAIL":
                 n_fail += 1
-            typer.echo(f"[{i+1}/{len(sdf_files)}] {fname}: rmsd={rmsd:.3f} {status}")
-            rows.append([name, s, f"{rmsd:.3f}", status])
-        except Exception as e:
-            n_error += 1
-            typer.echo(f"[{i+1}/{len(sdf_files)}] {fname}: ERROR ({e})")
-            traceback.print_exc()
-            rows.append([name, "", "", f"error: {e}"])
+            else:
+                n_error += 1
+            typer.echo(
+                f"[{i+1}/{total}] {os.path.basename(path)}: "
+                f"{'rmsd=' + row[2] + ' ' if row[2] else ''}{status}"
+            )
+    else:
+        # Parallel processing
+        futures = {}
+        with ProcessPoolExecutor(max_workers=jobs) as executor:
+            for i, path in enumerate(sdf_paths):
+                fut = executor.submit(_process_one, path, out_str, threshold)
+                futures[fut] = (i, path)
 
-    # Sort by rmsd_refined descending (worst first), matching test_zmatrix.py
+            done = 0
+            for fut in as_completed(futures):
+                done += 1
+                i, path = futures[fut]
+                try:
+                    row = fut.result()
+                except Exception as e:
+                    name = os.path.splitext(os.path.basename(path))[0]
+                    row = [name, "", "", f"error: {e}"]
+                rows.append(row)
+                status = row[3]
+                if status == "OK":
+                    n_ok += 1
+                elif status == "FAIL":
+                    n_fail += 1
+                else:
+                    n_error += 1
+                if done % 100 == 0 or done == total:
+                    typer.echo(f"  [{done}/{total}] OK={n_ok} FAIL={n_fail} ERROR={n_error}")
+
+    # Sort by rmsd descending (worst first)
     def sort_key(row):
         try:
             return -float(row[2])
@@ -97,7 +128,7 @@ def main(
         w.writerow(["name", "amsr", "rmsd", "status"])
         w.writerows(rows)
 
-    typer.echo(f"\nDone. OK={n_ok} FAIL={n_fail} ERROR={n_error} / {len(sdf_files)} total")
+    typer.echo(f"\nDone. OK={n_ok} FAIL={n_fail} ERROR={n_error} / {total} total")
     typer.echo(f"Results: {csv_path}")
 
 
