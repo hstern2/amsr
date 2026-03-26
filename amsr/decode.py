@@ -171,11 +171,19 @@ def ToMol(
             else:
                 if is_EZ:
                     b.SetStereoAtoms(min(ni), min(nj))
-                if is_dihedral and dihedral is not None:
+                if is_dihedral:
+                    assert dihedral is not None
                     dihedral[_dihedral_ref(ni, mol), i, j, _dihedral_ref(nj, mol)] = (
                         dihedral_for_bond[k]
                     )
     PiBonds(mol, atom, stringent)
+    # Clear spurious E/Z stereo on bonds that are not double bonds.
+    # The `_` and `^` tokens encode both E/Z stereo (double bonds) and
+    # dihedral angles (rotatable single bonds).  After PiBonds assigns
+    # bond orders, clear E/Z on any bond that remained single.
+    for b in mol.GetBonds():
+        if b.GetBondType() == Chem.BondType.SINGLE and b.GetStereo() != Chem.BondStereo.STEREONONE:
+            b.SetStereo(Chem.BondStereo.STEREONONE)
     for i, a in enumerate(atom):
         if a.bangs > 0 and a.canBond():
             mol.GetAtomWithIdx(i).SetNumExplicitHs(a.maxNeighbors - a.nNeighbors)

@@ -178,13 +178,11 @@ def _batch_norm3(v):
 
 def _batch_cross3(a, b):
     """Cross product for Nx3 arrays, returns Nx3."""
-    return np.column_stack(
-        [
-            a[:, 1] * b[:, 2] - a[:, 2] * b[:, 1],
-            a[:, 2] * b[:, 0] - a[:, 0] * b[:, 2],
-            a[:, 0] * b[:, 1] - a[:, 1] * b[:, 0],
-        ]
-    )
+    out = np.empty_like(a)
+    out[:, 0] = a[:, 1] * b[:, 2] - a[:, 2] * b[:, 1]
+    out[:, 1] = a[:, 2] * b[:, 0] - a[:, 0] * b[:, 2]
+    out[:, 2] = a[:, 0] * b[:, 1] - a[:, 1] * b[:, 0]
+    return out
 
 
 def _batch_measure_torsion(p0, p1, p2, p3):
@@ -209,14 +207,6 @@ def _batch_measure_torsion(p0, p1, p2, p3):
     cos_val = np.sum(n1s * n2s, axis=1)
     result[safe] = np.degrees(np.arctan2(sin_val, cos_val))
     return result
-
-
-def _batch_measure_angle(coords, triples):
-    """Angles a-b-c (degrees) from Nx3 index array. Returns shape (N,)."""
-    v1 = coords[triples[:, 0]] - coords[triples[:, 1]]
-    v2 = coords[triples[:, 2]] - coords[triples[:, 1]]
-    cos_a = np.sum(v1 * v2, axis=1) / (_batch_norm3(v1) * _batch_norm3(v2) + 1e-10)
-    return np.degrees(np.arccos(np.clip(cos_a, -1, 1)))
 
 
 # ---------------------------------------------------------------------------
@@ -336,11 +326,13 @@ def _collect_ring_angles(mol, sys_set, fixed):
     """Collect all bond angle triples involving ring system atoms.
 
     Includes angles at ring atoms AND angles at fixed atoms that have
-    two ring-system neighbors.
+    two ring-system neighbors.  For SP2 atoms with exactly 3 angles,
+    adjusts targets so they sum to 360° (important for fused ring junctions).
     Returns (triples, ideal_angles) — numpy arrays.
     """
     available = sys_set | set(fixed)
     triples, ideals = [], []
+    center_indices: dict[int, list[int]] = {}  # center atom → list of indices into triples
     # Angles at ring atoms
     for b in sorted(sys_set):
         nbrs = [
@@ -349,8 +341,10 @@ def _collect_ring_angles(mol, sys_set, fixed):
         for ia in range(len(nbrs)):
             for ic in range(ia + 1, len(nbrs)):
                 a, c = nbrs[ia], nbrs[ic]
+                idx = len(triples)
                 triples.append((a, b, c))
                 ideals.append(_get_bond_angle(mol, a, b, c))
+                center_indices.setdefault(b, []).append(idx)
     # Angles at fixed atoms with >=2 ring neighbors
     for fb in sorted(fixed):
         ring_nbrs = [
@@ -360,8 +354,43 @@ def _collect_ring_angles(mol, sys_set, fixed):
             for ia in range(len(ring_nbrs)):
                 for ic in range(ia + 1, len(ring_nbrs)):
                     a, c = ring_nbrs[ia], ring_nbrs[ic]
+                    idx = len(triples)
                     triples.append((a, fb, c))
                     ideals.append(_get_bond_angle(mol, a, fb, c))
+                    center_indices.setdefault(fb, []).append(idx)
+    # For SP2 atoms with exactly 3 angle targets, ensure they sum to 360°.
+    # At fused ring junctions the cross-ring angle has no common ring size
+    # and defaults to 120°, but the correct value is 360° minus the two
+    # in-ring angles.  Only apply when exactly one angle is cross-ring.
+    ri = mol.GetRingInfo()
+    for b, indices in center_indices.items():
+        if len(indices) != 3:
+            continue
+        if mol.GetAtomWithIdx(b).GetHybridization() != SP2:
+            continue
+        total = sum(ideals[k] for k in indices)
+        if abs(total - 360.0) < 1.0:
+            continue
+        # Find angles without a common ring size between their two bonds.
+        # Distribute the deficit among cross-ring angles to make the sum 360°.
+        # Skip if any in-ring angle uses a ring > 6 (polygon formula unreliable).
+        no_common = []
+        has_large_ring = False
+        for k in indices:
+            a, _, c = triples[k]
+            b_ab = mol.GetBondBetweenAtoms(a, b)
+            b_bc = mol.GetBondBetweenAtoms(b, c)
+            if b_ab is None or b_bc is None:
+                continue
+            common = set(ri.BondRingSizes(b_ab.GetIdx())) & set(ri.BondRingSizes(b_bc.GetIdx()))
+            if not common:
+                no_common.append(k)
+            elif min(common) > 6:
+                has_large_ring = True
+        if no_common and not has_large_ring:
+            per = (360.0 - total) / len(no_common)
+            for k in no_common:
+                ideals[k] += per
     return np.array(triples, dtype=int) if triples else np.empty((0, 3), dtype=int), np.array(
         ideals
     )
@@ -386,10 +415,11 @@ def _collect_planar_atoms(mol, sys_set, fixed):
     return np.array(groups, dtype=int) if groups else np.empty((0, 4), dtype=int)
 
 
-def _collect_chiral_atoms(mol, sys_set, fixed):
+def _collect_chiral_atoms(mol, sys_set, fixed, coords=None):
     """Collect chirality constraints for SP3 chiral atoms in the ring system.
 
-    Returns Nx5 array: (center, a, b, c, sign) where sign is +1 (CW) or -1 (CCW).
+    Returns Nx5 array: (center, a, b, c, sign) where sign encodes expected
+    volume direction from the RDKit embedding.
     """
     available = sys_set | set(fixed)
     result = []
@@ -401,7 +431,18 @@ def _collect_chiral_atoms(mol, sys_set, fixed):
         nbrs = [nb.GetIdx() for nb in atom.GetNeighbors() if nb.GetIdx() in available]
         if len(nbrs) < 3:
             continue
-        sign = 1 if chiral == CW else -1
+        if coords is not None:
+
+            def _get(a):
+                return coords[a] if a not in fixed else fixed[a]
+
+            rj = _get(j)
+            ra, rb, rc = _get(nbrs[0]), _get(nbrs[1]), _get(nbrs[2])
+            v1, v2, v3 = ra - rj, rb - rj, rc - rj
+            vol = np.dot(v1, np.cross(v2, v3))
+            sign = 1 if vol > 0 else -1
+        else:
+            sign = 1 if chiral == CW else -1
         result.append((j, nbrs[0], nbrs[1], nbrs[2], sign))
     return np.array(result, dtype=int) if result else np.empty((0, 5), dtype=int)
 
@@ -431,6 +472,35 @@ def _collect_ring_dihedrals(mol, sys_set, bond_dihedral, fixed):
                 if mi in available and mj in available:
                     quads.append((mi, bond_key[0], bond_key[1], mj))
                     targets.append(float(angle))
+    return (
+        np.array(quads, dtype=int) if quads else np.empty((0, 4), dtype=int),
+        np.array(targets) if targets else np.empty(0),
+    )
+
+
+def _collect_ring_planarity_dihedrals(mol, sys_set, fixed):
+    """Collect 0° torsion constraints for all-SP2 rings.
+
+    For each ring where every atom is SP2 (aromatic or conjugated),
+    constrains consecutive 4-atom sequences to 0° torsion.
+    Returns (quads, targets) — Nx4 int, N float.
+    """
+    available = sys_set | set(fixed)
+    quads, targets = [], []
+    seen = set()
+    for ring in mol.GetRingInfo().AtomRings():
+        if not all(mol.GetAtomWithIdx(a).GetHybridization() == SP2 for a in ring):
+            continue
+        if not all(a in available for a in ring):
+            continue
+        n = len(ring)
+        for i in range(n):
+            quad = (ring[i], ring[(i + 1) % n], ring[(i + 2) % n], ring[(i + 3) % n])
+            key = (min(quad[1], quad[2]), max(quad[1], quad[2]))
+            if key not in seen:
+                seen.add(key)
+                quads.append(quad)
+                targets.append(0.0)
     return (
         np.array(quads, dtype=int) if quads else np.empty((0, 4), dtype=int),
         np.array(targets) if targets else np.empty(0),
@@ -470,95 +540,6 @@ def _collect_ez_constraints(mol, sys_set, fixed):
 
 
 # ============================================================
-# Cartesian ring geometry: residual functions (vectorized numpy, C-portable)
-# ============================================================
-
-
-def _resolve_coords(indices, all_coords, idx_map, fixed):
-    """Look up Nx3 coordinates for an array of atom indices.
-
-    Atoms in idx_map use all_coords (the optimization variable reshaped);
-    atoms in fixed use their stored coordinates.
-    """
-    n = len(indices)
-    out = np.empty((n, 3))
-    for k in range(n):
-        a = int(indices[k])
-        if a in idx_map:
-            out[k] = all_coords[idx_map[a]]
-        else:
-            out[k] = fixed[a]
-    return out
-
-
-def _bond_residuals(x_3d, idx_map, fixed, pairs, ideal_lengths, w):
-    """Residuals: w * (|r_i - r_j| - d_ij) for each bond."""
-    ri = _resolve_coords(pairs[:, 0], x_3d, idx_map, fixed)
-    rj = _resolve_coords(pairs[:, 1], x_3d, idx_map, fixed)
-    dists = _batch_norm3(ri - rj)
-    return w * (dists - ideal_lengths)
-
-
-def _angle_residuals(x_3d, idx_map, fixed, triples, ideal_angles, w):
-    """Residuals in Angstroms: w * 2 * L * sin(delta_angle / 2).
-
-    Converts angular error to Cartesian displacement, making it
-    commensurable with bond-length residuals.
-    """
-    ra = _resolve_coords(triples[:, 0], x_3d, idx_map, fixed)
-    rb = _resolve_coords(triples[:, 1], x_3d, idx_map, fixed)
-    rc = _resolve_coords(triples[:, 2], x_3d, idx_map, fixed)
-    v1, v2 = ra - rb, rc - rb
-    n1, n2 = _batch_norm3(v1), _batch_norm3(v2)
-    L = 0.5 * (n1 + n2)
-    cos_a = np.sum(v1 * v2, axis=1) / (n1 * n2 + 1e-10)
-    actual_rad = np.arccos(np.clip(cos_a, -1, 1))
-    ideal_rad = np.radians(ideal_angles)
-    delta_half = (actual_rad - ideal_rad) / 2.0
-    return w * 2.0 * L * np.sin(delta_half)
-
-
-def _planarity_residuals(x_3d, idx_map, fixed, groups, w):
-    """Residuals: w * normalized_volume for each SP2 center.
-
-    Volume = (a-j) . ((b-j) x (c-j)), normalized by product of bond lengths.
-    Zero when all four atoms are coplanar.
-    """
-    rj = _resolve_coords(groups[:, 0], x_3d, idx_map, fixed)
-    ra = _resolve_coords(groups[:, 1], x_3d, idx_map, fixed)
-    rb = _resolve_coords(groups[:, 2], x_3d, idx_map, fixed)
-    rc = _resolve_coords(groups[:, 3], x_3d, idx_map, fixed)
-    v1, v2, v3 = ra - rj, rb - rj, rc - rj
-    cross = _batch_cross3(v2, v3)
-    vol = np.sum(v1 * cross, axis=1)
-    norm = _batch_norm3(v1) * _batch_norm3(v2) * _batch_norm3(v3) + 1e-10
-    return w * vol / norm
-
-
-def _chirality_residuals(x_3d, idx_map, fixed, chiral_info, w):
-    """Residuals penalizing wrong-sign volume at chiral centers."""
-    rj = _resolve_coords(chiral_info[:, 0], x_3d, idx_map, fixed)
-    ra = _resolve_coords(chiral_info[:, 1], x_3d, idx_map, fixed)
-    rb = _resolve_coords(chiral_info[:, 2], x_3d, idx_map, fixed)
-    rc = _resolve_coords(chiral_info[:, 3], x_3d, idx_map, fixed)
-    sign = chiral_info[:, 4].astype(float)
-    v1, v2, v3 = ra - rj, rb - rj, rc - rj
-    vol = np.sum(v1 * _batch_cross3(v2, v3), axis=1)
-    return w * np.maximum(0.0, -sign * vol)
-
-
-def _dihedral_residuals(x_3d, idx_map, fixed, quads, targets, w):
-    """Residuals: w * angular_diff for each dihedral restraint."""
-    p0 = _resolve_coords(quads[:, 0], x_3d, idx_map, fixed)
-    p1 = _resolve_coords(quads[:, 1], x_3d, idx_map, fixed)
-    p2 = _resolve_coords(quads[:, 2], x_3d, idx_map, fixed)
-    p3 = _resolve_coords(quads[:, 3], x_3d, idx_map, fixed)
-    actual = _batch_measure_torsion(p0, p1, p2, p3)
-    diff = (actual - targets + 180.0) % 360.0 - 180.0
-    return w * diff
-
-
-# ============================================================
 # Cartesian ring geometry: RDKit embedding for initialization
 # ============================================================
 
@@ -594,17 +575,17 @@ def _rdkit_embed(mol, n_confs=1, seed=42):
 _W_BOND = 5.0
 _W_ANGLE = 2.0
 _W_PLANAR = 3.0
-_W_CHIRAL = 2.0
-_W_DIHEDRAL = 0.05
+_W_CHIRAL = 10.0
+_W_DIHEDRAL = 0.1
 
 
 _W_EZ = 0.3
 
 
-def _ring_system_residuals(
+def _cost_and_grad(
     x,
-    idx_map,
-    fixed,
+    n_free,
+    fixed_coords,
     bonds,
     ideal_lengths,
     angle_triples,
@@ -616,24 +597,210 @@ def _ring_system_residuals(
     ez_quads,
     ez_targets,
 ):
-    """Combined residual vector for ring system Cartesian optimization."""
+    """Compute total cost (sum of squared residuals) and analytical gradient.
+
+    All constraint indices are pre-remapped to slot indices: 0..n_free-1 are
+    free atoms (in x), n_free.. are fixed atoms (in fixed_coords).
+    """
     x_3d = x.reshape(-1, 3)
-    parts = []
+    all_coords = np.concatenate([x_3d, fixed_coords])
+    grad_all = np.zeros((len(all_coords), 3))
+    cost = 0.0
+    _lookup = all_coords.__getitem__
+
+    def _scatter(idx, contrib):
+        np.add.at(grad_all, idx, contrib)
+
+    # --- Bond terms: r = w*(|d| - d0) ---
     if len(bonds):
-        parts.append(_bond_residuals(x_3d, idx_map, fixed, bonds, ideal_lengths, _W_BOND))
+        w = _W_BOND
+        ri = _lookup(bonds[:, 0])
+        rj = _lookup(bonds[:, 1])
+        d = ri - rj
+        dist = _batch_norm3(d)
+        safe = dist > 1e-10
+        r = w * (dist - ideal_lengths)
+        cost += np.dot(r, r)
+        # grad: 2*r * w * d_hat
+        scale = np.zeros_like(dist)
+        scale[safe] = 2.0 * w * r[safe] / dist[safe]
+        g_contrib = scale[:, None] * d
+        _scatter(bonds[:, 0], g_contrib)
+        _scatter(bonds[:, 1], -g_contrib)
+
+    # --- Angle terms: r = w * (theta - theta0) [radians, weighted by L] ---
     if len(angle_triples):
-        parts.append(_angle_residuals(x_3d, idx_map, fixed, angle_triples, ideal_angles, _W_ANGLE))
+        w = _W_ANGLE
+        ra = _lookup(angle_triples[:, 0])
+        rb = _lookup(angle_triples[:, 1])
+        rc = _lookup(angle_triples[:, 2])
+        v1, v2 = ra - rb, rc - rb
+        n1, n2 = _batch_norm3(v1), _batch_norm3(v2)
+        L = 0.5 * (n1 + n2)
+        cos_a = np.sum(v1 * v2, axis=1) / (n1 * n2 + 1e-10)
+        cos_a = np.clip(cos_a, -1, 1)
+        theta = np.arccos(cos_a)
+        theta0 = np.radians(ideal_angles)
+        delta_half = (theta - theta0) / 2.0
+        r = w * 2.0 * L * np.sin(delta_half)
+        cost += np.dot(r, r)
+        # Gradient of r w.r.t. coordinates
+        sin_th = np.sin(theta)
+        safe = (sin_th > 1e-10) & (n1 > 1e-10) & (n2 > 1e-10)
+        v1_hat = np.zeros_like(v1)
+        v2_hat = np.zeros_like(v2)
+        v1_hat[safe] = v1[safe] / n1[safe, None]
+        v2_hat[safe] = v2[safe] / n2[safe, None]
+        # dr/dtheta = w * L * cos(delta_half)
+        # dr/dL = w * 2 * sin(delta_half)
+        dr_dtheta = w * L * np.cos(delta_half)
+        dr_dL = w * 2.0 * np.sin(delta_half)
+        # dtheta/dra = (cos_a * v1_hat - v2_hat) / (sin_th * n1)
+        # dtheta/drc = (cos_a * v2_hat - v1_hat) / (sin_th * n2)
+        dtheta_dra = np.zeros_like(v1)
+        dtheta_drc = np.zeros_like(v2)
+        dtheta_dra[safe] = (cos_a[safe, None] * v1_hat[safe] - v2_hat[safe]) / (
+            sin_th[safe, None] * n1[safe, None]
+        )
+        dtheta_drc[safe] = (cos_a[safe, None] * v2_hat[safe] - v1_hat[safe]) / (
+            sin_th[safe, None] * n2[safe, None]
+        )
+        dtheta_drb = -(dtheta_dra + dtheta_drc)
+        # dL/dra = 0.5*v1_hat, dL/drc = 0.5*v2_hat, dL/drb = -0.5*(v1_hat+v2_hat)
+        # dr/dra = dr_dtheta * dtheta_dra + dr_dL * 0.5*v1_hat
+        dr_dra = dr_dtheta[:, None] * dtheta_dra + dr_dL[:, None] * 0.5 * v1_hat
+        dr_drc = dr_dtheta[:, None] * dtheta_drc + dr_dL[:, None] * 0.5 * v2_hat
+        dr_drb = dr_dtheta[:, None] * dtheta_drb - dr_dL[:, None] * 0.5 * (v1_hat + v2_hat)
+        scale = 2.0 * r
+        _scatter(angle_triples[:, 0], scale[:, None] * dr_dra)
+        _scatter(angle_triples[:, 1], scale[:, None] * dr_drb)
+        _scatter(angle_triples[:, 2], scale[:, None] * dr_drc)
+
+    # --- Planarity terms: r = w * vol/norm ---
     if len(planar_groups):
-        parts.append(_planarity_residuals(x_3d, idx_map, fixed, planar_groups, _W_PLANAR))
+        w = _W_PLANAR
+        rj = _lookup(planar_groups[:, 0])
+        ra = _lookup(planar_groups[:, 1])
+        rb = _lookup(planar_groups[:, 2])
+        rc = _lookup(planar_groups[:, 3])
+        v1, v2, v3 = ra - rj, rb - rj, rc - rj
+        cross23 = _batch_cross3(v2, v3)
+        vol = np.sum(v1 * cross23, axis=1)
+        n1, n2, n3 = _batch_norm3(v1), _batch_norm3(v2), _batch_norm3(v3)
+        norm = n1 * n2 * n3 + 1e-10
+        r = w * vol / norm
+        cost += np.dot(r, r)
+        # dr/dra = w * cross23 / norm (since dvol/dv1 = cross23, dv1/dra = I)
+        # dr/drb = w * cross31 / norm
+        # dr/drc = w * cross12 / norm
+        # Plus quotient rule terms for norm (small near equilibrium, include for correctness)
+        cross31 = _batch_cross3(v3, v1)
+        cross12 = _batch_cross3(v1, v2)
+        inv_norm = 1.0 / norm
+        q = vol * inv_norm  # vol/norm
+        # d(vol/norm)/dra = (cross23 - q*n2*n3*v1/n1) / norm  [quotient rule]
+        safe1 = n1 > 1e-10
+        safe2 = n2 > 1e-10
+        safe3 = n3 > 1e-10
+        dnorm_dra = np.zeros_like(v1)
+        dnorm_drb = np.zeros_like(v2)
+        dnorm_drc = np.zeros_like(v3)
+        dnorm_dra[safe1] = (n2 * n3)[safe1, None] * v1[safe1] / n1[safe1, None]
+        dnorm_drb[safe2] = (n1 * n3)[safe2, None] * v2[safe2] / n2[safe2, None]
+        dnorm_drc[safe3] = (n1 * n2)[safe3, None] * v3[safe3] / n3[safe3, None]
+        dr_dra = w * (cross23 * inv_norm[:, None] - q[:, None] * dnorm_dra * inv_norm[:, None])
+        dr_drb = w * (cross31 * inv_norm[:, None] - q[:, None] * dnorm_drb * inv_norm[:, None])
+        dr_drc = w * (cross12 * inv_norm[:, None] - q[:, None] * dnorm_drc * inv_norm[:, None])
+        dr_drj = -(dr_dra + dr_drb + dr_drc)
+        scale = 2.0 * r
+        _scatter(planar_groups[:, 0], scale[:, None] * dr_drj)
+        _scatter(planar_groups[:, 1], scale[:, None] * dr_dra)
+        _scatter(planar_groups[:, 2], scale[:, None] * dr_drb)
+        _scatter(planar_groups[:, 3], scale[:, None] * dr_drc)
+
+    # --- Chirality terms: r = w * max(0, -sign*vol) ---
     if len(chiral_info):
-        parts.append(_chirality_residuals(x_3d, idx_map, fixed, chiral_info, _W_CHIRAL))
-    if len(dih_quads):
-        parts.append(_dihedral_residuals(x_3d, idx_map, fixed, dih_quads, dih_targets, _W_DIHEDRAL))
-    if len(ez_quads):
-        parts.append(_dihedral_residuals(x_3d, idx_map, fixed, ez_quads, ez_targets, _W_EZ))
-    if not parts:
-        return np.array([0.0])
-    return np.concatenate(parts)
+        w = _W_CHIRAL
+        rj = _lookup(chiral_info[:, 0])
+        ra = _lookup(chiral_info[:, 1])
+        rb = _lookup(chiral_info[:, 2])
+        rc = _lookup(chiral_info[:, 3])
+        sign = chiral_info[:, 4].astype(float)
+        v1, v2, v3 = ra - rj, rb - rj, rc - rj
+        cross23 = _batch_cross3(v2, v3)
+        vol = np.sum(v1 * cross23, axis=1)
+        raw = -sign * vol
+        active = raw > 0
+        r = w * np.maximum(0.0, raw)
+        cost += np.dot(r, r)
+        if np.any(active):
+            cross31 = _batch_cross3(v3, v1)
+            cross12 = _batch_cross3(v1, v2)
+            # dr/dvol = -w*sign (when active)
+            dr_dvol = np.zeros(len(sign))
+            dr_dvol[active] = -w * sign[active]
+            dr_dra = dr_dvol[:, None] * cross23
+            dr_drb = dr_dvol[:, None] * cross31
+            dr_drc = dr_dvol[:, None] * cross12
+            dr_drj = -(dr_dra + dr_drb + dr_drc)
+            scale = 2.0 * r
+            _scatter(chiral_info[:, 0], scale[:, None] * dr_drj)
+            _scatter(chiral_info[:, 1], scale[:, None] * dr_dra)
+            _scatter(chiral_info[:, 2], scale[:, None] * dr_drb)
+            _scatter(chiral_info[:, 3], scale[:, None] * dr_drc)
+
+    # --- Dihedral terms (AMSR + E/Z): r = w * angular_diff ---
+    for quads, targets, w in [
+        (dih_quads, dih_targets, _W_DIHEDRAL),
+        (ez_quads, ez_targets, _W_EZ),
+    ]:
+        if len(quads) == 0:
+            continue
+        p0 = _lookup(quads[:, 0])
+        p1 = _lookup(quads[:, 1])
+        p2 = _lookup(quads[:, 2])
+        p3 = _lookup(quads[:, 3])
+        actual = _batch_measure_torsion(p0, p1, p2, p3)
+        diff = (actual - targets + 180.0) % 360.0 - 180.0
+        r = w * diff
+        cost += np.dot(r, r)
+        # Torsion gradient (Blondel-Karplus formulation)
+        b1, b2, b3 = p1 - p0, p2 - p1, p3 - p2
+        n1_vec = _batch_cross3(b1, b2)
+        n2_vec = _batch_cross3(b2, b3)
+        n1n = _batch_norm3(n1_vec)
+        n2n = _batch_norm3(n2_vec)
+        b2n = _batch_norm3(b2)
+        safe = (n1n > 1e-10) & (n2n > 1e-10) & (b2n > 1e-10)
+        if not np.any(safe):
+            continue
+        # dtorsion/dp0 = -(b2n / n1n^2) * n1  (standard result)
+        # dtorsion/dp3 =  (b2n / n2n^2) * n2
+        # dtorsion/dp1, dp2 follow from chain rule
+        dt_dp0 = np.zeros_like(p0)
+        dt_dp3 = np.zeros_like(p3)
+        dt_dp0[safe] = -(b2n[safe] / (n1n[safe] ** 2))[:, None] * n1_vec[safe]
+        dt_dp3[safe] = (b2n[safe] / (n2n[safe] ** 2))[:, None] * n2_vec[safe]
+        # dt/dp1 = -dt/dp0 + (dot(b1,b2)/|b2|^2) * (-dt/dp0) + extra term
+        # Using the full Blondel-Karplus form:
+        b1_dot_b2 = np.sum(b1 * b2, axis=1)
+        b3_dot_b2 = np.sum(b3 * b2, axis=1)
+        b2sq = b2n**2
+        c1 = np.zeros_like(b2n)
+        c2 = np.zeros_like(b2n)
+        c1[safe] = b1_dot_b2[safe] / b2sq[safe]
+        c2[safe] = b3_dot_b2[safe] / b2sq[safe]
+        dt_dp1 = -(c1 + 1.0)[:, None] * dt_dp0 + c2[:, None] * dt_dp3
+        dt_dp2 = c1[:, None] * dt_dp0 - (c2 + 1.0)[:, None] * dt_dp3
+        # dt_dp* are dφ/dp in radians/Å; r = w*diff with diff in degrees.
+        # d(cost)/dp = 2*r * w * (180/π) * dφ/dp
+        scale = 2.0 * w * r * (180.0 / np.pi)
+        _scatter(quads[:, 0], scale[:, None] * dt_dp0)
+        _scatter(quads[:, 1], scale[:, None] * dt_dp1)
+        _scatter(quads[:, 2], scale[:, None] * dt_dp2)
+        _scatter(quads[:, 3], scale[:, None] * dt_dp3)
+
+    return cost, grad_all[: len(x_3d)].ravel()
 
 
 def _optimize_ring_system(mol, system_atoms, all_rings, bond_dihedral, coords, placed, parent):
@@ -643,7 +810,7 @@ def _optimize_ring_system(mol, system_atoms, all_rings, bond_dihedral, coords, p
     function enforcing ideal bonds, angles, planarity, chirality, and
     AMSR dihedral restraints.
     """
-    from scipy.optimize import least_squares
+    from scipy.optimize import minimize
 
     sys_set = set(system_atoms)
     sys_list = sorted(system_atoms)
@@ -662,26 +829,66 @@ def _optimize_ring_system(mol, system_atoms, all_rings, bond_dihedral, coords, p
     bonds, ideal_lengths = _collect_ring_bonds(mol, sys_set, fixed)
     angle_triples, ideal_angles = _collect_ring_angles(mol, sys_set, fixed)
     planar_groups = _collect_planar_atoms(mol, sys_set, fixed)
-    chiral_info = _collect_chiral_atoms(mol, sys_set, fixed)
+    chiral_info = _collect_chiral_atoms(mol, sys_set, fixed, coords=coords)
+    # Store optimizer chirality signs for z-matrix chain placement.
+    # Only core atoms get reliable signs (embedding chirality may be
+    # wrong for non-core atoms).
+    if not hasattr(mol, "_optimized_chiral_sign"):
+        mol._optimized_chiral_sign = {}
+    for row in chiral_info:
+        mol._optimized_chiral_sign[int(row[0])] = int(row[4])
     dih_quads, dih_targets = _collect_ring_dihedrals(mol, sys_set, bond_dihedral, fixed)
-    ez_quads, ez_targets = _collect_ez_constraints(mol, sys_set, fixed)
 
-    def residual_fn(x):
-        return _ring_system_residuals(
-            x,
-            idx_map,
-            fixed,
-            bonds,
-            ideal_lengths,
-            angle_triples,
-            ideal_angles,
-            planar_groups,
-            chiral_info,
-            dih_quads,
-            dih_targets,
-            ez_quads,
-            ez_targets,
-        )
+    ez_quads, ez_targets = _collect_ez_constraints(mol, sys_set, fixed)
+    rp_quads, rp_targets = _collect_ring_planarity_dihedrals(mol, sys_set, fixed)
+    # Merge ring planarity dihedrals with AMSR dihedrals (similar weight)
+    if len(rp_quads):
+        dih_quads = np.concatenate([dih_quads, rp_quads]) if len(dih_quads) else rp_quads
+        dih_targets = np.concatenate([dih_targets, rp_targets]) if len(dih_targets) else rp_targets
+
+    # Build unified atom-index -> slot-index mapping for numpy fancy indexing.
+    # Free atoms map to slots 0..n_sys-1; fixed atoms get slots n_sys..n_sys+n_fixed-1.
+    max_atom = max(max(sys_list), max(fixed.keys()) if fixed else 0) + 1
+    atom_to_slot = np.full(max_atom, -1, dtype=int)
+    for atom, i in idx_map.items():
+        atom_to_slot[atom] = i
+    fixed_list = sorted(fixed.keys())
+    fixed_coords = np.zeros((len(fixed_list), 3))
+    for fi, fa in enumerate(fixed_list):
+        atom_to_slot[fa] = n_sys + fi
+        fixed_coords[fi] = fixed[fa]
+
+    # Remap all constraint atom indices to slot indices for direct numpy indexing.
+    def _remap(arr):
+        return atom_to_slot[arr] if len(arr) else arr
+
+    if len(bonds):
+        bonds = _remap(bonds)
+    if len(angle_triples):
+        angle_triples = _remap(angle_triples)
+    if len(planar_groups):
+        planar_groups[:, :4] = _remap(planar_groups[:, :4])
+    if len(chiral_info):
+        chiral_info[:, :4] = _remap(chiral_info[:, :4])
+    if len(dih_quads):
+        dih_quads = _remap(dih_quads)
+    if len(ez_quads):
+        ez_quads = _remap(ez_quads)
+
+    args = (
+        n_sys,
+        fixed_coords,
+        bonds,
+        ideal_lengths,
+        angle_triples,
+        ideal_angles,
+        planar_groups,
+        chiral_info,
+        dih_quads,
+        dih_targets,
+        ez_quads,
+        ez_targets,
+    )
 
     # Initial coordinates come from the embedding already stored in coords.
     x0 = np.zeros(3 * n_sys)
@@ -689,24 +896,24 @@ def _optimize_ring_system(mol, system_atoms, all_rings, bond_dihedral, coords, p
         k = idx_map[a]
         x0[3 * k : 3 * k + 3] = coords[a]
 
-    result = least_squares(residual_fn, x0, method="trf", ftol=1e-10, xtol=1e-10, gtol=1e-10)
-    best_cost = result.cost
-    best_result = result
+    result = minimize(_cost_and_grad, x0, args=args, method="L-BFGS-B", jac=True)
+    best_cost = result.fun
+    best_x = result.x
 
-    # If cost is still high, try more RDKit embeddings
+    # If cost is still high, try more RDKit embeddings and perturbations
     if best_cost > 0.5 and n_sys > 0:
-        extra = _rdkit_embed(mol, n_confs=4, seed=123)
+        extra = _rdkit_embed(mol, n_confs=10, seed=123)
         for embed_coords in extra:
             x0 = np.zeros(3 * n_sys)
             for a in sys_list:
                 x0[3 * idx_map[a] : 3 * idx_map[a] + 3] = embed_coords[a]
-            r = least_squares(residual_fn, x0, method="trf", ftol=1e-10, xtol=1e-10, gtol=1e-10)
-            if r.cost < best_cost:
-                best_cost = r.cost
-                best_result = r
+            r = minimize(_cost_and_grad, x0, args=args, method="L-BFGS-B", jac=True)
+            if r.fun < best_cost:
+                best_cost = r.fun
+                best_x = r.x
 
     # Copy optimized coordinates back
-    x_opt = best_result.x.reshape(-1, 3)
+    x_opt = best_x.reshape(-1, 3)
     for a in sys_list:
         coords[a] = x_opt[idx_map[a]]
 
@@ -896,6 +1103,33 @@ def _place_chain_atom(
     if first_child_idx[p] is None:
         first_child_idx[p] = i
     child_count[p] += 1
+
+    # After placing a child of a chiral core atom, check volume against
+    # the embedding to catch sign convention mismatches.  If wrong, reflect
+    # the new atom across the plane of the parent's other neighbors.
+    # Only check atoms whose chirality was enforced by the ring optimizer
+    # (recorded in _optimized_chiral_sign).
+    atom_p = mol.GetAtomWithIdx(p)
+    if atom_p.GetChiralTag() in (CW, CCW):
+        nbrs = [nb.GetIdx() for nb in atom_p.GetNeighbors()]
+        if all(_is_placed(coords, nb) for nb in nbrs) and len(nbrs) >= 3:
+            rp = coords[p]
+            vs = [coords[nb] - rp for nb in nbrs[:3]]
+            vol = np.dot(vs[0], np.cross(vs[1], vs[2]))
+            expected = getattr(mol, "_optimized_chiral_sign", {}).get(p)
+            if expected is not None and np.sign(vol) != expected:
+                # Reflect atom i across the plane of p's other placed neighbors
+                others = [nb for nb in nbrs if nb != i and _is_placed(coords, nb)]
+                if len(others) >= 2:
+                    v1 = coords[others[0]] - rp
+                    v2 = coords[others[1]] - rp
+                    normal = np.cross(v1, v2)
+                    nn = _norm3(normal)
+                    if nn > 1e-10:
+                        normal /= nn
+                        d = coords[i] - rp
+                        coords[i] = rp + d - 2.0 * np.dot(d, normal) * normal
+
     return alternatives
 
 
@@ -968,6 +1202,64 @@ def GetConformer(
         embeddings = _rdkit_embed(mol, n_confs=1)
         if embeddings:
             coords[:] = embeddings[0]
+            # Fix dihedral reference-atom mismatches for equivalent terminals.
+            # When the reference atom is a degree-1 terminal with an equivalent
+            # sibling (same element, also degree-1), the encode/decode may pick
+            # different ones.  Try the alternative and keep the better match.
+            for (i, j), (mi, mj, angle) in list(bond_dihedral.items()):
+                if i > j:
+                    continue
+                changed = False
+                for side, ref, bond_end, other_end in [(0, mi, i, j), (1, mj, j, i)]:
+                    a_ref = mol.GetAtomWithIdx(ref)
+                    if a_ref.GetDegree() != 1:
+                        continue
+                    # Find equivalent sibling: same element, also degree-1
+                    siblings = [
+                        nb.GetIdx()
+                        for nb in mol.GetAtomWithIdx(bond_end).GetNeighbors()
+                        if nb.GetIdx() != other_end
+                        and nb.GetIdx() != ref
+                        and nb.GetDegree() == 1
+                        and nb.GetAtomicNum() == a_ref.GetAtomicNum()
+                    ]
+                    if not siblings:
+                        continue
+                    # Try each alternative and pick the one closest to AMSR target
+                    cur_mi, cur_mj = bond_dihedral[(i, j)][:2]
+                    best_ref = ref
+                    cur_diff = abs(
+                        (
+                            measure_torsion(coords[cur_mi], coords[i], coords[j], coords[cur_mj])
+                            - angle
+                            + 180
+                        )
+                        % 360
+                        - 180
+                    )
+                    for alt in siblings:
+                        alt_mi = alt if side == 0 else cur_mi
+                        alt_mj = alt if side == 1 else cur_mj
+                        alt_diff = abs(
+                            (
+                                measure_torsion(
+                                    coords[alt_mi], coords[i], coords[j], coords[alt_mj]
+                                )
+                                - angle
+                                + 180
+                            )
+                            % 360
+                            - 180
+                        )
+                        if alt_diff < cur_diff:
+                            best_ref = alt
+                            cur_diff = alt_diff
+                    if best_ref != ref:
+                        mi_new = best_ref if side == 0 else mi
+                        mj_new = best_ref if side == 1 else mj
+                        bond_dihedral[(i, j)] = (mi_new, mj_new, angle)
+                        bond_dihedral[(j, i)] = (mj_new, mi_new, angle)
+                        changed = True
             # Optimize core atoms; branch atoms from embedding serve as
             # fixed anchors (though few branches touch the core directly).
             fixed_for_opt = {i: coords[i].copy() for i in range(n) if i not in core_atoms}
