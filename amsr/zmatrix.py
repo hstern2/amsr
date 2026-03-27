@@ -1189,6 +1189,7 @@ def _optimize_ring_system(mol, system_atoms, all_rings, bond_dihedral, coords, p
     x_opt = best_x.reshape(-1, 3)
     for a in sys_list:
         coords[a] = x_opt[idx_map[a]]
+    return best_cost
 
 
 # ============================================================

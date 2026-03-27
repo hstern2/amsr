@@ -81,6 +81,39 @@ def FromMolToTokens(
         i = sorted(range(len(ranks)), key=lambda x: ranks[x])
         mol = Chem.RenumberAtoms(mol, i)
 
+    # Assign pseudo-chirality from 3D geometry for SP3 centers whose
+    # substituents are graph-equivalent (e.g. quaternary C bearing two
+    # identical phenyl rings).  RDKit won't mark these as chiral, but
+    # the 3D arrangement matters for conformer reconstruction.
+    # Skip atoms where all 4 neighbors are equivalent (e.g. neopentane).
+    if useStereo and mol.GetNumConformers() > 0 and mol.GetConformer().Is3D():
+        conf = mol.GetConformer()
+        ranks = list(Chem.CanonicalRankAtoms(mol, breakTies=False))
+        for a in mol.GetAtoms():
+            if a.GetChiralTag() != Chem.ChiralType.CHI_UNSPECIFIED:
+                continue
+            if a.GetDegree() != 4:
+                continue
+            nbrs = [n.GetIdx() for n in a.GetNeighbors()]
+            if len(set(ranks[n] for n in nbrs)) < 2:
+                continue
+            pc = conf.GetAtomPosition(a.GetIdx())
+            p0 = conf.GetAtomPosition(nbrs[0])
+            p1 = conf.GetAtomPosition(nbrs[1])
+            p2 = conf.GetAtomPosition(nbrs[2])
+            v0 = (p0.x - pc.x, p0.y - pc.y, p0.z - pc.z)
+            v1 = (p1.x - pc.x, p1.y - pc.y, p1.z - pc.z)
+            v2 = (p2.x - pc.x, p2.y - pc.y, p2.z - pc.z)
+            vol = (
+                v0[0] * (v1[1] * v2[2] - v1[2] * v2[1])
+                + v0[1] * (v1[2] * v2[0] - v1[0] * v2[2])
+                + v0[2] * (v1[0] * v2[1] - v1[1] * v2[0])
+            )
+            if vol > 0:
+                a.SetChiralTag(Chem.ChiralType.CHI_TETRAHEDRAL_CCW)
+            elif vol < 0:
+                a.SetChiralTag(Chem.ChiralType.CHI_TETRAHEDRAL_CW)
+
     atom = [Atom.fromRDAtom(a) for a in mol.GetAtoms()]
     seenBonds: set[frozenset[int]] = set()
     nSeenAtoms = 0
