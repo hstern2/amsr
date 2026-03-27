@@ -1163,6 +1163,25 @@ def _optimize_ring_system(mol, system_atoms, all_rings, bond_dihedral, coords, p
                 best_cost = r.fun
                 best_x = r.x
 
+    # If AMSR dihedral targets exist, try ring-inverted starting point.
+    # For non-planar rings the optimizer can converge to the mirror-image
+    # chair; inverting through the mean plane and re-optimizing often fixes it.
+    if best_cost > 0.01 and len(dih_quads):
+        x_inv = best_x.copy().reshape(-1, 3)
+        centroid = x_inv.mean(axis=0)
+        # SVD to find mean plane normal
+        centered = x_inv - centroid
+        _, _, Vt = np.linalg.svd(centered, full_matrices=False)
+        normal = Vt[-1]
+        # Reflect through the mean plane
+        for k in range(len(x_inv)):
+            d = np.dot(x_inv[k] - centroid, normal)
+            x_inv[k] -= 2.0 * d * normal
+        r = minimize(_objective, x_inv.ravel(), method="L-BFGS-B", jac=True)
+        if r.fun < best_cost:
+            best_cost = r.fun
+            best_x = r.x
+
     # Copy optimized coordinates back
     x_opt = best_x.reshape(-1, 3)
     for a in sys_list:
