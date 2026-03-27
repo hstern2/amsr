@@ -1324,22 +1324,24 @@ def _place_chain_atom(
                     k = other_placed[0]
                     if hyb == SP2:
                         omega = 180.0
+                        coords[i] = place_atom(
+                            coords[k], coords[c1], coords[p], bond_len, ang, omega
+                        )
                     else:
-                        chiral = mol.GetAtomWithIdx(p).GetChiralTag()
-                        sign = -1.0 if chiral == CCW else 1.0
-                        children_of_p = [
-                            nb.GetIdx()
-                            for nb in mol.GetAtomWithIdx(p).GetNeighbors()
-                            if nb.GetIdx() != c1
-                        ]
-                        if i in children_of_p and k in children_of_p:
-                            steps = (children_of_p.index(i) - children_of_p.index(k)) % len(
-                                children_of_p
+                        # Try +120 and -120 from ref k; pick the one farthest
+                        # from all placed neighbors (avoids atom-ordering-dependent
+                        # GetNeighbors() indexing for chirality).
+                        best_pos = None
+                        best_min_dist = -1.0
+                        for omega in [120.0, -120.0]:
+                            trial = place_atom(
+                                coords[k], coords[c1], coords[p], bond_len, ang, omega
                             )
-                        else:
-                            steps = child_count[p]
-                        omega = sign * 120.0 * steps
-                    coords[i] = place_atom(coords[k], coords[c1], coords[p], bond_len, ang, omega)
+                            min_d = min(_norm3(trial - coords[nb]) for nb in other_placed)
+                            if min_d > best_min_dist:
+                                best_min_dist = min_d
+                                best_pos = trial
+                        coords[i] = best_pos
                 else:
                     ref = _synthetic_ref(coords, p, c1)
                     omega = 180.0 if hyb == SP2 else 120.0 * child_count[p]
