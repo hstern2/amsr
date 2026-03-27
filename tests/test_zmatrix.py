@@ -56,12 +56,12 @@ def _backend_name():
     return "C" if _cg.is_available() else "Python"
 
 
-# Seeds: None = default (canonical), then 5 deterministic random seeds
+# Seeds: None = default SDF atom order, then 5 randomized atom orders
 _seeds = [None] + list(range(_N_RANDOM))
 
 
 @pytest.mark.parametrize("sdf_path", _sdf_files, ids=[os.path.basename(f) for f in _sdf_files])
-@pytest.mark.parametrize("seed", _seeds, ids=["canonical"] + [f"seed{s}" for s in range(_N_RANDOM)])
+@pytest.mark.parametrize("seed", _seeds, ids=[f"seed{s}" for s in range(len(_seeds))])
 def test_roundtrip_sdf(sdf_path, seed):
     name = os.path.splitext(os.path.basename(sdf_path))[0]
     mol = Chem.MolFromMolFile(sdf_path, removeHs=True)
@@ -71,7 +71,7 @@ def test_roundtrip_sdf(sdf_path, seed):
     backend = _backend_name()
 
     os.makedirs(_out_dir, exist_ok=True)
-    seed_str = "canonical" if seed is None else str(seed)
+    seed_str = "0" if seed is None else str(seed + 1)
     # Save SDF output for every encoding
     match = mol.GetSubstructMatch(mol_out)
     if match:

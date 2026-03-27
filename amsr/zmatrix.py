@@ -692,10 +692,11 @@ def _collect_ring_dihedrals(mol, sys_set, bond_dihedral, fixed):
 def _collect_ring_planarity_dihedrals(mol, sys_set, fixed):
     """Collect 0° torsion constraints for planar ring bonds.
 
-    For small (<=6) all-SP2 rings, constrains all consecutive 4-atom
-    sequences to 0° torsion.  For larger all-SP2 rings, only constrains
-    bonds that are double in the Kekulized form — single bonds in large
-    rings can rotate (e.g. 7-membered tropylium-like rings pucker).
+    For each ring, constrains consecutive 4-atom sequences where all
+    four atoms are SP2 to 0° torsion (planar).  This handles both
+    all-SP2 rings and mixed SP2/SP3 rings — the SP2 portions stay flat
+    while SP3 atoms are free to puck.  For large (>6) all-SP2 rings,
+    only constrains Kekulized double bonds since single bonds can rotate.
     Returns (quads, targets) — Nx4 int, N float.
     """
     available = sys_set | set(fixed)
@@ -708,22 +709,24 @@ def _collect_ring_planarity_dihedrals(mol, sys_set, fixed):
     quads, targets = [], []
     seen = set()
     for ring in mol.GetRingInfo().AtomRings():
-        if not all(mol.GetAtomWithIdx(a).GetHybridization() == SP2 for a in ring):
-            continue
         if not all(a in available for a in ring):
             continue
         n = len(ring)
+        all_sp2 = all(mol.GetAtomWithIdx(a).GetHybridization() == SP2 for a in ring)
         for i in range(n):
-            b, c = ring[(i + 1) % n], ring[(i + 2) % n]
-            # For large rings, skip Kekulized single bonds (they can rotate).
-            if n > 6:
+            a, b, c, d = ring[i], ring[(i + 1) % n], ring[(i + 2) % n], ring[(i + 3) % n]
+            # All four atoms must be SP2 for planarity.
+            if not all(mol.GetAtomWithIdx(x).GetHybridization() == SP2 for x in (a, b, c, d)):
+                continue
+            # For large all-SP2 rings, skip Kekulized single bonds (they can rotate).
+            if all_sp2 and n > 6:
                 bond_bc = mol_k.GetBondBetweenAtoms(b, c)
                 if bond_bc is not None and bond_bc.GetBondType() == Chem.BondType.SINGLE:
                     continue
             key = (min(b, c), max(b, c))
             if key not in seen:
                 seen.add(key)
-                quads.append((ring[i], b, c, ring[(i + 3) % n]))
+                quads.append((a, b, c, d))
                 targets.append(0.0)
     return (
         np.array(quads, dtype=int) if quads else np.empty((0, 4), dtype=int),
