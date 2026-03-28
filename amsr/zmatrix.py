@@ -1067,13 +1067,16 @@ def _optimize_ring_system(mol, system_atoms, all_rings, bond_dihedral, coords, p
     angle_triples, ideal_angles = _collect_ring_angles(mol, sys_set, fixed)
     planar_groups = _collect_planar_atoms(mol, sys_set, fixed)
     chiral_info, chiral_target_vols = _collect_chiral_atoms(mol, sys_set, fixed, coords=coords)
-    # Store optimizer chirality signs for z-matrix chain placement.
-    # Only core atoms get reliable signs (embedding chirality may be
-    # wrong for non-core atoms).
+    # Store optimizer chirality signs and target volumes for z-matrix
+    # chain placement.  Only core atoms get reliable values (embedding
+    # chirality may be wrong for non-core atoms).
     if not hasattr(mol, "_optimized_chiral_sign"):
         mol._optimized_chiral_sign = {}
-    for row in chiral_info:
+    if not hasattr(mol, "_optimized_chiral_vol"):
+        mol._optimized_chiral_vol = {}
+    for idx, row in enumerate(chiral_info):
         mol._optimized_chiral_sign[int(row[0])] = int(row[4])
+        mol._optimized_chiral_vol[int(row[0])] = float(chiral_target_vols[idx])
     dih_quads, dih_targets = _collect_ring_dihedrals(mol, sys_set, bond_dihedral, fixed)
 
     ez_quads, ez_targets = _collect_ez_constraints(mol, sys_set, fixed)
@@ -1180,17 +1183,16 @@ def _optimize_ring_system(mol, system_atoms, all_rings, bond_dihedral, coords, p
                 best_cost = r.fun
                 best_x = r.x
 
-    # If AMSR dihedral targets exist, try ring-inverted starting point.
+    # If AMSR dihedral targets exist, try ring-inverted starting points.
     # For non-planar rings the optimizer can converge to the mirror-image
     # chair; inverting through the mean plane and re-optimizing often fixes it.
     if best_cost > 0.01 and len(dih_quads):
+        # Global inversion (all atoms through overall mean plane)
         x_inv = best_x.copy().reshape(-1, 3)
         centroid = x_inv.mean(axis=0)
-        # SVD to find mean plane normal
         centered = x_inv - centroid
         _, _, Vt = np.linalg.svd(centered, full_matrices=False)
         normal = Vt[-1]
-        # Reflect through the mean plane
         for k in range(len(x_inv)):
             d = np.dot(x_inv[k] - centroid, normal)
             x_inv[k] -= 2.0 * d * normal
@@ -1198,6 +1200,28 @@ def _optimize_ring_system(mol, system_atoms, all_rings, bond_dihedral, coords, p
         if r.fun < best_cost:
             best_cost = r.fun
             best_x = r.x
+
+        # Per-ring inversions: invert each non-planar ring individually.
+        # This handles cases where only one ring in a multi-ring system
+        # needs to be flipped (e.g. cyclohexane chair in a mixed system).
+        for ring in all_rings:
+            ring_slots = [idx_map[a] for a in ring if a in idx_map]
+            if len(ring_slots) < 4:
+                continue
+            if all(mol.GetAtomWithIdx(a).GetHybridization() == SP2 for a in ring):
+                continue
+            x_inv = best_x.copy().reshape(-1, 3)
+            rcoords = x_inv[ring_slots]
+            rc = rcoords.mean(axis=0)
+            _, _, Vt = np.linalg.svd(rcoords - rc, full_matrices=False)
+            rn = Vt[-1]
+            for k in ring_slots:
+                d = np.dot(x_inv[k] - rc, rn)
+                x_inv[k] -= 2.0 * d * rn
+            r = minimize(_objective, x_inv.ravel(), method="L-BFGS-B", jac=True)
+            if r.fun < best_cost:
+                best_cost = r.fun
+                best_x = r.x
 
     # Copy optimized coordinates back
     x_opt = best_x.reshape(-1, 3)
@@ -1404,12 +1428,10 @@ def _place_chain_atom(
             rp = coords[p]
             vs = [coords[nb] - rp for nb in nbrs[:3]]
             vol = np.dot(vs[0], np.cross(vs[1], vs[2]))
-            expected = getattr(mol, "_optimized_chiral_sign", {}).get(p)
-            if expected is None:
-                # CW → negative volume, CCW → positive (RDKit convention
-                # with GetNeighbors() ordering).
-                expected = -1.0 if atom_p.GetChiralTag() == CW else 1.0
-            if np.sign(vol) != expected:
+            expected_sign = getattr(mol, "_optimized_chiral_sign", {}).get(p)
+            if expected_sign is None:
+                expected_sign = -1.0 if atom_p.GetChiralTag() == CW else 1.0
+            if np.sign(vol) != expected_sign:
                 # Reflect atom i across the plane of p's other placed neighbors
                 others = [nb for nb in nbrs if nb != i and _is_placed(coords, nb)]
                 if len(others) >= 2:
@@ -1421,6 +1443,13 @@ def _place_chain_atom(
                         normal /= nn
                         d = coords[i] - rp
                         coords[i] = rp + d - 2.0 * np.dot(d, normal) * normal
+                        # Update first_child_torsion so subsequent children
+                        # use the post-reflection base angle.
+                        if first_child_idx[p] == i and g is not None:
+                            std_ref = coords[gg] if gg is not None else _synthetic_ref(coords, g, p)
+                            first_child_torsion[p] = measure_torsion(
+                                std_ref, coords[g], coords[p], coords[i]
+                            )
 
     return alternatives
 
