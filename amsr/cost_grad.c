@@ -103,8 +103,8 @@ double cost_and_grad(
     const int *angle_triples, const double *ideal_angles_deg, int n_angles,
     /* Planarity: groups[n_planar*4] */
     const int *planar_groups, int n_planar,
-    /* Chirality: info[n_chiral*5] (center, a, b, c, sign) */
-    const int *chiral_info, int n_chiral,
+    /* Chirality: info[n_chiral*5] (center, a, b, c, sign), target_vols[n_chiral] */
+    const int *chiral_info, const double *chiral_target_vols, int n_chiral,
     /* Dihedral: quads[n_dih*4], targets_deg[n_dih] */
     const int *dih_quads, const double *dih_targets_deg, int n_dih,
     /* EZ: quads[n_ez*4], targets_deg[n_ez] */
@@ -237,13 +237,16 @@ double cost_and_grad(
         scatter(grad, sc, n_free, gc);
     }
 
-    /* --- Chirality terms: r = w * max(0, -sign*vol) --- */
+    /* --- Chirality terms: r = w * max(0, sign*(target - vol)) --- */
+    /* One-sided penalty from target volume: penalizes when |vol| is too    */
+    /* small or has the wrong sign, but not when |vol| > |target|.         */
     for (int ic = 0; ic < n_chiral; ic++) {
         int sj = chiral_info[5*ic];
         int sa = chiral_info[5*ic+1];
         int sb = chiral_info[5*ic+2];
         int sc = chiral_info[5*ic+3];
         double sign = (double)chiral_info[5*ic+4];
+        double target = chiral_target_vols[ic];
         const double *rj = coord(x, fixed, n_free, sj);
         const double *ra = coord(x, fixed, n_free, sa);
         const double *rb = coord(x, fixed, n_free, sb);
@@ -252,7 +255,7 @@ double cost_and_grad(
         sub3(ra, rj, v1); sub3(rb, rj, v2); sub3(rc, rj, v3);
         cross3(v2, v3, c23);
         double vol = dot3(v1, c23);
-        double raw = -sign * vol;
+        double raw = sign * (target - vol);
         if (raw <= 0.0) continue;
         double r = w_chiral * raw;
         cost += r * r;

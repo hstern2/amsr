@@ -44,7 +44,8 @@ def _load_lib():
             ctypes.c_void_p,
             ctypes.c_int,  # planar
             ctypes.c_void_p,
-            ctypes.c_int,  # chiral
+            ctypes.c_void_p,  # chiral (info + target_vols)
+            ctypes.c_int,
             ctypes.c_void_p,
             ctypes.c_void_p,
             ctypes.c_int,  # dih
@@ -114,8 +115,10 @@ class CostGradProblem:
         "_n_planar",
         "_p_pg",
         "_ci",
+        "_ctv",
         "_n_chiral",
         "_p_ci",
+        "_p_ctv",
         "_dq",
         "_dt",
         "_n_dih",
@@ -144,6 +147,7 @@ class CostGradProblem:
         ideal_angles,
         planar_groups,
         chiral_info,
+        chiral_target_vols,
         dih_quads,
         dih_targets,
         ez_quads,
@@ -184,8 +188,14 @@ class CostGradProblem:
         self._p_pg = _dptr(self._pg)
 
         self._ci = _to_int32(chiral_info) if len(chiral_info) else np.empty((0, 5), dtype=np.int32)
+        self._ctv = (
+            _to_f64(chiral_target_vols)
+            if len(chiral_target_vols)
+            else np.empty(0, dtype=np.float64)
+        )
         self._n_chiral = len(self._ci)
         self._p_ci = _dptr(self._ci)
+        self._p_ctv = _dptr(self._ctv)
 
         self._dq = _to_int32(dih_quads) if len(dih_quads) else np.empty((0, 4), dtype=np.int32)
         self._dt = _to_f64(dih_targets) if len(dih_targets) else np.empty(0, dtype=np.float64)
@@ -225,6 +235,7 @@ class CostGradProblem:
             self._p_pg,
             self._n_planar,
             self._p_ci,
+            self._p_ctv,
             self._n_chiral,
             self._p_dq,
             self._p_dt,

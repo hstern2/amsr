@@ -629,11 +629,13 @@ def _collect_planar_atoms(mol, sys_set, fixed):
 def _collect_chiral_atoms(mol, sys_set, fixed, coords=None):
     """Collect chirality constraints for SP3 chiral atoms in the ring system.
 
-    Returns Nx5 array: (center, a, b, c, sign) where sign encodes expected
-    volume direction from the RDKit embedding.
+    Returns (Nx5 int array (center, a, b, c, sign), N float array of target volumes).
+    When coords are available, target volumes are the embedding volumes;
+    otherwise ±1 from the chirality tag.
     """
     available = sys_set | set(fixed)
     result = []
+    target_vols = []
     for j in sorted(sys_set):
         atom = mol.GetAtomWithIdx(j)
         chiral = atom.GetChiralTag()
@@ -652,10 +654,14 @@ def _collect_chiral_atoms(mol, sys_set, fixed, coords=None):
             v1, v2, v3 = ra - rj, rb - rj, rc - rj
             vol = np.dot(v1, np.cross(v2, v3))
             sign = 1 if vol > 0 else -1
+            target_vols.append(vol)
         else:
             sign = 1 if chiral == CW else -1
+            target_vols.append(float(sign))
         result.append((j, nbrs[0], nbrs[1], nbrs[2], sign))
-    return np.array(result, dtype=int) if result else np.empty((0, 5), dtype=int)
+    idx = np.array(result, dtype=int) if result else np.empty((0, 5), dtype=int)
+    tvol = np.array(target_vols, dtype=float) if target_vols else np.empty(0, dtype=float)
+    return idx, tvol
 
 
 def _collect_ring_dihedrals(mol, sys_set, bond_dihedral, fixed):
@@ -817,6 +823,7 @@ def _cost_and_grad(
     ideal_angles,
     planar_groups,
     chiral_info,
+    chiral_target_vols,
     dih_quads,
     dih_targets,
     ez_quads,
@@ -943,7 +950,11 @@ def _cost_and_grad(
         _scatter(planar_groups[:, 2], scale[:, None] * dr_drb)
         _scatter(planar_groups[:, 3], scale[:, None] * dr_drc)
 
-    # --- Chirality terms: r = w * max(0, -sign*vol) ---
+    # --- Chirality terms: r = w * max(0, sign*(target - vol)) ---
+    # One-sided penalty that activates when vol is closer to zero (or
+    # wrong sign) than the target.  Unlike the old max(0, -sign*vol),
+    # this has non-zero gradient at vol=0, preventing SP2 planarity
+    # constraints from collapsing SP3 chiral centers flat.
     if len(chiral_info):
         w = _W_CHIRAL
         rj = _lookup(chiral_info[:, 0])
@@ -954,7 +965,8 @@ def _cost_and_grad(
         v1, v2, v3 = ra - rj, rb - rj, rc - rj
         cross23 = _batch_cross3(v2, v3)
         vol = np.sum(v1 * cross23, axis=1)
-        raw = -sign * vol
+        target = chiral_target_vols
+        raw = sign * (target - vol)
         active = raw > 0
         r = w * np.maximum(0.0, raw)
         cost += np.dot(r, r)
@@ -1054,7 +1066,7 @@ def _optimize_ring_system(mol, system_atoms, all_rings, bond_dihedral, coords, p
     bonds, ideal_lengths = _collect_ring_bonds(mol, sys_set, fixed)
     angle_triples, ideal_angles = _collect_ring_angles(mol, sys_set, fixed)
     planar_groups = _collect_planar_atoms(mol, sys_set, fixed)
-    chiral_info = _collect_chiral_atoms(mol, sys_set, fixed, coords=coords)
+    chiral_info, chiral_target_vols = _collect_chiral_atoms(mol, sys_set, fixed, coords=coords)
     # Store optimizer chirality signs for z-matrix chain placement.
     # Only core atoms get reliable signs (embedding chirality may be
     # wrong for non-core atoms).
@@ -1114,6 +1126,7 @@ def _optimize_ring_system(mol, system_atoms, all_rings, bond_dihedral, coords, p
             ideal_angles,
             planar_groups,
             chiral_info,
+            chiral_target_vols,
             dih_quads,
             dih_targets,
             ez_quads,
@@ -1135,6 +1148,7 @@ def _optimize_ring_system(mol, system_atoms, all_rings, bond_dihedral, coords, p
             ideal_angles,
             planar_groups,
             chiral_info,
+            chiral_target_vols,
             dih_quads,
             dih_targets,
             ez_quads,
