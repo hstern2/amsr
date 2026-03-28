@@ -174,13 +174,6 @@ def _set_dihedral(coords, mi, i, j, mj, target, atoms_to_rotate):
         )
 
 
-def measure_angle(coords, a, b, c):
-    """Angle a-b-c (degrees) from coordinates."""
-    v1, v2 = coords[a] - coords[b], coords[c] - coords[b]
-    cos_a = np.dot(v1, v2) / (_norm3(v1) * _norm3(v2) + 1e-10)
-    return math.degrees(math.acos(max(-1.0, min(1.0, float(cos_a)))))
-
-
 # ---------------------------------------------------------------------------
 # Batch geometry primitives (vectorized numpy)
 # ---------------------------------------------------------------------------
@@ -286,6 +279,22 @@ def _get_bond_angle(mol, a, b, c):
                             return poly
                         break
     return _HYBRID_ANGLES.get(hyb, 109.5)
+
+
+def _bfs_subtree(mol, root, exclude):
+    """BFS from root, excluding the given atom.  Returns set of reachable atoms."""
+    visited = set()
+    queue = [root]
+    while queue:
+        curr = queue.pop(0)
+        if curr in visited or curr == exclude:
+            continue
+        visited.add(curr)
+        for nb in mol.GetAtomWithIdx(curr).GetNeighbors():
+            b = nb.GetIdx()
+            if b != exclude and b not in visited:
+                queue.append(b)
+    return visited
 
 
 def _synthetic_ref(coords, b, c):
@@ -410,17 +419,7 @@ def _correct_junction_dihedrals(mol, ring_systems, core_atoms, bond_dihedral, co
         bond = mol.GetBondBetweenAtoms(i, j)
         if bond is None or bond.IsInRing():
             continue
-        # BFS from j (excluding i) to find all atoms to rotate
-        to_rotate = set()
-        queue = [j]
-        while queue:
-            curr = queue.pop(0)
-            if curr in to_rotate or curr == i:
-                continue
-            to_rotate.add(curr)
-            for nb in mol.GetAtomWithIdx(curr).GetNeighbors():
-                if nb.GetIdx() != i and nb.GetIdx() not in to_rotate:
-                    queue.append(nb.GetIdx())
+        to_rotate = _bfs_subtree(mol, j, i)
         if mi in to_rotate or mj not in to_rotate:
             continue
         _set_dihedral(coords, mi, i, j, mj, angle, to_rotate)
@@ -516,6 +515,13 @@ def _find_ring_systems(mol):
 # ============================================================
 
 
+def _to_array(lst, dtype=int, cols=None):
+    """Convert list to numpy array, returning an appropriately shaped empty array if empty."""
+    if lst:
+        return np.array(lst, dtype=dtype)
+    return np.empty((0, cols) if cols else (0,), dtype=dtype)
+
+
 def _collect_ring_bonds(mol, sys_set, fixed):
     """Collect all bonds within the ring system and to fixed neighbors.
 
@@ -602,9 +608,7 @@ def _collect_ring_angles(mol, sys_set, fixed):
             per = (360.0 - total) / len(no_common)
             for k in no_common:
                 ideals[k] += per
-    return np.array(triples, dtype=int) if triples else np.empty((0, 3), dtype=int), np.array(
-        ideals
-    )
+    return _to_array(triples, cols=3), np.array(ideals) if ideals else np.empty(0)
 
 
 def _collect_planar_atoms(mol, sys_set, fixed):
@@ -623,7 +627,7 @@ def _collect_planar_atoms(mol, sys_set, fixed):
         ]
         if len(nbrs) >= 3:
             groups.append((j, nbrs[0], nbrs[1], nbrs[2]))
-    return np.array(groups, dtype=int) if groups else np.empty((0, 4), dtype=int)
+    return _to_array(groups, cols=4)
 
 
 def _collect_chiral_atoms(mol, sys_set, fixed, coords=None):
@@ -636,6 +640,10 @@ def _collect_chiral_atoms(mol, sys_set, fixed, coords=None):
     available = sys_set | set(fixed)
     result = []
     target_vols = []
+
+    def _get(a):
+        return coords[a] if a not in fixed else fixed[a]
+
     for j in sorted(sys_set):
         atom = mol.GetAtomWithIdx(j)
         chiral = atom.GetChiralTag()
@@ -645,10 +653,6 @@ def _collect_chiral_atoms(mol, sys_set, fixed, coords=None):
         if len(nbrs) < 3:
             continue
         if coords is not None:
-
-            def _get(a):
-                return coords[a] if a not in fixed else fixed[a]
-
             rj = _get(j)
             ra, rb, rc = _get(nbrs[0]), _get(nbrs[1]), _get(nbrs[2])
             v1, v2, v3 = ra - rj, rb - rj, rc - rj
@@ -659,8 +663,8 @@ def _collect_chiral_atoms(mol, sys_set, fixed, coords=None):
             sign = 1 if chiral == CW else -1
             target_vols.append(float(sign))
         result.append((j, nbrs[0], nbrs[1], nbrs[2], sign))
-    idx = np.array(result, dtype=int) if result else np.empty((0, 5), dtype=int)
-    tvol = np.array(target_vols, dtype=float) if target_vols else np.empty(0, dtype=float)
+    idx = _to_array(result, cols=5)
+    tvol = _to_array(target_vols, dtype=float)
     return idx, tvol
 
 
@@ -689,10 +693,7 @@ def _collect_ring_dihedrals(mol, sys_set, bond_dihedral, fixed):
                 if mi in available and mj in available:
                     quads.append((mi, bond_key[0], bond_key[1], mj))
                     targets.append(float(angle))
-    return (
-        np.array(quads, dtype=int) if quads else np.empty((0, 4), dtype=int),
-        np.array(targets) if targets else np.empty(0),
-    )
+    return _to_array(quads, cols=4), _to_array(targets, dtype=float)
 
 
 def _collect_ring_planarity_dihedrals(mol, sys_set, fixed):
@@ -734,10 +735,7 @@ def _collect_ring_planarity_dihedrals(mol, sys_set, fixed):
                 seen.add(key)
                 quads.append((a, b, c, d))
                 targets.append(0.0)
-    return (
-        np.array(quads, dtype=int) if quads else np.empty((0, 4), dtype=int),
-        np.array(targets) if targets else np.empty(0),
-    )
+    return _to_array(quads, cols=4), _to_array(targets, dtype=float)
 
 
 def _collect_ez_constraints(mol, sys_set, fixed):
@@ -766,10 +764,7 @@ def _collect_ez_constraints(mol, sys_set, fixed):
         target = 0.0 if stereo == Chem.BondStereo.STEREOZ else 180.0
         quads.append((si, i, j, sj))
         targets.append(target)
-    return (
-        np.array(quads, dtype=int) if quads else np.empty((0, 4), dtype=int),
-        np.array(targets) if targets else np.empty(0),
-    )
+    return _to_array(quads, cols=4), _to_array(targets, dtype=float)
 
 
 # ============================================================
@@ -1579,17 +1574,7 @@ def GetConformer(
         bond = mol.GetBondBetweenAtoms(i, j)
         if bond is None or bond.IsInRing():
             continue
-        # BFS from j excluding i to find subtree to rotate
-        to_rotate = set()
-        queue = [j]
-        while queue:
-            curr = queue.pop(0)
-            if curr in to_rotate or curr == i:
-                continue
-            to_rotate.add(curr)
-            for nb in mol.GetAtomWithIdx(curr).GetNeighbors():
-                if nb.GetIdx() != i and nb.GetIdx() not in to_rotate:
-                    queue.append(nb.GetIdx())
+        to_rotate = _bfs_subtree(mol, j, i)
         if mi in to_rotate or mj not in to_rotate:
             continue
         _set_dihedral(coords, mi, i, j, mj, angle, to_rotate)

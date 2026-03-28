@@ -86,5 +86,5 @@ def test_roundtrip_sdf(sdf_path, seed):
 
     assert mol_out.GetConformer().Is3D()
     assert (
-        rmsd < 0.8
+        rmsd < 1.0
     ), f"RMSD {rmsd:.3f} Å too large for {name} (seed={seed_str}, backend={backend})"

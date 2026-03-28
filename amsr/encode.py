@@ -85,14 +85,16 @@ def FromMolToTokens(
     # substituents are graph-equivalent (e.g. quaternary C bearing two
     # identical phenyl rings).  RDKit won't mark these as chiral, but
     # the 3D arrangement matters for conformer reconstruction.
-    # Skip atoms where all 4 neighbors are equivalent (e.g. neopentane).
+    # Handles both degree-4 (4 heavy neighbors) and degree-3 + 1 implicit H.
+    # Skip atoms where all neighbors are equivalent (e.g. neopentane).
     if useStereo and mol.GetNumConformers() > 0 and mol.GetConformer().Is3D():
         conf = mol.GetConformer()
         ranks = list(Chem.CanonicalRankAtoms(mol, breakTies=False))
         for a in mol.GetAtoms():
             if a.GetChiralTag() != Chem.ChiralType.CHI_UNSPECIFIED:
                 continue
-            if a.GetDegree() != 4:
+            deg = a.GetDegree()
+            if deg < 3 or deg + a.GetTotalNumHs() != 4:
                 continue
             nbrs = [n.GetIdx() for n in a.GetNeighbors()]
             if len(set(ranks[n] for n in nbrs)) < 2:
