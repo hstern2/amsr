@@ -413,11 +413,17 @@ def _correct_junction_dihedrals(mol, ring_systems, core_atoms, bond_dihedral, co
     """
     if len(ring_systems) <= 1:
         return
+    SP = Chem.HybridizationType.SP
     for (i, j), (mi, mj, angle) in bond_dihedral.items():
         if i > j or i not in core_atoms or j not in core_atoms:
             continue
         bond = mol.GetBondBetweenAtoms(i, j)
         if bond is None or bond.IsInRing():
+            continue
+        # Skip bonds where an SP atom makes the torsion undefined.
+        if mol.GetAtomWithIdx(i).GetHybridization() == SP:
+            continue
+        if mol.GetAtomWithIdx(j).GetHybridization() == SP:
             continue
         to_rotate = _bfs_subtree(mol, j, i)
         if mi in to_rotate or mj not in to_rotate:
@@ -545,13 +551,17 @@ def _collect_ring_angles(mol, sys_set, fixed):
     Includes angles at ring atoms AND angles at fixed atoms that have
     two ring-system neighbors.  For SP2 atoms with exactly 3 angles,
     adjusts targets so they sum to 360° (important for fused ring junctions).
+    Skips SP atoms (180° targets) — those are handled by _collect_linear_atoms.
     Returns (triples, ideal_angles) — numpy arrays.
     """
+    SP = Chem.HybridizationType.SP
     available = sys_set | set(fixed)
     triples, ideals = [], []
     center_indices: dict[int, list[int]] = {}  # center atom → list of indices into triples
-    # Angles at ring atoms
+    # Angles at ring atoms (skip SP — handled by linearity constraint)
     for b in sorted(sys_set):
+        if mol.GetAtomWithIdx(b).GetHybridization() == SP:
+            continue
         nbrs = [
             nb.GetIdx() for nb in mol.GetAtomWithIdx(b).GetNeighbors() if nb.GetIdx() in available
         ]
@@ -630,6 +640,26 @@ def _collect_planar_atoms(mol, sys_set, fixed):
     return _to_array(groups, cols=4)
 
 
+def _collect_linear_atoms(mol, sys_set, fixed):
+    """Collect linearity constraints for SP atoms in the ring system.
+
+    Returns Nx3 int array of (a, b, c) triples where b is SP and
+    the angle a-b-c should be 180°.
+    """
+    SP = Chem.HybridizationType.SP
+    available = sys_set | set(fixed)
+    triples = []
+    for j in sorted(sys_set):
+        if mol.GetAtomWithIdx(j).GetHybridization() != SP:
+            continue
+        nbrs = [
+            nb.GetIdx() for nb in mol.GetAtomWithIdx(j).GetNeighbors() if nb.GetIdx() in available
+        ]
+        if len(nbrs) == 2:
+            triples.append((nbrs[0], j, nbrs[1]))
+    return _to_array(triples, cols=3)
+
+
 def _collect_chiral_atoms(mol, sys_set, fixed, coords=None):
     """Collect chirality constraints for SP3 chiral atoms in the ring system.
 
@@ -644,6 +674,7 @@ def _collect_chiral_atoms(mol, sys_set, fixed, coords=None):
     def _get(a):
         return coords[a] if a not in fixed else fixed[a]
 
+    SP = Chem.HybridizationType.SP
     for j in sorted(sys_set):
         atom = mol.GetAtomWithIdx(j)
         chiral = atom.GetChiralTag()
@@ -654,8 +685,33 @@ def _collect_chiral_atoms(mol, sys_set, fixed, coords=None):
             continue
         if coords is not None:
             rj = _get(j)
-            ra, rb, rc = _get(nbrs[0]), _get(nbrs[1]), _get(nbrs[2])
-            v1, v2, v3 = ra - rj, rb - rj, rc - rj
+            # For neighbors that are SP, the embedding position reflects
+            # a bent alkyne.  Replace with the linearized direction at the
+            # ideal bond length so the target volume matches the geometry
+            # the optimizer will converge to.
+            positions = []
+            for nb in nbrs[:3]:
+                if mol.GetAtomWithIdx(nb).GetHybridization() == SP:
+                    # Find the other neighbor of the SP atom (the one that isn't j)
+                    sp_other = [
+                        x.GetIdx() for x in mol.GetAtomWithIdx(nb).GetNeighbors() if x.GetIdx() != j
+                    ]
+                    if sp_other:
+                        # Direction: from center toward the SP chain
+                        far = _get(sp_other[0])
+                        direction = far - rj
+                        n = _norm3(direction)
+                        if n > 1e-10:
+                            direction /= n
+                            d = _get_bond_length(mol, j, nb)
+                            positions.append(rj + direction * d)
+                        else:
+                            positions.append(_get(nb))
+                    else:
+                        positions.append(_get(nb))
+                else:
+                    positions.append(_get(nb))
+            v1, v2, v3 = positions[0] - rj, positions[1] - rj, positions[2] - rj
             vol = np.dot(v1, np.cross(v2, v3))
             sign = 1 if vol > 0 else -1
             target_vols.append(vol)
@@ -673,8 +729,10 @@ def _collect_ring_dihedrals(mol, sys_set, bond_dihedral, fixed):
 
     Includes dihedrals for bonds within the ring system and bonds
     connecting ring atoms to fixed (placed) atoms.
+    Skips dihedrals where an SP atom makes the torsion angle undefined.
     Returns (quads, targets) where quads is Nx4 int array and targets is N float.
     """
+    SP = Chem.HybridizationType.SP
     available = sys_set | set(fixed)
     quads, targets = [], []
     seen = set()
@@ -691,7 +749,14 @@ def _collect_ring_dihedrals(mol, sys_set, bond_dihedral, fixed):
             if bond_key in bond_dihedral:
                 mi, mj, angle = bond_dihedral[bond_key]
                 if mi in available and mj in available:
-                    quads.append((mi, bond_key[0], bond_key[1], mj))
+                    # Skip if either bond endpoint is SP — the 180° angle
+                    # makes the torsion undefined.
+                    i, j = bond_key
+                    if mol.GetAtomWithIdx(i).GetHybridization() == SP:
+                        continue
+                    if mol.GetAtomWithIdx(j).GetHybridization() == SP:
+                        continue
+                    quads.append((mi, i, j, mj))
                     targets.append(float(angle))
     return _to_array(quads, cols=4), _to_array(targets, dtype=float)
 
@@ -806,6 +871,7 @@ _W_PLANAR = 3.0
 _W_CHIRAL = 10.0
 _W_DIHEDRAL = 0.1
 _W_EZ = 0.3
+_W_LINEAR = 20.0
 
 
 def _cost_and_grad(
@@ -823,6 +889,7 @@ def _cost_and_grad(
     dih_targets,
     ez_quads,
     ez_targets,
+    linear_triples=None,
 ):
     """Compute total cost (sum of squared residuals) and analytical gradient.
 
@@ -1032,6 +1099,44 @@ def _cost_and_grad(
         _scatter(quads[:, 2], scale[:, None] * dt_dp2)
         _scatter(quads[:, 3], scale[:, None] * dt_dp3)
 
+    # --- Linearity terms for SP atoms: cost = w^2 * sin^2(theta) ---
+    # sin^2 = |v1 x v2|^2 / (|v1|^2 |v2|^2), normalized so gradient
+    # magnitude is independent of bond length (like the angle constraint).
+    # Gradient is applied only to the center (SP) atom — the endpoints'
+    # geometry is determined by their own angle/planarity constraints.
+    if linear_triples is not None and len(linear_triples):
+        w = _W_LINEAR
+        ra = _lookup(linear_triples[:, 0])
+        rb = _lookup(linear_triples[:, 1])
+        rc = _lookup(linear_triples[:, 2])
+        v1, v2 = ra - rb, rc - rb
+        n1sq = np.sum(v1 * v1, axis=1)
+        n2sq = np.sum(v2 * v2, axis=1)
+        dot12 = np.sum(v1 * v2, axis=1)
+        denom = n1sq * n2sq + 1e-20
+        sin2 = (n1sq * n2sq - dot12 * dot12) / denom
+        cost += w * w * np.sum(sin2)
+        inv = 1.0 / denom
+        ga = (
+            w
+            * w
+            * 2.0
+            * (
+                (n2sq[:, None] * v1 - dot12[:, None] * v2) * inv[:, None]
+                - sin2[:, None] * v1 / n1sq[:, None]
+            )
+        )
+        gc = (
+            w
+            * w
+            * 2.0
+            * (
+                (n1sq[:, None] * v2 - dot12[:, None] * v1) * inv[:, None]
+                - sin2[:, None] * v2 / n2sq[:, None]
+            )
+        )
+        _scatter(linear_triples[:, 1], -(ga + gc))
+
     return cost, grad_all[: len(x_3d)].ravel()
 
 
@@ -1074,6 +1179,7 @@ def _optimize_ring_system(mol, system_atoms, all_rings, bond_dihedral, coords, p
         mol._optimized_chiral_vol[int(row[0])] = float(chiral_target_vols[idx])
     dih_quads, dih_targets = _collect_ring_dihedrals(mol, sys_set, bond_dihedral, fixed)
 
+    linear_triples = _collect_linear_atoms(mol, sys_set, fixed)
     ez_quads, ez_targets = _collect_ez_constraints(mol, sys_set, fixed)
     rp_quads, rp_targets = _collect_ring_planarity_dihedrals(mol, sys_set, fixed)
     # Merge ring planarity dihedrals with AMSR dihedrals (similar weight)
@@ -1109,10 +1215,14 @@ def _optimize_ring_system(mol, system_atoms, all_rings, bond_dihedral, coords, p
         dih_quads = _remap(dih_quads)
     if len(ez_quads):
         ez_quads = _remap(ez_quads)
+    if len(linear_triples):
+        linear_triples = _remap(linear_triples)
 
     # Build the objective function: C extension if available, else Python.
     from .cost_grad import CostGradProblem
     from .cost_grad import is_available as _c_available
+
+    _lin = linear_triples if len(linear_triples) else None
 
     if _c_available():
         _objective = CostGradProblem(
@@ -1135,6 +1245,8 @@ def _optimize_ring_system(mol, system_atoms, all_rings, bond_dihedral, coords, p
             _W_CHIRAL,
             _W_DIHEDRAL,
             _W_EZ,
+            linear_triples=_lin,
+            w_linear=_W_LINEAR,
         )
     else:
         args = (
@@ -1154,7 +1266,7 @@ def _optimize_ring_system(mol, system_atoms, all_rings, bond_dihedral, coords, p
         )
 
         def _objective(x):
-            return _cost_and_grad(x, *args)
+            return _cost_and_grad(x, *args, linear_triples=_lin)
 
     # Initial coordinates come from the embedding already stored in coords.
     x0 = np.zeros(3 * n_sys)
@@ -1498,9 +1610,26 @@ def GetConformer(
     core_atoms: set[int] = set()
     if ring_atoms:
         core_atoms = _find_core_atoms(mol, ring_atoms, n)
-        embeddings = _rdkit_embed(mol, n_confs=1)
+        embeddings = _rdkit_embed(mol, n_confs=10)
         if embeddings:
-            coords[:] = embeddings[0]
+            # Pick embedding with lowest dihedral cost so the optimizer
+            # starts from a conformation that already roughly matches
+            # the AMSR dihedrals (avoids destructive large moves).
+            if len(embeddings) > 1 and bond_dihedral:
+                best_cost, best_idx = float("inf"), 0
+                for ei, ec in enumerate(embeddings):
+                    dc = 0.0
+                    for (i, j), (mi, mj, angle) in bond_dihedral.items():
+                        if i > j:
+                            continue
+                        actual = measure_torsion(ec[mi], ec[i], ec[j], ec[mj])
+                        diff = (actual - angle + 180.0) % 360.0 - 180.0
+                        dc += diff * diff
+                    if dc < best_cost:
+                        best_cost, best_idx = dc, ei
+                coords[:] = embeddings[best_idx]
+            else:
+                coords[:] = embeddings[0]
             _fix_equivalent_terminals(mol, bond_dihedral, coords)
             _correct_junction_dihedrals(mol, ring_systems, core_atoms, bond_dihedral, coords)
             fixed_for_opt = {i: coords[i].copy() for i in range(n) if i not in core_atoms}
@@ -1566,7 +1695,13 @@ def GetConformer(
     # --- Phase 3: correct any unsatisfied AMSR dihedrals ---
     # Some dihedrals (e.g. on forward bonds not consumed during z-matrix
     # placement) may not have been applied.  Rotate subtrees to fix them.
+    SP = Chem.HybridizationType.SP
     for (mi, i, j, mj), angle in (dihedral or {}).items():
+        # Skip bonds where an SP atom makes the torsion undefined.
+        if mol.GetAtomWithIdx(i).GetHybridization() == SP:
+            continue
+        if mol.GetAtomWithIdx(j).GetHybridization() == SP:
+            continue
         actual = measure_torsion(coords[mi], coords[i], coords[j], coords[mj])
         diff = abs((actual - angle + 180) % 360 - 180)
         if diff < 5.0:

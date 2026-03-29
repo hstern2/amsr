@@ -109,9 +109,11 @@ double cost_and_grad(
     const int *dih_quads, const double *dih_targets_deg, int n_dih,
     /* EZ: quads[n_ez*4], targets_deg[n_ez] */
     const int *ez_quads, const double *ez_targets_deg, int n_ez,
+    /* Linearity: triples[n_linear*3] (a, b, c — b should be collinear with a,c) */
+    const int *linear_triples, int n_linear,
     /* Weights */
     double w_bond, double w_angle, double w_planar, double w_chiral,
-    double w_dih, double w_ez)
+    double w_dih, double w_ez, double w_linear)
 {
     double cost = 0.0;
     memset(grad, 0, 3 * n_free * sizeof(double));
@@ -339,6 +341,39 @@ double cost_and_grad(
             scatter(grad, s2, n_free, g2);
             scatter(grad, s3, n_free, g3);
         }
+    }
+
+    /* --- Linearity terms: cost += w^2 * sin^2(theta) --- */
+    /* sin^2 = |v1 x v2|^2 / (|v1|^2 |v2|^2), normalized so gradient  */
+    /* magnitude is independent of bond length.                          */
+    for (int il = 0; il < n_linear; il++) {
+        int sa = linear_triples[3*il];
+        int sb = linear_triples[3*il+1];
+        int sc = linear_triples[3*il+2];
+        const double *ra = coord(x, fixed, n_free, sa);
+        const double *rb = coord(x, fixed, n_free, sb);
+        const double *rc = coord(x, fixed, n_free, sc);
+        double v1[3], v2[3];
+        sub3(ra, rb, v1);
+        sub3(rc, rb, v2);
+        double n1sq = dot3(v1, v1);
+        double n2sq = dot3(v2, v2);
+        double d12 = dot3(v1, v2);
+        double denom = n1sq * n2sq + 1e-20;
+        double cross_sq = n1sq * n2sq - d12 * d12;
+        double sin2 = cross_sq / denom;
+        double w2 = w_linear * w_linear;
+        cost += w2 * sin2;
+        double inv = 1.0 / denom;
+        /* Gradient only on center (SP) atom — endpoints have their own
+           angle/planarity constraints that should not be disturbed. */
+        double gb[3];
+        for (int k = 0; k < 3; k++) {
+            double da = w2 * 2.0 * ((n2sq * v1[k] - d12 * v2[k]) * inv - sin2 * v1[k] / n1sq);
+            double dc = w2 * 2.0 * ((n1sq * v2[k] - d12 * v1[k]) * inv - sin2 * v2[k] / n2sq);
+            gb[k] = -(da + dc);
+        }
+        scatter(grad, sb, n_free, gb);
     }
 
     return cost;

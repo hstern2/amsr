@@ -52,12 +52,15 @@ def _load_lib():
             ctypes.c_void_p,
             ctypes.c_void_p,
             ctypes.c_int,  # ez
+            ctypes.c_void_p,
+            ctypes.c_int,  # linear
             ctypes.c_double,
             ctypes.c_double,
             ctypes.c_double,
             ctypes.c_double,
             ctypes.c_double,
-            ctypes.c_double,  # weights
+            ctypes.c_double,
+            ctypes.c_double,  # weights (7: bond, angle, planar, chiral, dih, ez, linear)
         ]
         _c_func = fn
     except OSError:
@@ -135,6 +138,10 @@ class CostGradProblem:
         "_w_chiral",
         "_w_dih",
         "_w_ez",
+        "_lt",
+        "_n_linear",
+        "_p_lt",
+        "_w_linear",
     )
 
     def __init__(
@@ -158,6 +165,8 @@ class CostGradProblem:
         w_chiral,
         w_dih,
         w_ez,
+        linear_triples=None,
+        w_linear=10.0,
     ):
         self._fn = _c_func
         self._n_free = n_free
@@ -216,6 +225,12 @@ class CostGradProblem:
         self._w_dih = w_dih
         self._w_ez = w_ez
 
+        lt = linear_triples if linear_triples is not None and len(linear_triples) else None
+        self._lt = _to_int32(lt) if lt is not None else np.empty((0, 3), dtype=np.int32)
+        self._n_linear = len(self._lt)
+        self._p_lt = _dptr(self._lt)
+        self._w_linear = w_linear
+
     def __call__(self, x):
         """Evaluate cost and gradient. Returns (cost, grad_flat)."""
         x = np.ascontiguousarray(x, dtype=np.float64)
@@ -243,11 +258,14 @@ class CostGradProblem:
             self._p_eq,
             self._p_et,
             self._n_ez,
+            self._p_lt,
+            self._n_linear,
             self._w_bond,
             self._w_angle,
             self._w_planar,
             self._w_chiral,
             self._w_dih,
             self._w_ez,
+            self._w_linear,
         )
         return cost, grad.copy()
