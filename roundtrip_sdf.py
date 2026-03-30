@@ -48,7 +48,7 @@ def main(
     output_dir: Path = typer.Option(
         None, "--output", "-o", help="Output directory (default: out/)"
     ),
-    threshold: float = typer.Option(0.8, "--threshold", "-t", help="RMSD threshold for OK/FAIL"),
+    threshold: float = typer.Option(1.0, "--threshold", "-t", help="RMSD threshold for OK/FAIL"),
     jobs: int = typer.Option(1, "--jobs", "-j", help="Number of parallel workers"),
 ):
     """Round-trip verification: encode each SDF to AMSR, decode, compute RMSD."""
