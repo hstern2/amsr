@@ -3,6 +3,7 @@ from random import shuffle
 from typing import Optional
 
 from rdkit import Chem
+from rdkit.Chem import rdMolTransforms
 
 from .atom import Atom, GetSeenIndex, IsSeen, SetSeenIndex, UnSee
 from .bfs import BFSFind
@@ -127,6 +128,33 @@ def FromMolToTokens(
                 a.SetChiralTag(Chem.ChiralType.CHI_TETRAHEDRAL_CCW)
             elif vol < 0:
                 a.SetChiralTag(Chem.ChiralType.CHI_TETRAHEDRAL_CW)
+
+        # Assign pseudo-E/Z on double bonds whose substituents are
+        # graph-equivalent (e.g. guanidine C=N with two identical
+        # NH-cyclohexyl groups).  RDKit won't assign E/Z here, but
+        # the 3D arrangement matters for conformer reconstruction.
+        for b in mol.GetBonds():
+            if b.GetBondTypeAsDouble() < 1.5:
+                continue
+            if b.GetStereo() != Chem.BondStereo.STEREONONE:
+                continue
+            i, j = b.GetBeginAtomIdx(), b.GetEndAtomIdx()
+            ni = [c.GetIdx() for c in b.GetBeginAtom().GetNeighbors() if c.GetIdx() != j]
+            nj = [c.GetIdx() for c in b.GetEndAtom().GetNeighbors() if c.GetIdx() != i]
+            if not ni or not nj:
+                continue
+            has_equiv = (len(ni) >= 2 and len(set(ranks[n] for n in ni)) < len(ni)) or (
+                len(nj) >= 2 and len(set(ranks[n] for n in nj)) < len(nj)
+            )
+            if not has_equiv:
+                continue
+            ri, rj = min(ni), min(nj)
+            dih = rdMolTransforms.GetDihedralDeg(conf, ri, i, j, rj)
+            if abs(dih) < 90:
+                b.SetStereo(Chem.BondStereo.STEREOZ)
+            else:
+                b.SetStereo(Chem.BondStereo.STEREOE)
+            b.SetStereoAtoms(ri, rj)
 
     atom = [Atom.fromRDAtom(a) for a in mol.GetAtoms()]
     seenBonds: set[frozenset[int]] = set()
