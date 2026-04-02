@@ -267,7 +267,7 @@ def _get_bond_angle(mol, a, b, c):
         if common:
             n = min(common)
             poly = (n - 2) * 180.0 / n
-            if hyb in (SP2, Chem.HybridizationType.SP):
+            if hyb in (SP2, Chem.HybridizationType.SP) and n <= 6:
                 return poly
             # SP3 in mixed rings (containing SP2 atoms): use polygon angle
             # so the ring angle sum is consistent with the SP2 atoms.
