@@ -11,6 +11,7 @@ Geometry primitives and cost-function components use only numpy arrays
 """
 
 import math
+from collections import deque
 from typing import Optional
 
 import numpy as np
@@ -284,16 +285,14 @@ def _get_bond_angle(mol, a, b, c):
 
 def _bfs_subtree(mol, root, exclude):
     """BFS from root, excluding the given atom.  Returns set of reachable atoms."""
-    visited = set()
-    queue = [root]
+    visited = {root}
+    queue = deque([root])
     while queue:
-        curr = queue.pop(0)
-        if curr in visited or curr == exclude:
-            continue
-        visited.add(curr)
+        curr = queue.popleft()
         for nb in mol.GetAtomWithIdx(curr).GetNeighbors():
             b = nb.GetIdx()
             if b != exclude and b not in visited:
+                visited.add(b)
                 queue.append(b)
     return visited
 
@@ -1290,18 +1289,6 @@ def _optimize_ring_system(mol, system_atoms, all_rings, bond_dihedral, coords, p
     best_cost = result.fun
     best_x = result.x
 
-    # If cost is still high, try more RDKit embeddings.
-    if best_cost > 0.5 and n_sys > 0:
-        extra = _rdkit_embed(mol, n_confs=10, seed=123)
-        for embed_coords in extra:
-            x0 = np.zeros(3 * n_sys)
-            for a in sys_list:
-                x0[3 * idx_map[a] : 3 * idx_map[a] + 3] = embed_coords[a]
-            r = minimize(_objective, x0, method="L-BFGS-B", jac=True)
-            if r.fun < best_cost:
-                best_cost = r.fun
-                best_x = r.x
-
     # If AMSR dihedral targets exist, try ring-inverted starting points.
     # For non-planar rings the optimizer can converge to the mirror-image
     # chair; inverting through the mean plane and re-optimizing often fixes it.
@@ -1667,30 +1654,36 @@ def GetConformer(
         core_atoms = _find_core_atoms(mol, ring_atoms, n)
         embeddings = _rdkit_embed(mol, n_confs=10)
         if embeddings:
-            # Pick embedding with lowest dihedral cost so the optimizer
-            # starts from a conformation that already roughly matches
-            # the AMSR dihedrals (avoids destructive large moves).
-            if len(embeddings) > 1 and bond_dihedral:
-                best_cost, best_idx = float("inf"), 0
-                for ei, ec in enumerate(embeddings):
-                    dc = 0.0
-                    for (i, j), (mi, mj, angle) in bond_dihedral.items():
-                        if i > j:
-                            continue
-                        actual = measure_torsion(ec[mi], ec[i], ec[j], ec[mj])
-                        diff = (actual - angle + 180.0) % 360.0 - 180.0
-                        dc += diff * diff
-                    if dc < best_cost:
-                        best_cost, best_idx = dc, ei
-                coords[:] = embeddings[best_idx]
-            else:
-                coords[:] = embeddings[0]
-            _fix_equivalent_terminals(mol, bond_dihedral, coords)
-            _correct_junction_dihedrals(mol, ring_systems, core_atoms, bond_dihedral, coords)
-            fixed_for_opt = {i: coords[i].copy() for i in range(n) if i not in core_atoms}
-            _optimize_ring_system(
-                mol, core_atoms, all_rings, bond_dihedral, coords, fixed_for_opt, parent
-            )
+            # Try embeddings through junction correction + optimization,
+            # keeping the one with the lowest optimizer cost.
+            # Stop early once cost is low enough.
+            best_opt_cost = float("inf")
+            best_coords = None
+            best_bd: dict[tuple[int, int], tuple[int, int, int]] = {}
+            best_chiral_sign = {}
+            best_chiral_vol = {}
+            bd_saved = dict(bond_dihedral)
+            for ec in embeddings:
+                bond_dihedral.update(bd_saved)
+                coords[:] = ec
+                _fix_equivalent_terminals(mol, bond_dihedral, coords)
+                _correct_junction_dihedrals(mol, ring_systems, core_atoms, bond_dihedral, coords)
+                fixed_for_opt = {i: coords[i].copy() for i in range(n) if i not in core_atoms}
+                oc = _optimize_ring_system(
+                    mol, core_atoms, all_rings, bond_dihedral, coords, fixed_for_opt, parent
+                )
+                if oc < best_opt_cost:
+                    best_opt_cost = oc
+                    best_coords = coords.copy()
+                    best_bd = dict(bond_dihedral)
+                    best_chiral_sign = dict(getattr(mol, "_optimized_chiral_sign", {}))
+                    best_chiral_vol = dict(getattr(mol, "_optimized_chiral_vol", {}))
+                if best_opt_cost < 0.01:
+                    break
+            coords[:] = best_coords
+            bond_dihedral.update(best_bd)
+            mol._optimized_chiral_sign = best_chiral_sign
+            mol._optimized_chiral_vol = best_chiral_vol
 
     # --- Phase 2: z-matrix place branch atoms outward from core ---
     placed: set[int] = set(core_atoms)
