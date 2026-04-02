@@ -94,7 +94,7 @@ def FromMolToTokens(
             if a.GetChiralTag() != Chem.ChiralType.CHI_UNSPECIFIED:
                 continue
             deg = a.GetDegree()
-            if deg < 3 or deg + a.GetTotalNumHs() != 4:
+            if deg < 3 or a.GetHybridization() != Chem.HybridizationType.SP3:
                 continue
             nbrs = [n.GetIdx() for n in a.GetNeighbors()]
             if len(set(ranks[n] for n in nbrs)) < 2:
