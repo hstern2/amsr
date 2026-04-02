@@ -201,7 +201,9 @@ def ToMol(
         if a.bangs > 0 and a.canBond():
             mol.GetAtomWithIdx(i).SetNumExplicitHs(a.maxNeighbors - a.nNeighbors)
     mol = mol.GetMol()
-    Chem.SanitizeMol(mol)
+    Chem.SanitizeMol(
+        mol, Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_CLEANUPCHIRALITY
+    )
     Chem.AssignStereochemistry(mol)
     for a in reversed(mol.GetAtoms()):
         if atom[a.GetIdx()].canBond():

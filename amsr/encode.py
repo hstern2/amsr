@@ -1,3 +1,4 @@
+import math
 from random import shuffle
 from typing import Optional
 
@@ -94,7 +95,11 @@ def FromMolToTokens(
             if a.GetChiralTag() != Chem.ChiralType.CHI_UNSPECIFIED:
                 continue
             deg = a.GetDegree()
-            if deg < 3 or a.GetHybridization() != Chem.HybridizationType.SP3:
+            hyb = a.GetHybridization()
+            if deg < 3 or hyb not in (
+                Chem.HybridizationType.SP3,
+                Chem.HybridizationType.SP2,
+            ):
                 continue
             nbrs = [n.GetIdx() for n in a.GetNeighbors()]
             if len(set(ranks[n] for n in nbrs)) < 2:
@@ -111,6 +116,13 @@ def FromMolToTokens(
                 + v0[1] * (v1[2] * v2[0] - v1[0] * v2[2])
                 + v0[2] * (v1[0] * v2[1] - v1[1] * v2[0])
             )
+            # For SP2, only assign if significantly pyramidal (e.g. sulfonamide N).
+            if hyb == Chem.HybridizationType.SP2:
+                n0 = math.sqrt(v0[0] ** 2 + v0[1] ** 2 + v0[2] ** 2)
+                n1 = math.sqrt(v1[0] ** 2 + v1[1] ** 2 + v1[2] ** 2)
+                n2 = math.sqrt(v2[0] ** 2 + v2[1] ** 2 + v2[2] ** 2)
+                if n0 * n1 * n2 < 1e-10 or abs(vol) / (n0 * n1 * n2) < 0.15:
+                    continue
             if vol > 0:
                 a.SetChiralTag(Chem.ChiralType.CHI_TETRAHEDRAL_CCW)
             elif vol < 0:

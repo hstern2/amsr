@@ -77,6 +77,7 @@ _HYBRID_ANGLES = {
     Chem.HybridizationType.SP: 180.0,
 }
 
+SP = Chem.HybridizationType.SP
 SP2 = Chem.HybridizationType.SP2
 SP3 = Chem.HybridizationType.SP3
 CW = Chem.ChiralType.CHI_TETRAHEDRAL_CW
@@ -413,7 +414,7 @@ def _correct_junction_dihedrals(mol, ring_systems, core_atoms, bond_dihedral, co
     """
     if len(ring_systems) <= 1:
         return
-    SP = Chem.HybridizationType.SP
+
     for (i, j), (mi, mj, angle) in bond_dihedral.items():
         if i > j or i not in core_atoms or j not in core_atoms:
             continue
@@ -554,7 +555,7 @@ def _collect_ring_angles(mol, sys_set, fixed):
     Skips SP atoms (180° targets) — those are handled by _collect_linear_atoms.
     Returns (triples, ideal_angles) — numpy arrays.
     """
-    SP = Chem.HybridizationType.SP
+
     available = sys_set | set(fixed)
     triples, ideals = [], []
     center_indices: dict[int, list[int]] = {}  # center atom → list of indices into triples
@@ -630,11 +631,13 @@ def _collect_planar_atoms(mol, sys_set, fixed):
     available = sys_set | set(fixed)
     groups = []
     for j in sorted(sys_set):
-        if mol.GetAtomWithIdx(j).GetHybridization() != SP2:
+        atom = mol.GetAtomWithIdx(j)
+        if atom.GetHybridization() != SP2:
             continue
-        nbrs = [
-            nb.GetIdx() for nb in mol.GetAtomWithIdx(j).GetNeighbors() if nb.GetIdx() in available
-        ]
+        # Skip atoms with chirality tags — they are pyramidal, not planar.
+        if atom.GetChiralTag() in (CW, CCW):
+            continue
+        nbrs = [nb.GetIdx() for nb in atom.GetNeighbors() if nb.GetIdx() in available]
         if len(nbrs) >= 3:
             groups.append((j, nbrs[0], nbrs[1], nbrs[2]))
     return _to_array(groups, cols=4)
@@ -646,7 +649,7 @@ def _collect_linear_atoms(mol, sys_set, fixed):
     Returns Nx3 int array of (a, b, c) triples where b is SP and
     the angle a-b-c should be 180°.
     """
-    SP = Chem.HybridizationType.SP
+
     available = sys_set | set(fixed)
     triples = []
     for j in sorted(sys_set):
@@ -674,7 +677,6 @@ def _collect_chiral_atoms(mol, sys_set, fixed, coords=None):
     def _get(a):
         return coords[a] if a not in fixed else fixed[a]
 
-    SP = Chem.HybridizationType.SP
     for j in sorted(sys_set):
         atom = mol.GetAtomWithIdx(j)
         chiral = atom.GetChiralTag()
@@ -713,13 +715,20 @@ def _collect_chiral_atoms(mol, sys_set, fixed, coords=None):
                     positions.append(_get(nb))
             v1, v2, v3 = positions[0] - rj, positions[1] - rj, positions[2] - rj
             vol = np.dot(v1, np.cross(v2, v3))
-            sign = 1 if vol > 0 else -1
-            # For SP neighbors the linearized volume can be unrealistically
-            # large; use sign-only so chirality doesn't fight bond/angle.
+            # When the embedding volume is near zero (e.g. pyramidal atom
+            # embedded as planar) or an SP neighbor makes the linearized
+            # volume unrealistically large, use sign-only target.
+            denom = _norm3(v1) * _norm3(v2) * _norm3(v3)
+            oop = abs(vol) / denom if denom > 1e-10 else 0.0
             has_sp_nbr = any(mol.GetAtomWithIdx(nb).GetHybridization() == SP for nb in nbrs[:3])
-            target_vols.append(float(sign) if has_sp_nbr else vol)
+            if oop > 0.1 and not has_sp_nbr:
+                sign = 1 if vol > 0 else -1
+                target_vols.append(vol)
+            else:
+                sign = -1 if chiral == CW else 1
+                target_vols.append(float(sign))
         else:
-            sign = 1 if chiral == CW else -1
+            sign = -1 if chiral == CW else 1
             target_vols.append(float(sign))
         result.append((j, nbrs[0], nbrs[1], nbrs[2], sign))
     idx = _to_array(result, cols=5)
@@ -735,7 +744,7 @@ def _collect_ring_dihedrals(mol, sys_set, bond_dihedral, fixed):
     Skips dihedrals where an SP atom makes the torsion angle undefined.
     Returns (quads, targets) where quads is Nx4 int array and targets is N float.
     """
-    SP = Chem.HybridizationType.SP
+
     available = sys_set | set(fixed)
     quads, targets = [], []
     seen = set()
@@ -1501,14 +1510,13 @@ def _place_chain_atom(
 
         # When g is SP the ref chain (gg-g-p) is collinear and the
         # torsion is undefined.  Place using non-SP placed neighbors.
-        SP_hyb = Chem.HybridizationType.SP
-        if mol.GetAtomWithIdx(g).GetHybridization() == SP_hyb:
+        if mol.GetAtomWithIdx(g).GetHybridization() == SP:
             non_sp = [
                 nb.GetIdx()
                 for nb in mol.GetAtomWithIdx(p).GetNeighbors()
                 if nb.GetIdx() != i
                 and _is_placed(coords, nb.GetIdx())
-                and mol.GetAtomWithIdx(nb.GetIdx()).GetHybridization() != SP_hyb
+                and mol.GetAtomWithIdx(nb.GetIdx()).GetHybridization() != SP
             ]
             if len(non_sp) >= 2:
                 k1, k2 = non_sp[0], non_sp[1]
@@ -1722,7 +1730,8 @@ def GetConformer(
         )
         placed.add(i)
         p = outward_parent[i]
-        if alts and p is not None and _has_collision(mol, i, coords, placed, threshold=1.0):
+        if p is not None and _has_collision(mol, i, coords, placed, threshold=1.0):
+            resolved = False
             for alt in alts:
                 child_count[p] -= 1
                 _place_chain_atom(
@@ -1737,12 +1746,31 @@ def GetConformer(
                     torsion_override=alt,
                 )
                 if not _has_collision(mol, i, coords, placed, threshold=1.0):
+                    resolved = True
                     break
+            # When torsion alternatives fail and the parent is SP3 with
+            # 3+ placed neighbors, the remaining tetrahedral vertex is
+            # uniquely determined.
+            if not resolved and mol.GetAtomWithIdx(p).GetHybridization() == SP3:
+                nbrs_p = [nb.GetIdx() for nb in mol.GetAtomWithIdx(p).GetNeighbors()]
+                placed_nbrs = [nb for nb in nbrs_p if nb != i and _is_placed(coords, nb)]
+                if len(placed_nbrs) >= 3:
+                    rp = coords[p]
+                    vsum = np.zeros(3)
+                    for nb in placed_nbrs[:3]:
+                        v = coords[nb] - rp
+                        nv = _norm3(v)
+                        if nv > 1e-10:
+                            vsum += v / nv
+                    direction = -vsum
+                    n_dir = _norm3(direction)
+                    if n_dir > 1e-10:
+                        coords[i] = rp + _get_bond_length(mol, p, i) * direction / n_dir
 
     # --- Phase 3: correct any unsatisfied AMSR dihedrals ---
     # Some dihedrals (e.g. on forward bonds not consumed during z-matrix
     # placement) may not have been applied.  Rotate subtrees to fix them.
-    SP = Chem.HybridizationType.SP
+
     for (mi, i, j, mj), angle in (dihedral or {}).items():
         # Skip bonds where an SP atom makes the torsion undefined.
         if mol.GetAtomWithIdx(i).GetHybridization() == SP:
