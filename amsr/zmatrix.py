@@ -714,7 +714,10 @@ def _collect_chiral_atoms(mol, sys_set, fixed, coords=None):
             v1, v2, v3 = positions[0] - rj, positions[1] - rj, positions[2] - rj
             vol = np.dot(v1, np.cross(v2, v3))
             sign = 1 if vol > 0 else -1
-            target_vols.append(vol)
+            # For SP neighbors the linearized volume can be unrealistically
+            # large; use sign-only so chirality doesn't fight bond/angle.
+            has_sp_nbr = any(mol.GetAtomWithIdx(nb).GetHybridization() == SP for nb in nbrs[:3])
+            target_vols.append(float(sign) if has_sp_nbr else vol)
         else:
             sign = 1 if chiral == CW else -1
             target_vols.append(float(sign))
@@ -1495,31 +1498,75 @@ def _place_chain_atom(
     else:
         gg = parent[g]
         bond_angle = _get_bond_angle(mol, g, p, i)
-        if torsion_override is not None:
-            torsion = torsion_override
-            ref_override = None
-        else:
-            torsion, ref_override, alternatives = _choose_chain_dihedral(
-                mol,
-                i,
-                p,
-                g,
-                gg,
-                child_count[p],
-                first_child_torsion,
-                first_child_idx,
-                coords,
-                bond_dihedral,
-            )
-        if ref_override is not None and _is_placed(coords, ref_override):
-            ref = coords[ref_override]
-        else:
-            ref, _ = _ref_point(coords, parent, g, p, i, bond_dihedral)
-        coords[i] = place_atom(ref, coords[g], coords[p], bond_len, bond_angle, torsion)
 
-        if child_count[p] == 0:
-            std_ref = coords[gg] if gg is not None else _synthetic_ref(coords, g, p)
-            first_child_torsion[p] = measure_torsion(std_ref, coords[g], coords[p], coords[i])
+        # When g is SP the ref chain (gg-g-p) is collinear and the
+        # torsion is undefined.  Place using non-SP placed neighbors.
+        SP_hyb = Chem.HybridizationType.SP
+        if mol.GetAtomWithIdx(g).GetHybridization() == SP_hyb:
+            non_sp = [
+                nb.GetIdx()
+                for nb in mol.GetAtomWithIdx(p).GetNeighbors()
+                if nb.GetIdx() != i
+                and _is_placed(coords, nb.GetIdx())
+                and mol.GetAtomWithIdx(nb.GetIdx()).GetHybridization() != SP_hyb
+            ]
+            if len(non_sp) >= 2:
+                k1, k2 = non_sp[0], non_sp[1]
+                hyb = mol.GetAtomWithIdx(p).GetHybridization()
+                if hyb == SP2:
+                    coords[i] = place_atom(
+                        coords[k2], coords[k1], coords[p], bond_len, bond_angle, 180.0
+                    )
+                else:
+                    best_pos, best_min = None, -1.0
+                    all_placed = [
+                        nb.GetIdx()
+                        for nb in mol.GetAtomWithIdx(p).GetNeighbors()
+                        if nb.GetIdx() != i and _is_placed(coords, nb.GetIdx())
+                    ]
+                    for omega in (120.0, -120.0):
+                        trial = place_atom(
+                            coords[k2], coords[k1], coords[p], bond_len, bond_angle, omega
+                        )
+                        min_d = min(_norm3(trial - coords[nb]) for nb in all_placed)
+                        if min_d > best_min:
+                            best_min = min_d
+                            best_pos = trial
+                    coords[i] = best_pos
+            elif len(non_sp) == 1:
+                k = non_sp[0]
+                ref = _synthetic_ref(coords, p, k)
+                coords[i] = place_atom(ref, coords[k], coords[p], bond_len, bond_angle, 120.0)
+            else:
+                # All neighbors are SP — just use synthetic ref from g
+                ref = _synthetic_ref(coords, g, p)
+                coords[i] = place_atom(ref, coords[g], coords[p], bond_len, bond_angle, 120.0)
+        else:
+            if torsion_override is not None:
+                torsion = torsion_override
+                ref_override = None
+            else:
+                torsion, ref_override, alternatives = _choose_chain_dihedral(
+                    mol,
+                    i,
+                    p,
+                    g,
+                    gg,
+                    child_count[p],
+                    first_child_torsion,
+                    first_child_idx,
+                    coords,
+                    bond_dihedral,
+                )
+            if ref_override is not None and _is_placed(coords, ref_override):
+                ref = coords[ref_override]
+            else:
+                ref, _ = _ref_point(coords, parent, g, p, i, bond_dihedral)
+            coords[i] = place_atom(ref, coords[g], coords[p], bond_len, bond_angle, torsion)
+
+            if child_count[p] == 0:
+                std_ref = coords[gg] if gg is not None else _synthetic_ref(coords, g, p)
+                first_child_torsion[p] = measure_torsion(std_ref, coords[g], coords[p], coords[i])
 
     if first_child_idx[p] is None:
         first_child_idx[p] = i
