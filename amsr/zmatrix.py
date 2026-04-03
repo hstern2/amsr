@@ -679,10 +679,11 @@ def _collect_chiral_atoms(mol, sys_set, fixed, coords=None):
             has_sp_nbr = any(mol.GetAtomWithIdx(nb).GetHybridization() == SP for nb in nbrs[:3])
             if oop > 0.1 and not has_sp_nbr:
                 sign = 1 if vol > 0 else -1
-                target_vols.append(vol)
             else:
                 sign = -1 if chiral == CW else 1
-                target_vols.append(float(sign))
+            # Use a fixed-magnitude target so the optimizer enforces the
+            # correct handedness without chasing the exact embedding volume.
+            target_vols.append(sign * 2.5)
         else:
             sign = -1 if chiral == CW else 1
             target_vols.append(float(sign))
@@ -1302,9 +1303,9 @@ def _place_chain_atom(
 def GetConformer(
     mol: Chem.Mol,
     dihedral: Optional[dict[tuple[int, int, int, int], int]] = None,
-    ftol: float = 1e-7,
-    gtol: float = 1e-5,
-    max_confs: int = 10,
+    ftol: float = 1e-3,
+    gtol: float = 1e-1,
+    max_confs: int = 8,
 ) -> Chem.Mol:
     """Generate 3D conformer.
 
@@ -1354,7 +1355,6 @@ def GetConformer(
         best_chiral_sign = {}
         best_chiral_vol = {}
         bd_saved = dict(bond_dihedral)
-        stale = 0  # consecutive embeddings without >10% improvement
         for attempt in range(max_confs):
             ec_list = _rdkit_embed(mol, n_confs=1, seed=42 + attempt)
             if not ec_list:
@@ -1376,16 +1376,13 @@ def GetConformer(
                 ftol=ftol,
                 gtol=gtol,
             )
-            improved = oc < best_opt_cost * 0.9
             if oc < best_opt_cost:
                 best_opt_cost = oc
                 best_coords = coords.copy()
                 best_bd = dict(bond_dihedral)
                 best_chiral_sign = dict(getattr(mol, "_optimized_chiral_sign", {}))
                 best_chiral_vol = dict(getattr(mol, "_optimized_chiral_vol", {}))
-            stale = 0 if improved else stale + 1
-            # Stop early only when cost has converged to a low value.
-            if stale >= 2 and best_opt_cost < 1.0:
+            if best_opt_cost < 1.0:
                 break
         if best_coords is not None:
             coords[:] = best_coords
