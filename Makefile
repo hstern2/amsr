@@ -14,18 +14,14 @@ else
   LDFLAGS := -shared -lm
 endif
 
-TARGETS := amsr/cost_grad.$(EXT) amsr/geom_embed.$(EXT)
+TARGET := amsr/cost_grad.$(EXT)
 
 .PHONY: all clean
 
-all: $(TARGETS)
+all: $(TARGET)
 
-amsr/cost_grad.$(EXT): amsr/cost_grad.c
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $<
-
-amsr/geom_embed.$(EXT): amsr/geom_embed.c
+$(TARGET): amsr/cost_grad.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $<
 
 clean:
 	rm -f amsr/cost_grad.dylib amsr/cost_grad.so
-	rm -f amsr/geom_embed.dylib amsr/geom_embed.so
