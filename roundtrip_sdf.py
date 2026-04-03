@@ -1,54 +1,78 @@
 #!/usr/bin/env python
 """Round-trip verification for SDF files: encode to AMSR, decode, compute RMSD.
 
-Supports parallel processing with --jobs N for multi-core speedup.
+Each molecule is tested with a default encoding plus N_RANDOM_SEEDS randomized
+encodings (same as the pytest suite).
+
+Usage:
+    python roundtrip_sdf.py ~/sdf              # sequential
+    python roundtrip_sdf.py ~/sdf -j 10        # 10 parallel workers
+    python roundtrip_sdf.py ~/sdf -j 10 -t 0.5 # stricter threshold
 """
 
 import csv
 import os
+import sys
+import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
 import typer
 from rdkit import Chem
 
-import amsr
+from amsr.roundtrip import N_RANDOM_SEEDS, Roundtrip
 
 app = typer.Typer(context_settings={"help_option_names": ["-h", "--help"]})
 
+_SEEDS = [None] + list(range(N_RANDOM_SEEDS))
 
-def _process_one(sdf_path: str, out_dir: str, threshold: float):
-    """Round-trip one SDF file.  Designed to run in a worker process."""
+
+def _process_one(sdf_path: str, seed, threshold: float):
+    """Round-trip one SDF file with one seed."""
     name = os.path.splitext(os.path.basename(sdf_path))[0]
+    seed_str = "0" if seed is None else str(seed + 1)
     mol = Chem.MolFromMolFile(sdf_path, removeHs=True)
     if mol is None:
-        return [name, "", "", "parse_error"]
+        return {
+            "name": name,
+            "seed": seed_str,
+            "amsr": "",
+            "rmsd": "",
+            "status": "ERROR",
+            "time": 0.0,
+        }
 
     try:
-        s, rmsd, mol_out = amsr.Roundtrip(mol)
+        t0 = time.time()
+        s, rmsd, mol_out = Roundtrip(mol, seed=seed)
+        elapsed = time.time() - t0
     except Exception as e:
-        return [name, "", "", f"error: {e}"]
+        return {
+            "name": name,
+            "seed": seed_str,
+            "amsr": "",
+            "rmsd": "",
+            "status": "ERROR",
+            "time": 0.0,
+            "error": str(e),
+        }
 
-    # Save output SDF files
-    match = mol.GetSubstructMatch(mol_out)
-    if match:
-        mol_reordered = Chem.RenumberAtoms(mol, list(match))
-    else:
-        mol_reordered = mol
-    Chem.MolToMolFile(mol_reordered, os.path.join(out_dir, f"{name}_original.sdf"))
-    Chem.MolToMolFile(mol_out, os.path.join(out_dir, f"{name}_out.sdf"))
-
-    status = "OK" if rmsd < threshold else "FAIL"
-    return [name, s, f"{rmsd:.3f}", status]
+    status = "PASSED" if rmsd < threshold else "FAILED"
+    return {
+        "name": name,
+        "seed": seed_str,
+        "amsr": s,
+        "rmsd": rmsd,
+        "status": status,
+        "time": elapsed,
+    }
 
 
 @app.command()
 def main(
     input_dir: Path = typer.Argument(..., help="Directory containing SDF files"),
-    output_dir: Path = typer.Option(
-        None, "--output", "-o", help="Output directory (default: out/)"
-    ),
-    threshold: float = typer.Option(1.0, "--threshold", "-t", help="RMSD threshold for OK/FAIL"),
+    output_dir: Path = typer.Option(None, "--output", "-o", help="Output directory for CSV"),
+    threshold: float = typer.Option(1.0, "--threshold", "-t", help="RMSD threshold for PASS/FAIL"),
     jobs: int = typer.Option(1, "--jobs", "-j", help="Number of parallel workers"),
 ):
     """Round-trip verification: encode each SDF to AMSR, decode, compute RMSD."""
@@ -61,74 +85,83 @@ def main(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     sdf_files = sorted(f for f in os.listdir(input_dir) if f.endswith(".sdf"))
-    total = len(sdf_files)
-    typer.echo(f"Found {total} SDF files in {input_dir} (jobs={jobs})")
+    n_mols = len(sdf_files)
+    n_seeds = len(_SEEDS)
+    total = n_mols * n_seeds
+    typer.echo(
+        f"Found {n_mols} SDF files in {input_dir}"
+        f" ({n_seeds} seeds each, {total} tests, jobs={jobs})"
+    )
 
-    sdf_paths = [str(input_dir / f) for f in sdf_files]
-    out_str = str(output_dir)
-    rows: list[list[str]] = []
-    n_ok = n_fail = n_error = 0
+    # Build work items: (sdf_path, seed)
+    work = []
+    for f in sdf_files:
+        path = str(input_dir / f)
+        for seed in _SEEDS:
+            work.append((path, seed))
+
+    results: list[dict] = []
+    n_pass = n_fail = n_error = 0
+
+    def _report(r):
+        nonlocal n_pass, n_fail, n_error
+        if r["status"] == "PASSED":
+            n_pass += 1
+            mark = "\033[32mPASSED\033[0m"
+        elif r["status"] == "FAILED":
+            n_fail += 1
+            mark = "\033[31mFAILED\033[0m"
+        else:
+            n_error += 1
+            mark = "\033[33mERROR\033[0m"
+        rmsd_str = f"rmsd={r['rmsd']:.3f}" if isinstance(r["rmsd"], float) else r.get("error", "")
+        time_str = f"{r['time']:.2f}s" if r["time"] else ""
+        sys.stdout.write(f"{r['name']}[seed{r['seed']}] {mark} {rmsd_str} {time_str}\n")
+        sys.stdout.flush()
 
     if jobs <= 1:
-        # Sequential processing
-        for i, path in enumerate(sdf_paths):
-            row = _process_one(path, out_str, threshold)
-            rows.append(row)
-            status = row[3]
-            if status == "OK":
-                n_ok += 1
-            elif status == "FAIL":
-                n_fail += 1
-            else:
-                n_error += 1
-            typer.echo(
-                f"[{i+1}/{total}] {os.path.basename(path)}: "
-                f"{'rmsd=' + row[2] + ' ' if row[2] else ''}{status}"
-            )
+        for path, seed in work:
+            r = _process_one(path, seed, threshold)
+            results.append(r)
+            _report(r)
     else:
-        # Parallel processing
         futures = {}
         with ProcessPoolExecutor(max_workers=jobs) as executor:
-            for i, path in enumerate(sdf_paths):
-                fut = executor.submit(_process_one, path, out_str, threshold)
-                futures[fut] = (i, path)
+            for path, seed in work:
+                fut = executor.submit(_process_one, path, seed, threshold)
+                futures[fut] = (path, seed)
 
-            done = 0
             for fut in as_completed(futures):
-                done += 1
-                i, path = futures[fut]
                 try:
-                    row = fut.result()
-                except Exception as e:
+                    r = fut.result()
+                except Exception:
+                    path, seed = futures[fut]
                     name = os.path.splitext(os.path.basename(path))[0]
-                    row = [name, "", "", f"error: {e}"]
-                rows.append(row)
-                status = row[3]
-                if status == "OK":
-                    n_ok += 1
-                elif status == "FAIL":
-                    n_fail += 1
-                else:
-                    n_error += 1
-                if done % 100 == 0 or done == total:
-                    typer.echo(f"  [{done}/{total}] OK={n_ok} FAIL={n_fail} ERROR={n_error}")
+                    seed_str = "0" if seed is None else str(seed + 1)
+                    r = {
+                        "name": name,
+                        "seed": seed_str,
+                        "amsr": "",
+                        "rmsd": "",
+                        "status": "ERROR",
+                        "time": 0.0,
+                    }
+                results.append(r)
+                _report(r)
 
-    # Sort by rmsd descending (worst first)
-    def sort_key(row):
-        try:
-            return -float(row[2])
-        except (ValueError, IndexError):
-            return 0.0
-
-    rows.sort(key=sort_key)
+    # Sort by RMSD descending (worst first)
+    results.sort(key=lambda r: -r["rmsd"] if isinstance(r["rmsd"], float) else 0.0)
 
     csv_path = output_dir / "roundtrip_results.csv"
-    with open(csv_path, "w", newline="") as f:
-        w = csv.writer(f)
-        w.writerow(["name", "amsr", "rmsd", "status"])
-        w.writerows(rows)
+    with open(csv_path, "w", newline="") as csvf:
+        w = csv.writer(csvf)
+        w.writerow(["name", "seed", "amsr", "rmsd", "status", "time_s"])
+        for r in results:
+            rmsd_str = f"{r['rmsd']:.3f}" if isinstance(r["rmsd"], float) else ""
+            w.writerow([r["name"], r["seed"], r["amsr"], rmsd_str, r["status"], f"{r['time']:.3f}"])
 
-    typer.echo(f"\nDone. OK={n_ok} FAIL={n_fail} ERROR={n_error} / {total} total")
+    typer.echo(f"\n{'='*60}")
+    typer.echo(f"{n_pass} passed, {n_fail} failed, {n_error} errors / {total} total")
     typer.echo(f"Results: {csv_path}")
 
 

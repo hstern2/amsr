@@ -1,38 +1,26 @@
 import csv
 import glob
 import os
-import random
 import time
 
 import pytest
 from rdkit import Chem
-from rdkit.Chem import rdMolAlign
 
 import amsr.cost_grad as _cg
-from amsr.decode import ToMol
-from amsr.encode import FromMol
-from amsr.zmatrix import GetConformer
+from amsr.roundtrip import N_RANDOM_SEEDS, Roundtrip
 
 from .conftest import SDF_DIR
 
 _out_dir = os.path.join(os.path.dirname(__file__), "out")
 _csv_path = os.path.join(_out_dir, "out.csv")
 
-_N_RANDOM = 5  # number of randomized encodings per molecule
-
-
-def _get_sdf_dir(config):
-    custom = config.getoption("--sdf-dir", default=None)
-    return custom if custom else SDF_DIR
-
 
 def pytest_generate_tests(metafunc):
     if "sdf_path" in metafunc.fixturenames:
-        sdf_d = _get_sdf_dir(metafunc.config)
-        sdf_files = sorted(glob.glob(os.path.join(sdf_d, "*.sdf")))
+        sdf_files = sorted(glob.glob(os.path.join(SDF_DIR, "*.sdf")))
         metafunc.parametrize("sdf_path", sdf_files, ids=[os.path.basename(f) for f in sdf_files])
     if "seed" in metafunc.fixturenames:
-        seeds = [None] + list(range(_N_RANDOM))
+        seeds = [None] + list(range(N_RANDOM_SEEDS))
         metafunc.parametrize("seed", seeds, ids=[f"seed{s}" for s in range(len(seeds))])
 
 
@@ -52,35 +40,19 @@ def _csv_output():
         w.writerows(data)
 
 
-def _roundtrip(mol, seed=None):
-    """Roundtrip with optional randomized encoding."""
-    if seed is not None:
-        random.seed(seed)
-    t0 = time.time()
-    dihedral = {}
-    s = FromMol(mol, randomize=(seed is not None))
-    mol2 = ToMol(s, dihedral=dihedral)
-    mol3 = GetConformer(mol2, dihedral=dihedral)
-    elapsed = time.time() - t0
-    rmsd = rdMolAlign.GetBestRMS(mol3, mol)
-    return s, rmsd, mol3, elapsed
-
-
-def _backend_name():
-    return "C" if _cg.is_available() else "Python"
-
-
 def test_roundtrip_sdf(sdf_path, seed):
     name = os.path.splitext(os.path.basename(sdf_path))[0]
     mol = Chem.MolFromMolFile(sdf_path, removeHs=True)
     assert mol is not None, f"Could not parse {sdf_path}"
 
-    s, rmsd, mol_out, elapsed = _roundtrip(mol, seed=seed)
-    backend = _backend_name()
+    backend = "C" if _cg.is_available() else "Python"
+    seed_str = "0" if seed is None else str(seed + 1)
+
+    t0 = time.time()
+    s, rmsd, mol_out = Roundtrip(mol, seed=seed)
+    elapsed = time.time() - t0
 
     os.makedirs(_out_dir, exist_ok=True)
-    seed_str = "0" if seed is None else str(seed + 1)
-    # Save SDF output for every encoding
     match = mol.GetSubstructMatch(mol_out)
     if match:
         mol_reordered = Chem.RenumberAtoms(mol, list(match))
