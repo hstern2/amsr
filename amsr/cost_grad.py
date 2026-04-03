@@ -24,51 +24,51 @@ def _load_lib():
     name = "cost_grad.dylib" if sys.platform == "darwin" else "cost_grad.so"
     path = os.path.join(d, name)
     if not os.path.exists(path):
-        return
+        raise RuntimeError(
+            f"C extension {name} not found in {d}. Build it with 'make' in the project root."
+        )
     try:
         _lib = ctypes.CDLL(path)
-        fn = _lib.cost_and_grad
-        fn.restype = ctypes.c_double
-        fn.argtypes = [
-            ctypes.c_void_p,  # x
-            ctypes.c_void_p,  # grad
-            ctypes.c_int,  # n_free
-            ctypes.c_void_p,  # fixed
-            ctypes.c_int,  # n_fixed
-            ctypes.c_void_p,
-            ctypes.c_void_p,
-            ctypes.c_int,  # bonds
-            ctypes.c_void_p,
-            ctypes.c_void_p,
-            ctypes.c_int,  # angles
-            ctypes.c_void_p,
-            ctypes.c_int,  # planar
-            ctypes.c_void_p,
-            ctypes.c_void_p,  # chiral (info + target_vols)
-            ctypes.c_int,
-            ctypes.c_void_p,
-            ctypes.c_void_p,
-            ctypes.c_int,  # dih
-            ctypes.c_void_p,
-            ctypes.c_void_p,
-            ctypes.c_int,  # ez
-            ctypes.c_void_p,
-            ctypes.c_int,  # linear
-            ctypes.c_double,
-            ctypes.c_double,
-            ctypes.c_double,
-            ctypes.c_double,
-            ctypes.c_double,
-            ctypes.c_double,
-            ctypes.c_double,  # weights (7: bond, angle, planar, chiral, dih, ez, linear)
-        ]
-        _c_func = fn
-    except OSError:
-        pass
+    except OSError as e:
+        raise RuntimeError(f"Failed to load C extension {path}: {e}. Rebuild with 'make'.") from e
+    fn = _lib.cost_and_grad
+    fn.restype = ctypes.c_double
+    fn.argtypes = [
+        ctypes.c_void_p,  # x
+        ctypes.c_void_p,  # grad
+        ctypes.c_int,  # n_free
+        ctypes.c_void_p,  # fixed
+        ctypes.c_int,  # n_fixed
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_int,  # bonds
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_int,  # angles
+        ctypes.c_void_p,
+        ctypes.c_int,  # planar
+        ctypes.c_void_p,
+        ctypes.c_void_p,  # chiral (info + target_vols)
+        ctypes.c_int,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_int,  # dih
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_int,  # ez
+        ctypes.c_void_p,
+        ctypes.c_int,  # linear
+        ctypes.c_double,
+        ctypes.c_double,
+        ctypes.c_double,
+        ctypes.c_double,
+        ctypes.c_double,
+        ctypes.c_double,
+        ctypes.c_double,  # weights (7: bond, angle, planar, chiral, dih, ez, linear)
+    ]
+    _c_func = fn
 
 
-# Use C extension if the shared library is present (built via `make`).
-# Remove it with `make clean` to fall back to pure Python.
 _load_lib()
 
 

@@ -18,8 +18,22 @@ from .conftest import SDF_DIR
 _out_dir = os.path.join(os.path.dirname(__file__), "out")
 _csv_path = os.path.join(_out_dir, "out.csv")
 
-_sdf_files = sorted(glob.glob(os.path.join(SDF_DIR, "*.sdf")))
 _N_RANDOM = 5  # number of randomized encodings per molecule
+
+
+def _get_sdf_dir(config):
+    custom = config.getoption("--sdf-dir", default=None)
+    return custom if custom else SDF_DIR
+
+
+def pytest_generate_tests(metafunc):
+    if "sdf_path" in metafunc.fixturenames:
+        sdf_d = _get_sdf_dir(metafunc.config)
+        sdf_files = sorted(glob.glob(os.path.join(sdf_d, "*.sdf")))
+        metafunc.parametrize("sdf_path", sdf_files, ids=[os.path.basename(f) for f in sdf_files])
+    if "seed" in metafunc.fixturenames:
+        seeds = [None] + list(range(_N_RANDOM))
+        metafunc.parametrize("seed", seeds, ids=[f"seed{s}" for s in range(len(seeds))])
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -31,7 +45,7 @@ def _csv_output():
     with open(_csv_path, newline="") as f:
         rows = list(csv.reader(f))
     header, data = rows[0], rows[1:]
-    data.sort(key=lambda r: (-float(r[4]) if r[4] else 0))
+    data.sort(key=lambda r: -float(r[4]) if r[4] else 0)
     with open(_csv_path, "w", newline="") as f:
         w = csv.writer(f)
         w.writerow(header)
@@ -39,7 +53,7 @@ def _csv_output():
 
 
 def _roundtrip(mol, seed=None):
-    """Roundtrip with optional randomized encoding.  Returns (amsr, rmsd, mol_out, elapsed)."""
+    """Roundtrip with optional randomized encoding."""
     if seed is not None:
         random.seed(seed)
     t0 = time.time()
@@ -56,12 +70,6 @@ def _backend_name():
     return "C" if _cg.is_available() else "Python"
 
 
-# Seeds: None = default SDF atom order, then 5 randomized atom orders
-_seeds = [None] + list(range(_N_RANDOM))
-
-
-@pytest.mark.parametrize("sdf_path", _sdf_files, ids=[os.path.basename(f) for f in _sdf_files])
-@pytest.mark.parametrize("seed", _seeds, ids=[f"seed{s}" for s in range(len(_seeds))])
 def test_roundtrip_sdf(sdf_path, seed):
     name = os.path.splitext(os.path.basename(sdf_path))[0]
     mol = Chem.MolFromMolFile(sdf_path, removeHs=True)

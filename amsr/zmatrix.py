@@ -177,49 +177,6 @@ def _set_dihedral(coords, mi, i, j, mj, target, atoms_to_rotate):
 
 
 # ---------------------------------------------------------------------------
-# Batch geometry primitives (vectorized numpy)
-# ---------------------------------------------------------------------------
-
-
-def _batch_norm3(v):
-    """Euclidean norm for Nx3 array, returns shape (N,)."""
-    return np.sqrt(v[:, 0] ** 2 + v[:, 1] ** 2 + v[:, 2] ** 2)
-
-
-def _batch_cross3(a, b):
-    """Cross product for Nx3 arrays, returns Nx3."""
-    out = np.empty_like(a)
-    out[:, 0] = a[:, 1] * b[:, 2] - a[:, 2] * b[:, 1]
-    out[:, 1] = a[:, 2] * b[:, 0] - a[:, 0] * b[:, 2]
-    out[:, 2] = a[:, 0] * b[:, 1] - a[:, 1] * b[:, 0]
-    return out
-
-
-def _batch_measure_torsion(p0, p1, p2, p3):
-    """Torsion angles (degrees) for N sets of four 3-D points (each Nx3)."""
-    b1, b2, b3 = p1 - p0, p2 - p1, p3 - p2
-    n1 = _batch_cross3(b1, b2)
-    n2 = _batch_cross3(b2, b3)
-    n1n = _batch_norm3(n1)
-    n2n = _batch_norm3(n2)
-    # Avoid division by zero
-    safe = (n1n > 1e-10) & (n2n > 1e-10)
-    result = np.zeros(len(p0))
-    if not np.any(safe):
-        return result
-    n1s = n1[safe] / n1n[safe, None]
-    n2s = n2[safe] / n2n[safe, None]
-    b2s = b2[safe]
-    b2n = _batch_norm3(b2s)
-    b2s = b2s / b2n[:, None]
-    cross_n = _batch_cross3(n1s, n2s)
-    sin_val = np.sum(cross_n * b2s, axis=1)
-    cos_val = np.sum(n1s * n2s, axis=1)
-    result[safe] = np.degrees(np.arctan2(sin_val, cos_val))
-    return result
-
-
-# ---------------------------------------------------------------------------
 # RDKit helpers (not C-portable)
 # ---------------------------------------------------------------------------
 
@@ -856,7 +813,14 @@ def _rdkit_embed(mol, n_confs=1, seed=42):
     """
     from rdkit.Chem import AllChem
 
-    mol_h = Chem.AddHs(mol)
+    # Strip E/Z stereo before embedding — pseudo-E/Z on bonds with
+    # equivalent substituents causes pathological slowdowns in RDKit's
+    # distance geometry.  The optimizer enforces E/Z via its own constraints.
+    mol_e = Chem.RWMol(mol)
+    for b in mol_e.GetBonds():
+        if b.GetStereo() != Chem.BondStereo.STEREONONE:
+            b.SetStereo(Chem.BondStereo.STEREONONE)
+    mol_h = Chem.AddHs(mol_e)
     cids = AllChem.EmbedMultipleConfs(
         mol_h, numConfs=n_confs, randomSeed=seed, enforceChirality=True
     )
@@ -885,273 +849,9 @@ _W_EZ = 0.3
 _W_LINEAR = 20.0
 
 
-def _cost_and_grad(
-    x,
-    n_free,
-    fixed_coords,
-    bonds,
-    ideal_lengths,
-    angle_triples,
-    ideal_angles,
-    planar_groups,
-    chiral_info,
-    chiral_target_vols,
-    dih_quads,
-    dih_targets,
-    ez_quads,
-    ez_targets,
-    linear_triples=None,
+def _optimize_ring_system(
+    mol, system_atoms, all_rings, bond_dihedral, coords, placed, parent, ftol=1e-7, gtol=1e-5
 ):
-    """Compute total cost (sum of squared residuals) and analytical gradient.
-
-    All constraint indices are pre-remapped to slot indices: 0..n_free-1 are
-    free atoms (in x), n_free.. are fixed atoms (in fixed_coords).
-    """
-    x_3d = x.reshape(-1, 3)
-    all_coords = np.concatenate([x_3d, fixed_coords])
-    grad_all = np.zeros((len(all_coords), 3))
-    cost = 0.0
-    _lookup = all_coords.__getitem__
-
-    def _scatter(idx, contrib):
-        np.add.at(grad_all, idx, contrib)
-
-    # --- Bond terms: r = w*(|d| - d0) ---
-    if len(bonds):
-        w = _W_BOND
-        ri = _lookup(bonds[:, 0])
-        rj = _lookup(bonds[:, 1])
-        d = ri - rj
-        dist = _batch_norm3(d)
-        safe = dist > 1e-10
-        r = w * (dist - ideal_lengths)
-        cost += np.dot(r, r)
-        # grad: 2*r * w * d_hat
-        scale = np.zeros_like(dist)
-        scale[safe] = 2.0 * w * r[safe] / dist[safe]
-        g_contrib = scale[:, None] * d
-        _scatter(bonds[:, 0], g_contrib)
-        _scatter(bonds[:, 1], -g_contrib)
-
-    # --- Angle terms: r = w * (theta - theta0) [radians, weighted by L] ---
-    if len(angle_triples):
-        w = _W_ANGLE
-        ra = _lookup(angle_triples[:, 0])
-        rb = _lookup(angle_triples[:, 1])
-        rc = _lookup(angle_triples[:, 2])
-        v1, v2 = ra - rb, rc - rb
-        n1, n2 = _batch_norm3(v1), _batch_norm3(v2)
-        L = 0.5 * (n1 + n2)
-        cos_a = np.sum(v1 * v2, axis=1) / (n1 * n2 + 1e-10)
-        cos_a = np.clip(cos_a, -1, 1)
-        theta = np.arccos(cos_a)
-        theta0 = np.radians(ideal_angles)
-        delta_half = (theta - theta0) / 2.0
-        r = w * 2.0 * L * np.sin(delta_half)
-        cost += np.dot(r, r)
-        # Gradient of r w.r.t. coordinates
-        sin_th = np.sin(theta)
-        safe = (sin_th > 1e-10) & (n1 > 1e-10) & (n2 > 1e-10)
-        v1_hat = np.zeros_like(v1)
-        v2_hat = np.zeros_like(v2)
-        v1_hat[safe] = v1[safe] / n1[safe, None]
-        v2_hat[safe] = v2[safe] / n2[safe, None]
-        # dr/dtheta = w * L * cos(delta_half)
-        # dr/dL = w * 2 * sin(delta_half)
-        dr_dtheta = w * L * np.cos(delta_half)
-        dr_dL = w * 2.0 * np.sin(delta_half)
-        # dtheta/dra = (cos_a * v1_hat - v2_hat) / (sin_th * n1)
-        # dtheta/drc = (cos_a * v2_hat - v1_hat) / (sin_th * n2)
-        dtheta_dra = np.zeros_like(v1)
-        dtheta_drc = np.zeros_like(v2)
-        dtheta_dra[safe] = (cos_a[safe, None] * v1_hat[safe] - v2_hat[safe]) / (
-            sin_th[safe, None] * n1[safe, None]
-        )
-        dtheta_drc[safe] = (cos_a[safe, None] * v2_hat[safe] - v1_hat[safe]) / (
-            sin_th[safe, None] * n2[safe, None]
-        )
-        dtheta_drb = -(dtheta_dra + dtheta_drc)
-        # dL/dra = 0.5*v1_hat, dL/drc = 0.5*v2_hat, dL/drb = -0.5*(v1_hat+v2_hat)
-        # dr/dra = dr_dtheta * dtheta_dra + dr_dL * 0.5*v1_hat
-        dr_dra = dr_dtheta[:, None] * dtheta_dra + dr_dL[:, None] * 0.5 * v1_hat
-        dr_drc = dr_dtheta[:, None] * dtheta_drc + dr_dL[:, None] * 0.5 * v2_hat
-        dr_drb = dr_dtheta[:, None] * dtheta_drb - dr_dL[:, None] * 0.5 * (v1_hat + v2_hat)
-        scale = 2.0 * r
-        _scatter(angle_triples[:, 0], scale[:, None] * dr_dra)
-        _scatter(angle_triples[:, 1], scale[:, None] * dr_drb)
-        _scatter(angle_triples[:, 2], scale[:, None] * dr_drc)
-
-    # --- Planarity terms: r = w * vol/norm ---
-    if len(planar_groups):
-        w = _W_PLANAR
-        rj = _lookup(planar_groups[:, 0])
-        ra = _lookup(planar_groups[:, 1])
-        rb = _lookup(planar_groups[:, 2])
-        rc = _lookup(planar_groups[:, 3])
-        v1, v2, v3 = ra - rj, rb - rj, rc - rj
-        cross23 = _batch_cross3(v2, v3)
-        vol = np.sum(v1 * cross23, axis=1)
-        n1, n2, n3 = _batch_norm3(v1), _batch_norm3(v2), _batch_norm3(v3)
-        norm = n1 * n2 * n3 + 1e-10
-        r = w * vol / norm
-        cost += np.dot(r, r)
-        # dr/dra = w * cross23 / norm (since dvol/dv1 = cross23, dv1/dra = I)
-        # dr/drb = w * cross31 / norm
-        # dr/drc = w * cross12 / norm
-        # Plus quotient rule terms for norm (small near equilibrium, include for correctness)
-        cross31 = _batch_cross3(v3, v1)
-        cross12 = _batch_cross3(v1, v2)
-        inv_norm = 1.0 / norm
-        q = vol * inv_norm  # vol/norm
-        # d(vol/norm)/dra = (cross23 - q*n2*n3*v1/n1) / norm  [quotient rule]
-        safe1 = n1 > 1e-10
-        safe2 = n2 > 1e-10
-        safe3 = n3 > 1e-10
-        dnorm_dra = np.zeros_like(v1)
-        dnorm_drb = np.zeros_like(v2)
-        dnorm_drc = np.zeros_like(v3)
-        dnorm_dra[safe1] = (n2 * n3)[safe1, None] * v1[safe1] / n1[safe1, None]
-        dnorm_drb[safe2] = (n1 * n3)[safe2, None] * v2[safe2] / n2[safe2, None]
-        dnorm_drc[safe3] = (n1 * n2)[safe3, None] * v3[safe3] / n3[safe3, None]
-        dr_dra = w * (cross23 * inv_norm[:, None] - q[:, None] * dnorm_dra * inv_norm[:, None])
-        dr_drb = w * (cross31 * inv_norm[:, None] - q[:, None] * dnorm_drb * inv_norm[:, None])
-        dr_drc = w * (cross12 * inv_norm[:, None] - q[:, None] * dnorm_drc * inv_norm[:, None])
-        dr_drj = -(dr_dra + dr_drb + dr_drc)
-        scale = 2.0 * r
-        _scatter(planar_groups[:, 0], scale[:, None] * dr_drj)
-        _scatter(planar_groups[:, 1], scale[:, None] * dr_dra)
-        _scatter(planar_groups[:, 2], scale[:, None] * dr_drb)
-        _scatter(planar_groups[:, 3], scale[:, None] * dr_drc)
-
-    # --- Chirality terms: r = w * max(0, sign*(target - vol)) ---
-    # One-sided penalty that activates when vol is closer to zero (or
-    # wrong sign) than the target.  Unlike the old max(0, -sign*vol),
-    # this has non-zero gradient at vol=0, preventing SP2 planarity
-    # constraints from collapsing SP3 chiral centers flat.
-    if len(chiral_info):
-        w = _W_CHIRAL
-        rj = _lookup(chiral_info[:, 0])
-        ra = _lookup(chiral_info[:, 1])
-        rb = _lookup(chiral_info[:, 2])
-        rc = _lookup(chiral_info[:, 3])
-        sign = chiral_info[:, 4].astype(float)
-        v1, v2, v3 = ra - rj, rb - rj, rc - rj
-        cross23 = _batch_cross3(v2, v3)
-        vol = np.sum(v1 * cross23, axis=1)
-        target = chiral_target_vols
-        raw = sign * (target - vol)
-        active = raw > 0
-        r = w * np.maximum(0.0, raw)
-        cost += np.dot(r, r)
-        if np.any(active):
-            cross31 = _batch_cross3(v3, v1)
-            cross12 = _batch_cross3(v1, v2)
-            # dr/dvol = -w*sign (when active)
-            dr_dvol = np.zeros(len(sign))
-            dr_dvol[active] = -w * sign[active]
-            dr_dra = dr_dvol[:, None] * cross23
-            dr_drb = dr_dvol[:, None] * cross31
-            dr_drc = dr_dvol[:, None] * cross12
-            dr_drj = -(dr_dra + dr_drb + dr_drc)
-            scale = 2.0 * r
-            _scatter(chiral_info[:, 0], scale[:, None] * dr_drj)
-            _scatter(chiral_info[:, 1], scale[:, None] * dr_dra)
-            _scatter(chiral_info[:, 2], scale[:, None] * dr_drb)
-            _scatter(chiral_info[:, 3], scale[:, None] * dr_drc)
-
-    # --- Dihedral terms (AMSR + E/Z): r = w * angular_diff ---
-    for quads, targets, w in [
-        (dih_quads, dih_targets, _W_DIHEDRAL),
-        (ez_quads, ez_targets, _W_EZ),
-    ]:
-        if len(quads) == 0:
-            continue
-        p0 = _lookup(quads[:, 0])
-        p1 = _lookup(quads[:, 1])
-        p2 = _lookup(quads[:, 2])
-        p3 = _lookup(quads[:, 3])
-        actual = _batch_measure_torsion(p0, p1, p2, p3)
-        diff = (actual - targets + 180.0) % 360.0 - 180.0
-        r = w * diff
-        cost += np.dot(r, r)
-        # Torsion gradient (Blondel-Karplus formulation)
-        b1, b2, b3 = p1 - p0, p2 - p1, p3 - p2
-        n1_vec = _batch_cross3(b1, b2)
-        n2_vec = _batch_cross3(b2, b3)
-        n1n = _batch_norm3(n1_vec)
-        n2n = _batch_norm3(n2_vec)
-        b2n = _batch_norm3(b2)
-        safe = (n1n > 1e-10) & (n2n > 1e-10) & (b2n > 1e-10)
-        if not np.any(safe):
-            continue
-        # dtorsion/dp0 = -(b2n / n1n^2) * n1  (standard result)
-        # dtorsion/dp3 =  (b2n / n2n^2) * n2
-        # dtorsion/dp1, dp2 follow from chain rule
-        dt_dp0 = np.zeros_like(p0)
-        dt_dp3 = np.zeros_like(p3)
-        dt_dp0[safe] = -(b2n[safe] / (n1n[safe] ** 2))[:, None] * n1_vec[safe]
-        dt_dp3[safe] = (b2n[safe] / (n2n[safe] ** 2))[:, None] * n2_vec[safe]
-        # dt/dp1 = -dt/dp0 + (dot(b1,b2)/|b2|^2) * (-dt/dp0) + extra term
-        # Using the full Blondel-Karplus form:
-        b1_dot_b2 = np.sum(b1 * b2, axis=1)
-        b3_dot_b2 = np.sum(b3 * b2, axis=1)
-        b2sq = b2n**2
-        c1 = np.zeros_like(b2n)
-        c2 = np.zeros_like(b2n)
-        c1[safe] = b1_dot_b2[safe] / b2sq[safe]
-        c2[safe] = b3_dot_b2[safe] / b2sq[safe]
-        dt_dp1 = -(c1 + 1.0)[:, None] * dt_dp0 + c2[:, None] * dt_dp3
-        dt_dp2 = c1[:, None] * dt_dp0 - (c2 + 1.0)[:, None] * dt_dp3
-        # dt_dp* are dφ/dp in radians/Å; r = w*diff with diff in degrees.
-        # d(cost)/dp = 2*r * w * (180/π) * dφ/dp
-        scale = 2.0 * w * r * (180.0 / np.pi)
-        _scatter(quads[:, 0], scale[:, None] * dt_dp0)
-        _scatter(quads[:, 1], scale[:, None] * dt_dp1)
-        _scatter(quads[:, 2], scale[:, None] * dt_dp2)
-        _scatter(quads[:, 3], scale[:, None] * dt_dp3)
-
-    # --- Linearity terms for SP atoms: cost = w^2 * sin^2(theta) ---
-    # sin^2 = |v1 x v2|^2 / (|v1|^2 |v2|^2), normalized so gradient
-    # magnitude is independent of bond length (like the angle constraint).
-    # Gradient is applied only to the center (SP) atom — the endpoints'
-    # geometry is determined by their own angle/planarity constraints.
-    if linear_triples is not None and len(linear_triples):
-        w = _W_LINEAR
-        ra = _lookup(linear_triples[:, 0])
-        rb = _lookup(linear_triples[:, 1])
-        rc = _lookup(linear_triples[:, 2])
-        v1, v2 = ra - rb, rc - rb
-        n1sq = np.sum(v1 * v1, axis=1)
-        n2sq = np.sum(v2 * v2, axis=1)
-        dot12 = np.sum(v1 * v2, axis=1)
-        denom = n1sq * n2sq + 1e-20
-        sin2 = (n1sq * n2sq - dot12 * dot12) / denom
-        cost += w * w * np.sum(sin2)
-        inv = 1.0 / denom
-        ga = (
-            w
-            * w
-            * 2.0
-            * (
-                (n2sq[:, None] * v1 - dot12[:, None] * v2) * inv[:, None]
-                - sin2[:, None] * v1 / n1sq[:, None]
-            )
-        )
-        gc = (
-            w
-            * w
-            * 2.0
-            * (
-                (n1sq[:, None] * v2 - dot12[:, None] * v1) * inv[:, None]
-                - sin2[:, None] * v2 / n2sq[:, None]
-            )
-        )
-        _scatter(linear_triples[:, 1], -(ga + gc))
-
-    return cost, grad_all[: len(x_3d)].ravel()
-
-
-def _optimize_ring_system(mol, system_atoms, all_rings, bond_dihedral, coords, placed, parent):
     """Place and optimize ring system atoms in Cartesian space.
 
     Initializes ring atoms as regular polygons, then minimizes a cost
@@ -1229,55 +929,32 @@ def _optimize_ring_system(mol, system_atoms, all_rings, bond_dihedral, coords, p
     if len(linear_triples):
         linear_triples = _remap(linear_triples)
 
-    # Build the objective function: C extension if available, else Python.
     from .cost_grad import CostGradProblem
-    from .cost_grad import is_available as _c_available
 
     _lin = linear_triples if len(linear_triples) else None
-
-    if _c_available():
-        _objective = CostGradProblem(
-            n_sys,
-            fixed_coords,
-            bonds,
-            ideal_lengths,
-            angle_triples,
-            ideal_angles,
-            planar_groups,
-            chiral_info,
-            chiral_target_vols,
-            dih_quads,
-            dih_targets,
-            ez_quads,
-            ez_targets,
-            _W_BOND,
-            _W_ANGLE,
-            _W_PLANAR,
-            _W_CHIRAL,
-            _W_DIHEDRAL,
-            _W_EZ,
-            linear_triples=_lin,
-            w_linear=_W_LINEAR,
-        )
-    else:
-        args = (
-            n_sys,
-            fixed_coords,
-            bonds,
-            ideal_lengths,
-            angle_triples,
-            ideal_angles,
-            planar_groups,
-            chiral_info,
-            chiral_target_vols,
-            dih_quads,
-            dih_targets,
-            ez_quads,
-            ez_targets,
-        )
-
-        def _objective(x):
-            return _cost_and_grad(x, *args, linear_triples=_lin)
+    _objective = CostGradProblem(
+        n_sys,
+        fixed_coords,
+        bonds,
+        ideal_lengths,
+        angle_triples,
+        ideal_angles,
+        planar_groups,
+        chiral_info,
+        chiral_target_vols,
+        dih_quads,
+        dih_targets,
+        ez_quads,
+        ez_targets,
+        _W_BOND,
+        _W_ANGLE,
+        _W_PLANAR,
+        _W_CHIRAL,
+        _W_DIHEDRAL,
+        _W_EZ,
+        linear_triples=_lin,
+        w_linear=_W_LINEAR,
+    )
 
     # Initial coordinates come from the embedding already stored in coords.
     x0 = np.zeros(3 * n_sys)
@@ -1285,7 +962,9 @@ def _optimize_ring_system(mol, system_atoms, all_rings, bond_dihedral, coords, p
         k = idx_map[a]
         x0[3 * k : 3 * k + 3] = coords[a]
 
-    result = minimize(_objective, x0, method="L-BFGS-B", jac=True)
+    result = minimize(
+        _objective, x0, method="L-BFGS-B", jac=True, options={"ftol": ftol, "gtol": gtol}
+    )
     best_cost = result.fun
     best_x = result.x
 
@@ -1302,7 +981,13 @@ def _optimize_ring_system(mol, system_atoms, all_rings, bond_dihedral, coords, p
         for k in range(len(x_inv)):
             d = np.dot(x_inv[k] - centroid, normal)
             x_inv[k] -= 2.0 * d * normal
-        r = minimize(_objective, x_inv.ravel(), method="L-BFGS-B", jac=True)
+        r = minimize(
+            _objective,
+            x_inv.ravel(),
+            method="L-BFGS-B",
+            jac=True,
+            options={"ftol": ftol, "gtol": gtol},
+        )
         if r.fun < best_cost:
             best_cost = r.fun
             best_x = r.x
@@ -1324,7 +1009,13 @@ def _optimize_ring_system(mol, system_atoms, all_rings, bond_dihedral, coords, p
             for k in ring_slots:
                 d = np.dot(x_inv[k] - rc, rn)
                 x_inv[k] -= 2.0 * d * rn
-            r = minimize(_objective, x_inv.ravel(), method="L-BFGS-B", jac=True)
+            r = minimize(
+                _objective,
+                x_inv.ravel(),
+                method="L-BFGS-B",
+                jac=True,
+                options={"ftol": ftol, "gtol": gtol},
+            )
             if r.fun < best_cost:
                 best_cost = r.fun
                 best_x = r.x
@@ -1611,6 +1302,9 @@ def _place_chain_atom(
 def GetConformer(
     mol: Chem.Mol,
     dihedral: Optional[dict[tuple[int, int, int, int], int]] = None,
+    ftol: float = 1e-7,
+    gtol: float = 1e-5,
+    max_confs: int = 10,
 ) -> Chem.Mol:
     """Generate 3D conformer.
 
@@ -1652,34 +1346,48 @@ def GetConformer(
     core_atoms: set[int] = set()
     if ring_atoms:
         core_atoms = _find_core_atoms(mol, ring_atoms, n)
-        embeddings = _rdkit_embed(mol, n_confs=10)
-        if embeddings:
-            # Try embeddings through junction correction + optimization,
-            # keeping the one with the lowest optimizer cost.
-            # Stop early once cost is low enough.
-            best_opt_cost = float("inf")
-            best_coords = None
-            best_bd: dict[tuple[int, int], tuple[int, int, int]] = {}
-            best_chiral_sign = {}
-            best_chiral_vol = {}
-            bd_saved = dict(bond_dihedral)
-            for ec in embeddings:
-                bond_dihedral.update(bd_saved)
-                coords[:] = ec
-                _fix_equivalent_terminals(mol, bond_dihedral, coords)
-                _correct_junction_dihedrals(mol, ring_systems, core_atoms, bond_dihedral, coords)
-                fixed_for_opt = {i: coords[i].copy() for i in range(n) if i not in core_atoms}
-                oc = _optimize_ring_system(
-                    mol, core_atoms, all_rings, bond_dihedral, coords, fixed_for_opt, parent
-                )
-                if oc < best_opt_cost:
-                    best_opt_cost = oc
-                    best_coords = coords.copy()
-                    best_bd = dict(bond_dihedral)
-                    best_chiral_sign = dict(getattr(mol, "_optimized_chiral_sign", {}))
-                    best_chiral_vol = dict(getattr(mol, "_optimized_chiral_vol", {}))
-                if best_opt_cost < 0.01:
-                    break
+        # Generate embeddings lazily (one at a time).  Stop when the cost
+        # is low and additional embeddings aren't improving it.
+        best_opt_cost = float("inf")
+        best_coords = None
+        best_bd: dict[tuple[int, int], tuple[int, int, int]] = {}
+        best_chiral_sign = {}
+        best_chiral_vol = {}
+        bd_saved = dict(bond_dihedral)
+        stale = 0  # consecutive embeddings without >10% improvement
+        for attempt in range(max_confs):
+            ec_list = _rdkit_embed(mol, n_confs=1, seed=42 + attempt)
+            if not ec_list:
+                continue
+            ec = ec_list[0]
+            bond_dihedral.update(bd_saved)
+            coords[:] = ec
+            _fix_equivalent_terminals(mol, bond_dihedral, coords)
+            _correct_junction_dihedrals(mol, ring_systems, core_atoms, bond_dihedral, coords)
+            fixed_for_opt = {i: coords[i].copy() for i in range(n) if i not in core_atoms}
+            oc = _optimize_ring_system(
+                mol,
+                core_atoms,
+                all_rings,
+                bond_dihedral,
+                coords,
+                fixed_for_opt,
+                parent,
+                ftol=ftol,
+                gtol=gtol,
+            )
+            improved = oc < best_opt_cost * 0.9
+            if oc < best_opt_cost:
+                best_opt_cost = oc
+                best_coords = coords.copy()
+                best_bd = dict(bond_dihedral)
+                best_chiral_sign = dict(getattr(mol, "_optimized_chiral_sign", {}))
+                best_chiral_vol = dict(getattr(mol, "_optimized_chiral_vol", {}))
+            stale = 0 if improved else stale + 1
+            # Stop early only when cost has converged to a low value.
+            if stale >= 2 and best_opt_cost < 1.0:
+                break
+        if best_coords is not None:
             coords[:] = best_coords
             bond_dihedral.update(best_bd)
             mol._optimized_chiral_sign = best_chiral_sign
