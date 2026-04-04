@@ -235,6 +235,145 @@ def _fix_equivalent_terminals(mol, bond_dihedral, coords):
                 bond_dihedral[(j, i)] = (mj_new, mi_new, angle)
 
 
+def _subtree(mol, root, exclude):
+    """BFS to find all atoms reachable from root without crossing exclude."""
+    visited = {root}
+    queue = [root]
+    while queue:
+        a = queue.pop(0)
+        for nb in mol.GetAtomWithIdx(a).GetNeighbors():
+            ni = nb.GetIdx()
+            if ni not in visited and ni != exclude:
+                visited.add(ni)
+                queue.append(ni)
+    return visited
+
+
+def _rotate_subtree(coords, atoms, origin, axis_dir, angle_deg):
+    """Rotate atoms around an axis through origin by angle_deg (Rodrigues)."""
+    rad = np.radians(angle_deg)
+    axis = axis_dir / _norm3(axis_dir)
+    cos_a, sin_a = np.cos(rad), np.sin(rad)
+    for k in atoms:
+        v = coords[k] - origin
+        coords[k] = (
+            origin + v * cos_a + _cross3(axis, v) * sin_a + axis * np.dot(axis, v) * (1 - cos_a)
+        )
+
+
+def _set_dihedrals(mol, bond_dihedral, coords):
+    """Rotate subtrees around non-ring bonds to match AMSR dihedral targets."""
+    seen = set()
+    for (i, j), (mi, mj, target) in bond_dihedral.items():
+        key = (min(i, j), max(i, j))
+        if key in seen:
+            continue
+        seen.add(key)
+        bond = mol.GetBondBetweenAtoms(i, j)
+        if bond is not None and bond.IsInRing():
+            continue
+        current = measure_torsion(coords[mi], coords[i], coords[j], coords[mj])
+        delta = (target - current + 180) % 360 - 180
+        if abs(delta) < 1.0:
+            continue
+        tree_j = _subtree(mol, j, i)
+        tree_i = _subtree(mol, i, j)
+        if len(tree_j) <= len(tree_i):
+            _rotate_subtree(coords, tree_j - {j}, coords[i], coords[j] - coords[i], delta)
+        else:
+            _rotate_subtree(coords, tree_i - {i}, coords[j], coords[i] - coords[j], -delta)
+
+
+def _fix_ring_puckers(mol, bond_dihedral, coords):
+    """Reconstruct ring atom positions from AMSR ring dihedrals.
+
+    For each ring with encoded dihedral targets, build coordinates from
+    internal geometry (bond lengths, angles, dihedrals), Kabsch-align
+    onto the embedding, and translate attached substituents.
+    """
+    all_rings = [list(r) for r in mol.GetRingInfo().AtomRings()]
+    # Only fix isolated rings (no atoms shared with other rings).
+    # Fused ring systems have coupled geometry — let the optimizer handle them.
+    all_ring_atoms = {}
+    for idx, ring in enumerate(all_rings):
+        for a in ring:
+            all_ring_atoms.setdefault(a, set()).add(idx)
+    shared_atoms = {a for a, rings in all_ring_atoms.items() if len(rings) > 1}
+
+    for ring in all_rings:
+        ring_set = set(ring)
+        if ring_set & shared_atoms:
+            continue
+        n_ring = len(ring)
+        if n_ring < 4:
+            continue
+
+        # Collect target dihedrals for consecutive ring quadruples
+        ring_dihedrals: dict[int, float] = {}
+        for idx in range(n_ring):
+            b, c = ring[(idx + 1) % n_ring], ring[(idx + 2) % n_ring]
+            key_bc = (min(b, c), max(b, c))
+            for (bi, bj), (mi, mj, target) in bond_dihedral.items():
+                if (min(bi, bj), max(bi, bj)) == key_bc and mi in ring_set and mj in ring_set:
+                    ring_dihedrals[idx] = target
+                    break
+        if len(ring_dihedrals) < n_ring:
+            continue
+
+        # Bond lengths and angles around the ring
+        lengths = [_get_bond_length(mol, ring[k], ring[(k + 1) % n_ring]) for k in range(n_ring)]
+        angles = [
+            _get_bond_angle(mol, ring[(k - 1) % n_ring], ring[k], ring[(k + 1) % n_ring])
+            for k in range(n_ring)
+        ]
+
+        # Build ring from internal coordinates (z-matrix style)
+        new_pos = np.zeros((n_ring, 3))
+        new_pos[0] = [0, 0, 0]
+        new_pos[1] = [lengths[0], 0, 0]
+        if n_ring >= 3:
+            a = np.radians(180 - angles[1])
+            new_pos[2] = [lengths[0] - lengths[1] * np.cos(a), lengths[1] * np.sin(a), 0]
+        for idx in range(3, n_ring):
+            p1, p2, p3 = new_pos[idx - 3], new_pos[idx - 2], new_pos[idx - 1]
+            d_len = lengths[idx - 1]
+            theta = np.radians(180 - angles[idx])
+            tau = np.radians(ring_dihedrals.get((idx - 3) % n_ring, 0))
+            bc = p3 - p2
+            bc_n = bc / _norm3(bc)
+            ab = p2 - p1
+            n_vec = _cross3(ab, bc)
+            nn = _norm3(n_vec)
+            n_vec = n_vec / nn if nn > 1e-10 else np.array([0.0, 0.0, 1.0])
+            m_vec = _cross3(n_vec, bc_n)
+            new_pos[idx] = p3 + d_len * (
+                bc_n * np.cos(theta)
+                + m_vec * np.sin(theta) * np.cos(tau)
+                + n_vec * np.sin(theta) * np.sin(tau)
+            )
+
+        # Kabsch alignment onto embedded ring positions
+        old_pos = coords[ring]
+        old_center = old_pos.mean(axis=0)
+        new_center = new_pos.mean(axis=0)
+        H = (new_pos - new_center).T @ (old_pos - old_center)
+        U, _, Vt = np.linalg.svd(H)
+        d = np.linalg.det(Vt.T @ U.T)
+        R = Vt.T @ np.diag([1, 1, np.sign(d)]) @ U.T
+        aligned = (new_pos - new_center) @ R.T + old_center
+
+        # Move ring atoms and translate their substituent subtrees
+        for idx, ai in enumerate(ring):
+            disp = aligned[idx] - coords[ai]
+            for nb in mol.GetAtomWithIdx(ai).GetNeighbors():
+                ni = nb.GetIdx()
+                if ni in ring_set:
+                    continue
+                for k in _subtree(mol, ni, ai):
+                    coords[k] += disp
+            coords[ai] = aligned[idx]
+
+
 # ============================================================
 # Constraint collection
 # ============================================================
@@ -696,6 +835,8 @@ def GetConformer(
         bd = dict(bond_dihedral)  # copy — _fix_equivalent_terminals mutates
         coords[:] = ec_list[0]
         _fix_equivalent_terminals(mol, bd, coords)
+        _fix_ring_puckers(mol, bd, coords)
+        _set_dihedrals(mol, bd, coords)
         oc = _optimize(mol, bd, coords, ftol=ftol, gtol=gtol)
         if oc < best_cost:
             best_cost = oc
