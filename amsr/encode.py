@@ -83,24 +83,22 @@ def FromMolToTokens(
         i = sorted(range(len(ranks)), key=lambda x: ranks[x])
         mol = Chem.RenumberAtoms(mol, i)
 
-    # Assign pseudo-chirality from 3D geometry for SP3 centers whose
-    # substituents are graph-equivalent (e.g. quaternary C bearing two
-    # identical phenyl rings).  RDKit won't mark these as chiral, but
-    # the 3D arrangement matters for conformer reconstruction.
-    # Handles both degree-4 (4 heavy neighbors) and degree-3 + 1 implicit H.
-    # Skip atoms where all neighbors are equivalent (e.g. neopentane).
+    # Assign pseudo-chirality from 3D geometry for centers whose
+    # substituents are graph-equivalent.  RDKit won't mark these as
+    # chiral, but the 3D arrangement matters for conformer reconstruction.
+    # Skip aromatic atoms (always planar) and atoms whose neighbors are
+    # all equivalent (e.g. neopentane).  Use out-of-plane distance to
+    # distinguish genuinely pyramidal centers from nearly-planar ones.
     if useStereo and mol.GetNumConformers() > 0 and mol.GetConformer().Is3D():
         conf = mol.GetConformer()
         ranks = list(Chem.CanonicalRankAtoms(mol, breakTies=False))
         for a in mol.GetAtoms():
             if a.GetChiralTag() != Chem.ChiralType.CHI_UNSPECIFIED:
                 continue
-            deg = a.GetDegree()
+            if a.GetIsAromatic() or a.GetDegree() < 3:
+                continue
             hyb = a.GetHybridization()
-            if deg < 3 or hyb not in (
-                Chem.HybridizationType.SP3,
-                Chem.HybridizationType.SP2,
-            ):
+            if hyb not in (Chem.HybridizationType.SP3, Chem.HybridizationType.SP2):
                 continue
             nbrs = [n.GetIdx() for n in a.GetNeighbors()]
             if len(set(ranks[n] for n in nbrs)) < 2:
@@ -112,21 +110,22 @@ def FromMolToTokens(
             v0 = (p0.x - pc.x, p0.y - pc.y, p0.z - pc.z)
             v1 = (p1.x - pc.x, p1.y - pc.y, p1.z - pc.z)
             v2 = (p2.x - pc.x, p2.y - pc.y, p2.z - pc.z)
+            # Scalar triple product = signed volume of parallelepiped
             vol = (
                 v0[0] * (v1[1] * v2[2] - v1[2] * v2[1])
                 + v0[1] * (v1[2] * v2[0] - v1[0] * v2[2])
                 + v0[2] * (v1[0] * v2[1] - v1[1] * v2[0])
             )
-            # For SP2, only assign if significantly pyramidal (e.g. sulfonamide N).
-            # Aromatic atoms are always planar — skip them.
-            if hyb == Chem.HybridizationType.SP2:
-                if a.GetIsAromatic():
-                    continue
-                n0 = math.sqrt(v0[0] ** 2 + v0[1] ** 2 + v0[2] ** 2)
-                n1 = math.sqrt(v1[0] ** 2 + v1[1] ** 2 + v1[2] ** 2)
-                n2 = math.sqrt(v2[0] ** 2 + v2[1] ** 2 + v2[2] ** 2)
-                if n0 * n1 * n2 < 1e-10 or abs(vol) / (n0 * n1 * n2) < 0.15:
-                    continue
+            # Out-of-plane distance: |vol| / |cross(v1-v0, v2-v0)|
+            cx = (v1[1] - v0[1]) * (v2[2] - v0[2]) - (v1[2] - v0[2]) * (v2[1] - v0[1])
+            cy = (v1[2] - v0[2]) * (v2[0] - v0[0]) - (v1[0] - v0[0]) * (v2[2] - v0[2])
+            cz = (v1[0] - v0[0]) * (v2[1] - v0[1]) - (v1[1] - v0[1]) * (v2[0] - v0[0])
+            cross_mag = math.sqrt(cx * cx + cy * cy + cz * cz)
+            if cross_mag < 1e-10:
+                continue
+            oop_dist = abs(vol) / cross_mag
+            if oop_dist < 0.15:
+                continue
             if vol > 0:
                 a.SetChiralTag(Chem.ChiralType.CHI_TETRAHEDRAL_CCW)
             elif vol < 0:
