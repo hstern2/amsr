@@ -144,5 +144,8 @@ Cargo.lock
 # Test output files
 test_failures_*.txt
 tests/out/
-amsr/_cost_grad_c.dylib
+*.dylib
 amsr/_cost_grad_c.so
+
+# uv
+uv.lock
