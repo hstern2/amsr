@@ -22,7 +22,7 @@ __all__ = [
 ]
 
 from .check import CheckAMSR, CheckMol, CheckSmiles
-from .conf import GetConformerAndEnergy
+from .conf import GetConformer, GetConformerAndEnergy
 from .decode import ToMol, ToSmiles
 from .encode import FromMol, FromMolToTokens, FromSmiles, FromSmilesToTokens
 from .groups import Groups, InitializeGroups
@@ -33,4 +33,3 @@ from .morph import Morph
 from .roundtrip import Roundtrip
 from .tokens import ToTokens
 from .version import __version__
-from .zmatrix import GetConformer

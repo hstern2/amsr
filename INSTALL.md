@@ -13,7 +13,7 @@ pytest -n 8             # run all tests in parallel (8 workers)
 pytest                  # run all tests sequentially
 ```
 
-The conformer tests (`test_zmatrix.py`) encode each SDF molecule with 6
+The conformer tests (`test_conf.py`) encode each SDF molecule with 6
 different AMSR encodings (1 canonical + 5 randomized) and check that
 the round-trip RMSD is below 0.8 Å.
 

@@ -5,9 +5,9 @@ import random
 from rdkit import Chem
 from rdkit.Chem import rdMolAlign
 
+from .conf import GetConformer
 from .decode import ToMol
 from .encode import FromMol
-from .zmatrix import GetConformer
 
 N_RANDOM_SEEDS = 5  # number of randomized encodings per molecule
 
