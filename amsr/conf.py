@@ -178,27 +178,31 @@ def _get_bond_angle(mol, a, b, c):
     return _HYBRID_ANGLES.get(hyb, 109.5)
 
 
-def _fix_equivalent_terminals(mol, bond_dihedral, coords):
-    """Fix dihedral reference-atom mismatches for equivalent terminals.
+def _fix_equivalent_references(mol, bond_dihedral, coords, terminal_only=True):
+    """Fix dihedral reference-atom mismatches for graph-equivalent neighbors.
 
-    When the reference atom is a degree-1 terminal with an equivalent sibling
-    (same element, also degree-1), the encode/decode may pick different ones.
-    Try each alternative and keep the better match.  Mutates bond_dihedral.
+    When the reference atom has a sibling with the same canonical rank
+    (graph-equivalent), the encoder and decoder may pick different ones.
+    Try each alternative and keep the best match.  Mutates bond_dihedral.
+
+    If terminal_only is True, only fix degree-1 terminal references (safe
+    before branch dihedrals are set).  If False, fix all equivalent
+    references (should be called after _set_dihedrals for reliable geometry).
     """
+    ranks = list(Chem.CanonicalRankAtoms(mol, breakTies=False))
     for (i, j), (mi, mj, angle) in list(bond_dihedral.items()):
         if i > j:
             continue
         for side, ref, bond_end, other_end in [(0, mi, i, j), (1, mj, j, i)]:
-            a_ref = mol.GetAtomWithIdx(ref)
-            if a_ref.GetDegree() != 1:
+            if terminal_only and mol.GetAtomWithIdx(ref).GetDegree() != 1:
                 continue
+            ref_rank = ranks[ref]
             siblings = [
                 nb.GetIdx()
                 for nb in mol.GetAtomWithIdx(bond_end).GetNeighbors()
                 if nb.GetIdx() != other_end
                 and nb.GetIdx() != ref
-                and nb.GetDegree() == 1
-                and nb.GetAtomicNum() == a_ref.GetAtomicNum()
+                and ranks[nb.GetIdx()] == ref_rank
             ]
             if not siblings:
                 continue
@@ -233,6 +237,87 @@ def _fix_equivalent_terminals(mol, bond_dihedral, coords):
                 mj_new = best_ref if side == 1 else mj
                 bond_dihedral[(i, j)] = (mi_new, mj_new, angle)
                 bond_dihedral[(j, i)] = (mj_new, mi_new, angle)
+
+
+def _fix_pseudo_stereo(mol, coords):
+    """Fix pseudo-chiral centers and pseudo-E/Z bonds after embedding.
+
+    ETKDG enforces real stereochemistry but not pseudo-stereo (where
+    substituents are graph-equivalent).  Check the embedding geometry
+    against the CW/CCW or E/Z tags and reflect if wrong.
+    """
+    ranks = list(Chem.CanonicalRankAtoms(mol, breakTies=False))
+
+    # Pseudo-chiral centers
+    for atom in mol.GetAtoms():
+        chiral = atom.GetChiralTag()
+        if chiral not in (CW, CCW):
+            continue
+        j = atom.GetIdx()
+        nbrs = [nb.GetIdx() for nb in atom.GetNeighbors()]
+        if len(nbrs) < 3:
+            continue
+        # Only fix pseudo-chiral: at least two neighbors share a rank
+        nbr_ranks = [ranks[n] for n in nbrs]
+        if len(set(nbr_ranks)) == len(nbr_ranks):
+            continue
+        # Check signed volume
+        rj = coords[j]
+        v1, v2, v3 = coords[nbrs[0]] - rj, coords[nbrs[1]] - rj, coords[nbrs[2]] - rj
+        vol = np.dot(v1, np.cross(v2, v3))
+        expected = -1 if chiral == CW else 1
+        if (vol > 0) == (expected > 0):
+            continue
+        # Reflect the smaller subtree through the plane of the first two neighbors
+        normal = np.cross(v1, v2)
+        nn = _norm3(normal)
+        if nn < 1e-10:
+            continue
+        normal /= nn
+        for nb in nbrs[2:]:
+            sub = _subtree(mol, nb, j)
+            for k in sub:
+                d = np.dot(coords[k] - rj, normal)
+                coords[k] -= 2.0 * d * normal
+
+    # Pseudo-E/Z double bonds
+    for bond in mol.GetBonds():
+        stereo = bond.GetStereo()
+        if stereo not in (Chem.BondStereo.STEREOZ, Chem.BondStereo.STEREOE):
+            continue
+        i, j = bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()
+        stereo_atoms = list(bond.GetStereoAtoms())
+        if len(stereo_atoms) < 2:
+            continue
+        si, sj = stereo_atoms[0], stereo_atoms[1]
+        # Only fix pseudo-E/Z: substituents on at least one side share a rank
+        ni = [nb.GetIdx() for nb in mol.GetAtomWithIdx(i).GetNeighbors() if nb.GetIdx() != j]
+        nj = [nb.GetIdx() for nb in mol.GetAtomWithIdx(j).GetNeighbors() if nb.GetIdx() != i]
+        ni_ranks = [ranks[n] for n in ni]
+        nj_ranks = [ranks[n] for n in nj]
+        if len(set(ni_ranks)) == len(ni_ranks) and len(set(nj_ranks)) == len(nj_ranks):
+            continue
+        # Check current torsion
+        actual = measure_torsion(coords[si], coords[i], coords[j], coords[sj])
+        target = 0.0 if stereo == Chem.BondStereo.STEREOZ else 180.0
+        diff = abs((actual - target + 180) % 360 - 180)
+        if diff < 45:
+            continue
+        # Reflect the j-side substituents through the double bond plane
+        bond_vec = coords[j] - coords[i]
+        # Normal to the plane containing the double bond and si
+        v_si = coords[si] - coords[i]
+        normal = np.cross(bond_vec, v_si)
+        nn = _norm3(normal)
+        if nn < 1e-10:
+            continue
+        normal /= nn
+        mid = 0.5 * (coords[i] + coords[j])
+        for nb_idx in nj:
+            sub = _subtree(mol, nb_idx, j)
+            for k in sub:
+                d = np.dot(coords[k] - mid, normal)
+                coords[k] -= 2.0 * d * normal
 
 
 def _subtree(mol, root, exclude):
@@ -832,9 +917,10 @@ def GetConformer(
         ec_list = _rdkit_embed(mol, n_confs=1, seed=42 + attempt)
         if not ec_list:
             continue
-        bd = dict(bond_dihedral)  # copy — _fix_equivalent_terminals mutates
+        bd = dict(bond_dihedral)  # copy — _fix_equivalent_references mutates
         coords[:] = ec_list[0]
-        _fix_equivalent_terminals(mol, bd, coords)
+        _fix_equivalent_references(mol, bd, coords, terminal_only=True)
+        _fix_pseudo_stereo(mol, coords)
         _fix_ring_puckers(mol, bd, coords)
         _set_dihedrals(mol, bd, coords)
         oc = _optimize(mol, bd, coords, ftol=ftol, gtol=gtol)
