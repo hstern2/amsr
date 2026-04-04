@@ -118,7 +118,10 @@ def FromMolToTokens(
                 + v0[2] * (v1[0] * v2[1] - v1[1] * v2[0])
             )
             # For SP2, only assign if significantly pyramidal (e.g. sulfonamide N).
+            # Aromatic atoms are always planar — skip them.
             if hyb == Chem.HybridizationType.SP2:
+                if a.GetIsAromatic():
+                    continue
                 n0 = math.sqrt(v0[0] ** 2 + v0[1] ** 2 + v0[2] ** 2)
                 n1 = math.sqrt(v1[0] ** 2 + v1[1] ** 2 + v1[2] ** 2)
                 n2 = math.sqrt(v2[0] ** 2 + v2[1] ** 2 + v2[2] ** 2)
