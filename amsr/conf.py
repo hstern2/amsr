@@ -666,7 +666,7 @@ def GetConformer(
     dihedral: Optional[dict[tuple[int, int, int, int], int]] = None,
     ftol: float = 1e-3,
     gtol: float = 1e-1,
-    max_confs: int = 50,
+    max_confs: int = 30,
 ) -> Chem.Mol:
     """Generate 3D conformer.
 
@@ -688,16 +688,15 @@ def GetConformer(
 
     best_cost = float("inf")
     best_coords = None
-    bd_saved = dict(bond_dihedral)
 
     for attempt in range(max_confs):
         ec_list = _rdkit_embed(mol, n_confs=1, seed=42 + attempt)
         if not ec_list:
             continue
-        bond_dihedral.update(bd_saved)
+        bd = dict(bond_dihedral)  # copy — _fix_equivalent_terminals mutates
         coords[:] = ec_list[0]
-        _fix_equivalent_terminals(mol, bond_dihedral, coords)
-        oc = _optimize(mol, bond_dihedral, coords, ftol=ftol, gtol=gtol)
+        _fix_equivalent_terminals(mol, bd, coords)
+        oc = _optimize(mol, bd, coords, ftol=ftol, gtol=gtol)
         if oc < best_cost:
             best_cost = oc
             best_coords = coords.copy()
