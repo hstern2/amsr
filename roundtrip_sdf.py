@@ -10,160 +10,129 @@ Usage:
     python roundtrip_sdf.py ~/sdf -j 10 -t 0.5 # stricter threshold
 """
 
+import argparse
 import csv
 import os
 import sys
-import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
-import typer
-from rdkit import Chem
-
-from amsr.roundtrip import N_RANDOM_SEEDS, Roundtrip
-
-app = typer.Typer(context_settings={"help_option_names": ["-h", "--help"]})
+from amsr.roundtrip import N_RANDOM_SEEDS, RoundtripSDF
 
 _SEEDS = [None] + list(range(N_RANDOM_SEEDS))
 
 
-def _process_one(sdf_path: str, seed, threshold: float):
-    """Round-trip one SDF file with one seed."""
-    name = os.path.splitext(os.path.basename(sdf_path))[0]
-    seed_str = "0" if seed is None else str(seed + 1)
-    mol = Chem.MolFromMolFile(sdf_path, removeHs=True)
-    if mol is None:
-        return {
-            "name": name,
-            "seed": seed_str,
-            "amsr": "",
-            "rmsd": "",
-            "status": "ERROR",
-            "time": 0.0,
-        }
+def _sdf_work(input_dir: Path):
+    """Yield (sdf_path, seed) lazily by scanning the directory."""
+    for entry in sorted(os.scandir(input_dir), key=lambda e: e.name):
+        if entry.name.endswith(".sdf") and entry.is_file():
+            for seed in _SEEDS:
+                yield entry.path, seed
 
-    try:
-        t0 = time.time()
-        s, rmsd, mol_out = Roundtrip(mol, seed=seed)
-        elapsed = time.time() - t0
-    except Exception as e:
-        return {
-            "name": name,
-            "seed": seed_str,
-            "amsr": "",
-            "rmsd": "",
-            "status": "ERROR",
-            "time": 0.0,
-            "error": str(e),
-        }
 
-    status = "PASSED" if rmsd < threshold else "FAILED"
+def _report(r, counts):
+    if r["status"] == "PASSED":
+        counts[0] += 1
+        mark = "\033[32mPASSED\033[0m"
+    elif r["status"] == "FAILED":
+        counts[1] += 1
+        mark = "\033[31mFAILED\033[0m"
+    else:
+        counts[2] += 1
+        mark = "\033[33mERROR\033[0m"
+    rmsd_str = f"rmsd={r['rmsd']:.3f}" if isinstance(r["rmsd"], float) else r.get("error", "")
+    time_str = f"{r['time']:.2f}s" if r["time"] else ""
+    sys.stdout.write(f"{r['name']}[seed{r['seed']}] {mark} {rmsd_str} {time_str}\n")
+    sys.stdout.flush()
+
+
+def _error_result(path, seed):
     return {
-        "name": name,
-        "seed": seed_str,
-        "amsr": s,
-        "rmsd": rmsd,
-        "status": status,
-        "time": elapsed,
+        "name": os.path.splitext(os.path.basename(path))[0],
+        "seed": "0" if seed is None else str(seed + 1),
+        "amsr": "",
+        "rmsd": "",
+        "status": "ERROR",
+        "time": 0.0,
     }
 
 
-@app.command()
-def main(
-    input_dir: Path = typer.Argument(..., help="Directory containing SDF files"),
-    output_dir: Path = typer.Option(None, "--output", "-o", help="Output directory for CSV"),
-    threshold: float = typer.Option(1.0, "--threshold", "-t", help="RMSD threshold for PASS/FAIL"),
-    jobs: int = typer.Option(1, "--jobs", "-j", help="Number of parallel workers"),
-):
-    """Round-trip verification: encode each SDF to AMSR, decode, compute RMSD."""
-    if not input_dir.is_dir():
-        typer.echo(f"Error: {input_dir} is not a directory", err=True)
-        raise typer.Exit(1)
-
-    if output_dir is None:
-        output_dir = Path("out")
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    sdf_files = sorted(f for f in os.listdir(input_dir) if f.endswith(".sdf"))
-    n_mols = len(sdf_files)
-    n_seeds = len(_SEEDS)
-    total = n_mols * n_seeds
-    typer.echo(
-        f"Found {n_mols} SDF files in {input_dir}"
-        f" ({n_seeds} seeds each, {total} tests, jobs={jobs})"
+def main():
+    parser = argparse.ArgumentParser(
+        description="Round-trip verification: encode each SDF to AMSR, decode, compute RMSD."
     )
+    parser.add_argument("input_dir", type=Path, help="Directory containing SDF files")
+    parser.add_argument("-o", "--output", type=Path, default=Path("out"), help="Output directory")
+    parser.add_argument("-t", "--threshold", type=float, default=1.0, help="RMSD threshold")
+    parser.add_argument("-j", "--jobs", type=int, default=1, help="Number of parallel workers")
+    args = parser.parse_args()
 
-    # Build work items: (sdf_path, seed)
-    work = []
-    for f in sdf_files:
-        path = str(input_dir / f)
-        for seed in _SEEDS:
-            work.append((path, seed))
+    if not args.input_dir.is_dir():
+        print(f"Error: {args.input_dir} is not a directory", file=sys.stderr)
+        sys.exit(1)
 
-    results: list[dict] = []
-    n_pass = n_fail = n_error = 0
+    output_dir = str(args.output)
+    os.makedirs(output_dir, exist_ok=True)
 
-    def _report(r):
-        nonlocal n_pass, n_fail, n_error
-        if r["status"] == "PASSED":
-            n_pass += 1
-            mark = "\033[32mPASSED\033[0m"
-        elif r["status"] == "FAILED":
-            n_fail += 1
-            mark = "\033[31mFAILED\033[0m"
-        else:
-            n_error += 1
-            mark = "\033[33mERROR\033[0m"
-        rmsd_str = f"rmsd={r['rmsd']:.3f}" if isinstance(r["rmsd"], float) else r.get("error", "")
-        time_str = f"{r['time']:.2f}s" if r["time"] else ""
-        sys.stdout.write(f"{r['name']}[seed{r['seed']}] {mark} {rmsd_str} {time_str}\n")
-        sys.stdout.flush()
+    csv_path = os.path.join(output_dir, "roundtrip_results.csv")
+    csv_file = open(csv_path, "w", newline="")
+    csv_writer = csv.writer(csv_file)
+    csv_writer.writerow(["name", "seed", "amsr", "rmsd", "status", "time_s"])
 
-    if jobs <= 1:
-        for path, seed in work:
-            r = _process_one(path, seed, threshold)
-            results.append(r)
-            _report(r)
+    counts = [0, 0, 0]  # pass, fail, error
+
+    def _record(r):
+        _report(r, counts)
+        rmsd_str = f"{r['rmsd']:.3f}" if isinstance(r["rmsd"], float) else ""
+        csv_writer.writerow(
+            [r["name"], r["seed"], r["amsr"], rmsd_str, r["status"], f"{r['time']:.3f}"]
+        )
+        csv_file.flush()
+
+    if args.jobs <= 1:
+        for path, seed in _sdf_work(args.input_dir):
+            _record(RoundtripSDF(path, seed, args.threshold, output_dir))
     else:
-        futures = {}
-        with ProcessPoolExecutor(max_workers=jobs) as executor:
+        max_pending = args.jobs * 2
+        work = _sdf_work(args.input_dir)
+        with ProcessPoolExecutor(max_workers=args.jobs) as executor:
+            futures = {}
+            exhausted = False
+            # Fill initial batch
             for path, seed in work:
-                fut = executor.submit(_process_one, path, seed, threshold)
-                futures[fut] = (path, seed)
+                futures[executor.submit(RoundtripSDF, path, seed, args.threshold, output_dir)] = (
+                    path,
+                    seed,
+                )
+                if len(futures) >= max_pending:
+                    break
+            else:
+                exhausted = True
 
-            for fut in as_completed(futures):
+            while futures:
+                done = next(iter(as_completed(futures)))
+                path, seed = futures.pop(done)
                 try:
-                    r = fut.result()
+                    _record(done.result())
                 except Exception:
-                    path, seed = futures[fut]
-                    name = os.path.splitext(os.path.basename(path))[0]
-                    seed_str = "0" if seed is None else str(seed + 1)
-                    r = {
-                        "name": name,
-                        "seed": seed_str,
-                        "amsr": "",
-                        "rmsd": "",
-                        "status": "ERROR",
-                        "time": 0.0,
-                    }
-                results.append(r)
-                _report(r)
+                    _record(_error_result(path, seed))
+                # Submit more work
+                if not exhausted:
+                    for path, seed in work:
+                        futures[
+                            executor.submit(RoundtripSDF, path, seed, args.threshold, output_dir)
+                        ] = (path, seed)
+                        if len(futures) >= max_pending:
+                            break
+                    else:
+                        exhausted = True
 
-    # Sort by RMSD descending (worst first)
-    results.sort(key=lambda r: -r["rmsd"] if isinstance(r["rmsd"], float) else 0.0)
-
-    csv_path = output_dir / "roundtrip_results.csv"
-    with open(csv_path, "w", newline="") as csvf:
-        w = csv.writer(csvf)
-        w.writerow(["name", "seed", "amsr", "rmsd", "status", "time_s"])
-        for r in results:
-            rmsd_str = f"{r['rmsd']:.3f}" if isinstance(r["rmsd"], float) else ""
-            w.writerow([r["name"], r["seed"], r["amsr"], rmsd_str, r["status"], f"{r['time']:.3f}"])
-
-    typer.echo(f"\n{'='*60}")
-    typer.echo(f"{n_pass} passed, {n_fail} failed, {n_error} errors / {total} total")
-    typer.echo(f"Results: {csv_path}")
+    csv_file.close()
+    total = sum(counts)
+    print(f"\n{'='*60}")
+    print(f"{counts[0]} passed, {counts[1]} failed, {counts[2]} errors / {total} total")
+    print(f"Results: {csv_path}")
 
 
 if __name__ == "__main__":
-    app()
+    main()

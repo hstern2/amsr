@@ -1,6 +1,9 @@
 """Shared round-trip logic: encode to AMSR, decode, generate conformer, compute RMSD."""
 
+import os
 import random
+import time
+from typing import Optional
 
 from rdkit import Chem
 from rdkit.Chem import rdMolAlign
@@ -29,3 +32,58 @@ def Roundtrip(mol: Chem.Mol, seed=None) -> tuple[str, float, Chem.Mol]:
     mol3 = GetConformer(mol2, dihedral=dihedral)
     rmsd = rdMolAlign.GetBestRMS(mol3, mol)
     return s, rmsd, mol3
+
+
+def RoundtripSDF(
+    sdf_path: str, seed, threshold: float = 1.0, output_dir: Optional[str] = None
+) -> dict:
+    """Round-trip one SDF file with one seed.
+
+    Returns a dict with keys: name, seed, amsr, rmsd, status, time.
+    If output_dir is set, writes orig and roundtrip SDF files there.
+    """
+    name = os.path.splitext(os.path.basename(sdf_path))[0]
+    seed_str = "0" if seed is None else str(seed + 1)
+    mol = Chem.MolFromMolFile(sdf_path, removeHs=True)
+    if mol is None:
+        return {
+            "name": name,
+            "seed": seed_str,
+            "amsr": "",
+            "rmsd": "",
+            "status": "ERROR",
+            "time": 0.0,
+        }
+
+    try:
+        t0 = time.time()
+        s, rmsd, mol_out = Roundtrip(mol, seed=seed)
+        elapsed = time.time() - t0
+    except Exception as e:
+        return {
+            "name": name,
+            "seed": seed_str,
+            "amsr": "",
+            "rmsd": "",
+            "status": "ERROR",
+            "time": 0.0,
+            "error": str(e),
+        }
+
+    status = "PASSED" if rmsd < threshold else "FAILED"
+
+    if output_dir is not None:
+        os.makedirs(output_dir, exist_ok=True)
+        match = mol.GetSubstructMatch(mol_out)
+        mol_orig = Chem.RenumberAtoms(mol, list(match)) if match else mol
+        Chem.MolToMolFile(mol_orig, os.path.join(output_dir, f"{name}_{seed_str}_orig.sdf"))
+        Chem.MolToMolFile(mol_out, os.path.join(output_dir, f"{name}_{seed_str}_out.sdf"))
+
+    return {
+        "name": name,
+        "seed": seed_str,
+        "amsr": s,
+        "rmsd": rmsd,
+        "status": status,
+        "time": elapsed,
+    }
