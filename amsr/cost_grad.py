@@ -1,8 +1,4 @@
-"""Python wrapper for the C cost_and_grad function.
-
-Falls back to the pure-Python implementation if the shared library
-is not available.
-"""
+"""Python wrapper for the C cost_and_grad shared library."""
 
 import ctypes
 import os
@@ -21,7 +17,7 @@ _c_func = None
 def _load_lib():
     global _lib, _c_func
     d = os.path.dirname(__file__)
-    name = "cost_grad.dylib" if sys.platform == "darwin" else "cost_grad.so"
+    name = "_cost_grad_c.dylib" if sys.platform == "darwin" else "_cost_grad_c.so"
     path = os.path.join(d, name)
     if not os.path.exists(path):
         raise RuntimeError(

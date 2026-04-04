@@ -1,4 +1,4 @@
-# Build the optional C extension for faster cost/gradient evaluation.
+# Build the required C extension for cost/gradient evaluation.
 # Usage: make          (builds for current platform)
 #        make clean    (removes built libraries)
 
@@ -14,14 +14,14 @@ else
   LDFLAGS := -shared -lm
 endif
 
-TARGET := amsr/cost_grad.$(EXT)
+TARGET := amsr/_cost_grad_c.$(EXT)
 
 .PHONY: all clean
 
 all: $(TARGET)
 
-$(TARGET): amsr/cost_grad.c
+$(TARGET): amsr/_cost_grad_c.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $<
 
 clean:
-	rm -f amsr/cost_grad.dylib amsr/cost_grad.so
+	rm -f amsr/_cost_grad_c.dylib amsr/_cost_grad_c.so
