@@ -399,13 +399,18 @@ void embed(int n, double *coords_out,
 
     double *lower = (double*)calloc(n*n, sizeof(double));
     double *upper = (double*)malloc(n*n*sizeof(double));
-    double max_dist = 0;
-    for (int i=0;i<n_bonds;i++) max_dist += bond_lengths[i];
-    if (max_dist < 10.0) max_dist = 10.0;
-    for (int i=0;i<n*n;i++) upper[i] = max_dist;
-    for (int i=0;i<n;i++) { lower[i*n+i]=0; upper[i*n+i]=0; }
 
-    double min_dist = 0.8;
+    /* Default upper bound: rough molecular diameter estimate. */
+    double avg_bond = 0;
+    for (int i = 0; i < n_bonds; i++) avg_bond += bond_lengths[i];
+    avg_bond = n_bonds > 0 ? avg_bond / n_bonds : 1.5;
+    double max_dist = sqrt((double)n) * avg_bond * 2.0;
+    if (max_dist < 5.0) max_dist = 5.0;
+
+    for (int i = 0; i < n*n; i++) upper[i] = max_dist;
+    for (int i = 0; i < n; i++) { lower[i*n+i] = 0; upper[i*n+i] = 0; }
+
+    double min_dist = 1.5;
     for (int i=0;i<n;i++) for (int j=i+1;j<n;j++) lower[i*n+j]=lower[j*n+i]=min_dist;
 
     /* Bond distances (exact) */
@@ -459,7 +464,10 @@ void embed(int n, double *coords_out,
 
     smooth_bounds(lower, upper, n);
 
-    /* Sample distances */
+    /* Sample distances.  Use lower bounds plus a small random
+     * perturbation to produce a compact, nearly-realizable matrix.
+     * Large random offsets create distance matrices that can't be
+     * embedded in 3D, causing the MDS to collapse atoms together. */
     seed_rng(seed);
     double *D = (double*)malloc(n*n*sizeof(double));
     for (int i=0;i<n;i++) {
@@ -468,8 +476,13 @@ void embed(int n, double *coords_out,
             double lo=lower[i*n+j], hi=upper[i*n+j];
             if (lo>hi) { double m=0.5*(lo+hi); lo=hi=m; }
             double d;
-            if (hi-lo < 0.5) { d=0.5*(lo+hi); }
-            else { double r=rand_uniform(); d=lo+r*r*(hi-lo); }
+            if (hi-lo < 0.5) {
+                d=0.5*(lo+hi);
+            } else {
+                /* Sample in the middle third of the range */
+                double r = rand_uniform();
+                d = lo + (0.33 + 0.34 * r) * (hi - lo);
+            }
             D[i*n+j]=D[j*n+i]=d;
         }
     }

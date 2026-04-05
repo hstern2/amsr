@@ -500,37 +500,52 @@ def _rotate_subtree(coords, atoms, origin, axis_dir, angle_deg):
 
 
 def _fix_chirality(mol, coords):
-    """Fix all chiral centers whose signed volume has the wrong sign.
+    """Fix chiral centers whose signed volume has the wrong sign.
 
-    For each CW/CCW-tagged atom, check if the embedding geometry matches
-    the tag.  If not, reflect the third (and higher) substituents through
-    the plane defined by the first two.
+    For each wrong CW/CCW center, find the smallest neighbor subtree
+    that is a true branch (< half the molecule) and reflect it through
+    the plane of the other two neighbors.  Processes from interior
+    to exterior and iterates until stable.
     """
-    for atom in mol.GetAtoms():
-        chiral = atom.GetChiralTag()
-        if chiral not in (CW, CCW):
-            continue
-        j = atom.GetIdx()
-        nbrs = [nb.GetIdx() for nb in atom.GetNeighbors()]
-        if len(nbrs) < 3:
-            continue
-        rj = coords[j]
-        v1, v2, v3 = coords[nbrs[0]] - rj, coords[nbrs[1]] - rj, coords[nbrs[2]] - rj
-        vol = np.dot(v1, _cross3(v2, v3))
-        expected = -1 if chiral == CW else 1
-        if (vol > 0) == (expected > 0):
-            continue
-        # Reflect substituents 2+ through plane of first two
-        normal = _cross3(v1, v2)
-        nn = _norm3(normal)
-        if nn < 1e-10:
-            continue
-        normal /= nn
-        for nb in nbrs[2:]:
-            sub = _subtree(mol, nb, j)
-            for k in sub:
+    n = mol.GetNumAtoms()
+    for _iteration in range(10):
+        fixed_any = False
+        for atom in mol.GetAtoms():
+            chiral = atom.GetChiralTag()
+            if chiral not in (CW, CCW):
+                continue
+            j = atom.GetIdx()
+            nbrs = [nb.GetIdx() for nb in atom.GetNeighbors()]
+            if len(nbrs) < 3:
+                continue
+            rj = coords[j]
+            v = [coords[ni] - rj for ni in nbrs[:3]]
+            vol = np.dot(v[0], _cross3(v[1], v[2]))
+            expected = -1 if chiral == CW else 1
+            if (vol > 0) == (expected > 0):
+                continue
+            # Find smallest branch to reflect
+            best = None
+            for ni in nbrs[:3]:
+                sub = _subtree(mol, ni, j)
+                if len(sub) <= n // 2 and (best is None or len(sub) < len(best[1])):
+                    best = (ni, sub)
+            if best is None:
+                continue
+            reflect_nb, reflect_sub = best
+            others = [ni for ni in nbrs[:3] if ni != reflect_nb]
+            va, vb = coords[others[0]] - rj, coords[others[1]] - rj
+            normal = _cross3(va, vb)
+            nn = _norm3(normal)
+            if nn < 1e-10:
+                continue
+            normal /= nn
+            for k in reflect_sub:
                 d = np.dot(coords[k] - rj, normal)
                 coords[k] -= 2.0 * d * normal
+            fixed_any = True
+        if not fixed_any:
+            break
 
 
 def _set_dihedrals(mol, bond_dihedral, coords):
@@ -557,21 +572,69 @@ def _set_dihedrals(mol, bond_dihedral, coords):
 
 
 def _fix_ring_puckers(mol, bond_dihedral, coords):
-    """Reconstruct ring atom positions from AMSR ring dihedrals.
+    """Fix ring conformations.
 
-    For each ring with encoded dihedral targets, build coordinates from
-    internal geometry (bond lengths, angles, dihedrals), Kabsch-align
-    onto the embedding, and translate attached substituents.
+    Two strategies:
+    1. For isolated rings with encoded dihedral targets, rebuild from
+       internal coordinates (z-matrix style) and Kabsch-align.
+    2. For any ring (including fused) with a chiral atom whose volume
+       has the wrong sign, reflect the ring through its mean plane.
+       Iterate until stable.
     """
     all_rings = [list(r) for r in mol.GetRingInfo().AtomRings()]
-    # Only fix isolated rings (no atoms shared with other rings).
-    # Fused ring systems have coupled geometry — let the optimizer handle them.
     all_ring_atoms = {}
     for idx, ring in enumerate(all_rings):
         for a in ring:
             all_ring_atoms.setdefault(a, set()).add(idx)
     shared_atoms = {a for a, rings in all_ring_atoms.items() if len(rings) > 1}
 
+    # Strategy 2: flip ring puckers where chiral atoms have wrong sign.
+    # Do this first so that the z-matrix rebuild (strategy 1) has better
+    # starting geometry.
+    for _iteration in range(10):
+        flipped_any = False
+        for ring in all_rings:
+            ring_set = set(ring)
+            # Check chiral atoms in this ring
+            wrong = 0
+            for a in ring:
+                atom = mol.GetAtomWithIdx(a)
+                chiral = atom.GetChiralTag()
+                if chiral not in (CW, CCW):
+                    continue
+                nbrs = [nb.GetIdx() for nb in atom.GetNeighbors()]
+                if len(nbrs) < 3:
+                    continue
+                rj = coords[a]
+                v = [coords[ni] - rj for ni in nbrs[:3]]
+                vol = np.dot(v[0], _cross3(v[1], v[2]))
+                expected = -1 if chiral == CW else 1
+                if (vol > 0) != (expected > 0):
+                    wrong += 1
+            if wrong == 0:
+                continue
+            # Reflect ring atoms through mean plane
+            ring_coords = coords[ring]
+            center = ring_coords.mean(axis=0)
+            centered = ring_coords - center
+            _, _, Vt = np.linalg.svd(centered)
+            normal = Vt[2]  # smallest singular value = plane normal
+            for a in ring:
+                d = np.dot(coords[a] - center, normal)
+                coords[a] -= 2.0 * d * normal
+                # Also reflect non-ring substituents
+                for nb in mol.GetAtomWithIdx(a).GetNeighbors():
+                    ni = nb.GetIdx()
+                    if ni in ring_set:
+                        continue
+                    for k in _subtree(mol, ni, a):
+                        d = np.dot(coords[k] - center, normal)
+                        coords[k] -= 2.0 * d * normal
+            flipped_any = True
+        if not flipped_any:
+            break
+
+    # Strategy 1: rebuild isolated rings from internal coordinates.
     for ring in all_rings:
         ring_set = set(ring)
         if ring_set & shared_atoms:
@@ -1143,6 +1206,7 @@ def GetConformer(
     for attempt in range(max_confs):
         coords[:] = _dg_embed(mol, bond_dihedral, seed=42 + attempt)
         _fix_chirality(mol, coords)
+        _set_dihedrals(mol, bond_dihedral, coords)
         _fix_pseudo_ez(mol, coords)
         _fix_ring_puckers(mol, bond_dihedral, coords)
         _set_dihedrals(mol, bond_dihedral, coords)
