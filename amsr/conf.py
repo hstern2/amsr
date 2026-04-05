@@ -559,13 +559,21 @@ def _set_dihedrals(mol, bond_dihedral, coords):
         bond = mol.GetBondBetweenAtoms(i, j)
         if bond is not None and bond.IsInRing():
             continue
+        # Skip bonds involving SP (linear) atoms — torsion is undefined
+        if mol.GetAtomWithIdx(i).GetHybridization() == SP:
+            continue
+        if mol.GetAtomWithIdx(j).GetHybridization() == SP:
+            continue
         current = measure_torsion(coords[mi], coords[i], coords[j], coords[mj])
         delta = (target - current + 180) % 360 - 180
         if abs(delta) < 1.0:
             continue
         tree_j = _subtree(mol, j, i)
         tree_i = _subtree(mol, i, j)
-        if len(tree_j) <= len(tree_i):
+        # Prefer rotating the smaller subtree to minimize cascading
+        # disruption, but avoid rotating the side containing mi (the
+        # reference atom), which would change the dihedral by 2*delta.
+        if len(tree_j) <= len(tree_i) or mi in tree_i:
             _rotate_subtree(coords, tree_j - {j}, coords[i], coords[j] - coords[i], delta)
         else:
             _rotate_subtree(coords, tree_i - {i}, coords[j], coords[i] - coords[j], -delta)
@@ -589,13 +597,10 @@ def _fix_ring_puckers(mol, bond_dihedral, coords):
     shared_atoms = {a for a, rings in all_ring_atoms.items() if len(rings) > 1}
 
     # Strategy 2: flip ring puckers where chiral atoms have wrong sign.
-    # Do this first so that the z-matrix rebuild (strategy 1) has better
-    # starting geometry.
     for _iteration in range(10):
         flipped_any = False
         for ring in all_rings:
             ring_set = set(ring)
-            # Check chiral atoms in this ring
             wrong = 0
             for a in ring:
                 atom = mol.GetAtomWithIdx(a)
@@ -618,11 +623,10 @@ def _fix_ring_puckers(mol, bond_dihedral, coords):
             center = ring_coords.mean(axis=0)
             centered = ring_coords - center
             _, _, Vt = np.linalg.svd(centered)
-            normal = Vt[2]  # smallest singular value = plane normal
+            normal = Vt[2]
             for a in ring:
                 d = np.dot(coords[a] - center, normal)
                 coords[a] -= 2.0 * d * normal
-                # Also reflect non-ring substituents
                 for nb in mol.GetAtomWithIdx(a).GetNeighbors():
                     ni = nb.GetIdx()
                     if ni in ring_set:
@@ -1076,95 +1080,8 @@ def _optimize(mol, bond_dihedral, coords, ftol=1e-3, gtol=1e-1):
         jac=True,
         options={"ftol": ftol, "gtol": gtol},
     )
-    best_cost = result.fun
-    best_x = result.x
-
-    # Try ring-inverted starting points.  For non-planar rings the
-    # optimizer can converge to the wrong chair; inverting through the
-    # mean plane and re-optimizing often fixes it.
-    all_rings = [tuple(r) for r in mol.GetRingInfo().AtomRings()]
-    if best_cost > 1.0 and len(dih_quads):
-        # Global inversion
-        x_inv = best_x.copy().reshape(-1, 3)
-        centroid = x_inv.mean(axis=0)
-        centered = x_inv - centroid
-        _, _, Vt = np.linalg.svd(centered, full_matrices=False)
-        normal = Vt[-1]
-        for k in range(n):
-            d = np.dot(x_inv[k] - centroid, normal)
-            x_inv[k] -= 2.0 * d * normal
-        r = minimize(
-            _objective,
-            x_inv.ravel(),
-            method="L-BFGS-B",
-            jac=True,
-            options={"ftol": ftol, "gtol": gtol},
-        )
-        if r.fun < best_cost:
-            best_cost = r.fun
-            best_x = r.x
-
-        # Per-ring inversions
-        for ring in all_rings:
-            if len(ring) < 4:
-                continue
-            if all(mol.GetAtomWithIdx(a).GetHybridization() == SP2 for a in ring):
-                continue
-            x_inv = best_x.copy().reshape(-1, 3)
-            rcoords = x_inv[list(ring)]
-            rc = rcoords.mean(axis=0)
-            _, _, Vt = np.linalg.svd(rcoords - rc, full_matrices=False)
-            rn = Vt[-1]
-            for k in ring:
-                d = np.dot(x_inv[k] - rc, rn)
-                x_inv[k] -= 2.0 * d * rn
-            r = minimize(
-                _objective,
-                x_inv.ravel(),
-                method="L-BFGS-B",
-                jac=True,
-                options={"ftol": ftol, "gtol": gtol},
-            )
-            if r.fun < best_cost:
-                best_cost = r.fun
-                best_x = r.x
-
-        # Per-chiral-center inversions: reflect all neighbors of a
-        # chiral atom through the plane of its three placed neighbors.
-        # The embedding may assign the wrong handedness to pseudo-chiral
-        # centers (e.g. C(OH)(Ph)(Ph) with two identical phenyls).
-        for row in chiral_info:
-            center = int(row[0])
-            nbrs = [nb.GetIdx() for nb in mol.GetAtomWithIdx(center).GetNeighbors()]
-            if len(nbrs) < 3:
-                continue
-            x_inv = best_x.copy().reshape(-1, 3)
-            rp = x_inv[center]
-            v1 = x_inv[nbrs[0]] - rp
-            v2 = x_inv[nbrs[1]] - rp
-            normal = np.cross(v1, v2)
-            nn = _norm3(normal)
-            if nn < 1e-10:
-                continue
-            normal /= nn
-            # Reflect all atoms bonded on the "far" side through the plane.
-            # Simplest: reflect atom center's non-plane neighbors.
-            for nb in nbrs[2:]:
-                d = np.dot(x_inv[nb] - rp, normal)
-                x_inv[nb] -= 2.0 * d * normal
-            r = minimize(
-                _objective,
-                x_inv.ravel(),
-                method="L-BFGS-B",
-                jac=True,
-                options={"ftol": ftol, "gtol": gtol},
-            )
-            if r.fun < best_cost:
-                best_cost = r.fun
-                best_x = r.x
-
-    coords[:] = best_x.reshape(-1, 3)
-    return best_cost
+    coords[:] = result.x.reshape(-1, 3)
+    return result.fun
 
 
 # ============================================================
