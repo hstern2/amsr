@@ -966,8 +966,6 @@ def _dg_embed(mol, bond_dihedral, seed=42):
     angle_values = []
     for b_idx in sorted(atoms):
         atom_b = mol.GetAtomWithIdx(b_idx)
-        if atom_b.GetHybridization() == Chem.HybridizationType.SP:
-            continue
         nbrs = [nb.GetIdx() for nb in atom_b.GetNeighbors() if nb.GetIdx() in atoms]
         for ia in range(len(nbrs)):
             for ic in range(ia + 1, len(nbrs)):
