@@ -37,6 +37,9 @@ jobs:
           uv run pre-commit install
           uv run pre-commit run --all-files
 
+      - name: Build C extension
+        run: make
+
       - name: Run tests
         run: |
           uv run pytest tests --doctest-modules \
