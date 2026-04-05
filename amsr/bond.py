@@ -32,6 +32,11 @@ def _is_rotatable(b):
         return False
     if b.GetBeginAtom().GetDegree() == 1 or b.GetEndAtom().GetDegree() == 1:
         return False
+    # Bonds involving SP (linear) atoms have undefined torsion
+    if b.GetBeginAtom().GetHybridization() == Chem.HybridizationType.SP:
+        return False
+    if b.GetEndAtom().GetHybridization() == Chem.HybridizationType.SP:
+        return False
     if b.IsInRing():
         a1 = b.GetBeginAtom()
         a2 = b.GetEndAtom()

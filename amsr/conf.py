@@ -812,12 +812,8 @@ def _collect_linear_atoms(mol, atoms):
     return _to_array(triples, cols=3)
 
 
-def _collect_chiral_atoms(mol, atoms, coords):
-    """Collect chirality constraints for SP3 chiral atoms.
-
-    Uses the embedding volume sign when clearly pyramidal; otherwise
-    falls back to the CW/CCW tag.
-    """
+def _collect_chiral_atoms(mol, atoms):
+    """Collect chirality constraints for SP3 chiral atoms."""
     result = []
     target_vols = []
     for j in sorted(atoms):
@@ -828,36 +824,7 @@ def _collect_chiral_atoms(mol, atoms, coords):
         nbrs = [nb.GetIdx() for nb in atom.GetNeighbors() if nb.GetIdx() in atoms]
         if len(nbrs) < 3:
             continue
-        rj = coords[j]
-        positions = []
-        for nb in nbrs[:3]:
-            if mol.GetAtomWithIdx(nb).GetHybridization() == SP:
-                sp_other = [
-                    x.GetIdx() for x in mol.GetAtomWithIdx(nb).GetNeighbors() if x.GetIdx() != j
-                ]
-                if sp_other:
-                    far = coords[sp_other[0]]
-                    direction = far - rj
-                    dn = _norm3(direction)
-                    if dn > 1e-10:
-                        direction /= dn
-                        d = _get_bond_length(mol, j, nb)
-                        positions.append(rj + direction * d)
-                    else:
-                        positions.append(coords[nb])
-                else:
-                    positions.append(coords[nb])
-            else:
-                positions.append(coords[nb])
-        v1, v2, v3 = positions[0] - rj, positions[1] - rj, positions[2] - rj
-        vol = np.dot(v1, np.cross(v2, v3))
-        denom = _norm3(v1) * _norm3(v2) * _norm3(v3)
-        oop = abs(vol) / denom if denom > 1e-10 else 0.0
-        has_sp_nbr = any(mol.GetAtomWithIdx(nb).GetHybridization() == SP for nb in nbrs[:3])
-        if oop > 0.1 and not has_sp_nbr:
-            sign = 1 if vol > 0 else -1
-        else:
-            sign = -1 if chiral == CW else 1
+        sign = -1 if chiral == CW else 1
         target_vols.append(sign * 2.5)
         result.append((j, nbrs[0], nbrs[1], nbrs[2], sign))
     return _to_array(result, cols=5), _to_array(target_vols, dtype=float)
@@ -1039,7 +1006,7 @@ def _optimize(mol, bond_dihedral, coords, ftol=1e-3, gtol=1e-1):
     bonds, ideal_lengths = _collect_bonds(mol, atoms)
     angle_triples, ideal_angles = _collect_angles(mol, atoms)
     planar_groups = _collect_planar_atoms(mol, atoms)
-    chiral_info, chiral_target_vols = _collect_chiral_atoms(mol, atoms, coords)
+    chiral_info, chiral_target_vols = _collect_chiral_atoms(mol, atoms)
     dih_quads, dih_targets = _collect_dihedral_restraints(mol, atoms, bond_dihedral)
     linear_triples = _collect_linear_atoms(mol, atoms)
     ez_quads, ez_targets = _collect_ez_constraints(mol, atoms)
