@@ -1,15 +1,263 @@
 """Conformer generation from AMSR dihedrals.
 
-Embed the entire molecule with RDKit distance geometry, then optimize
+Embed with distance geometry using AMSR-encoded dihedrals, then optimize
 all atoms with a Cartesian-space cost function enforcing ideal bond
 lengths, bond angles, planarity at SP2 centers, chirality at SP3
 centers, E/Z constraints, and AMSR dihedral restraints.
 """
 
+import ctypes
+import os
+import sys
 from typing import Optional
 
 import numpy as np
 from rdkit import Chem
+
+# ---------------------------------------------------------------------------
+# C shared library (conf_util.c): cost_and_grad + embed
+# ---------------------------------------------------------------------------
+
+_LIB_NAME = "conf_util.dylib" if sys.platform == "darwin" else "conf_util.so"
+_LIB_PATH = os.path.join(os.path.dirname(__file__), _LIB_NAME)
+_lib = ctypes.CDLL(_LIB_PATH)
+
+_cost_and_grad = _lib.cost_and_grad
+_cost_and_grad.restype = ctypes.c_double
+_cost_and_grad.argtypes = [
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,  # x, grad, n_free
+    ctypes.c_void_p,
+    ctypes.c_int,  # fixed, n_fixed
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,  # bonds
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,  # angles
+    ctypes.c_void_p,
+    ctypes.c_int,  # planar
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,  # chiral
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,  # dihedral
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,  # ez
+    ctypes.c_void_p,
+    ctypes.c_int,  # linear
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,  # w_bond, w_angle, w_planar
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,  # w_chiral, w_dih, w_ez
+    ctypes.c_double,  # w_linear
+]
+
+_c_embed = _lib.embed
+_c_embed.restype = None
+_c_embed.argtypes = [
+    ctypes.c_int,
+    ctypes.c_void_p,  # n, coords_out
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,  # bonds
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,  # angles
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,  # dihedrals
+    ctypes.c_uint,  # seed
+]
+
+
+def _to_int32(arr, cols=None):
+    if isinstance(arr, np.ndarray) and arr.dtype == np.int32 and arr.flags["C_CONTIGUOUS"]:
+        return arr
+    a = np.asarray(arr, dtype=np.int32)
+    return np.ascontiguousarray(a)
+
+
+def _to_f64(arr):
+    if isinstance(arr, np.ndarray) and arr.dtype == np.float64 and arr.flags["C_CONTIGUOUS"]:
+        return arr
+    a = np.asarray(arr, dtype=np.float64)
+    return np.ascontiguousarray(a)
+
+
+def _dptr(arr):
+    """Data pointer for a numpy array, or NULL."""
+    return arr.ctypes.data_as(ctypes.c_void_p) if arr.size else ctypes.c_void_p(0)
+
+
+class _CostGradProblem:
+    """Pre-cached C cost_and_grad arguments for repeated evaluation."""
+
+    __slots__ = (
+        "_grad",
+        "_n_free",
+        "_fc",
+        "_n_fixed",
+        "_p_fc",
+        "_bp",
+        "_il",
+        "_n_bonds",
+        "_p_bp",
+        "_p_il",
+        "_at",
+        "_ia",
+        "_n_angles",
+        "_p_at",
+        "_p_ia",
+        "_pg",
+        "_n_planar",
+        "_p_pg",
+        "_ci",
+        "_ctv",
+        "_n_chiral",
+        "_p_ci",
+        "_p_ctv",
+        "_dq",
+        "_dt",
+        "_n_dih",
+        "_p_dq",
+        "_p_dt",
+        "_eq",
+        "_et",
+        "_n_ez",
+        "_p_eq",
+        "_p_et",
+        "_lt",
+        "_n_linear",
+        "_p_lt",
+        "_w_bond",
+        "_w_angle",
+        "_w_planar",
+        "_w_chiral",
+        "_w_dih",
+        "_w_ez",
+        "_w_linear",
+    )
+
+    def __init__(
+        self,
+        n_free,
+        fixed_coords,
+        bonds,
+        ideal_lengths,
+        angle_triples,
+        ideal_angles,
+        planar_groups,
+        chiral_info,
+        chiral_target_vols,
+        dih_quads,
+        dih_targets,
+        ez_quads,
+        ez_targets,
+        w_bond,
+        w_angle,
+        w_planar,
+        w_chiral,
+        w_dih,
+        w_ez,
+        linear_triples=None,
+        w_linear=10.0,
+    ):
+        self._n_free = n_free
+        self._grad = np.zeros(n_free * 3)
+        self._fc = _to_f64(fixed_coords) if len(fixed_coords) else np.empty(0, dtype=np.float64)
+        self._n_fixed = len(fixed_coords)
+        self._p_fc = _dptr(self._fc)
+        self._bp = _to_int32(bonds) if len(bonds) else np.empty((0, 2), dtype=np.int32)
+        self._il = _to_f64(ideal_lengths) if len(ideal_lengths) else np.empty(0, dtype=np.float64)
+        self._n_bonds = len(self._bp)
+        self._p_bp = _dptr(self._bp)
+        self._p_il = _dptr(self._il)
+        self._at = (
+            _to_int32(angle_triples) if len(angle_triples) else np.empty((0, 3), dtype=np.int32)
+        )
+        self._ia = _to_f64(ideal_angles) if len(ideal_angles) else np.empty(0, dtype=np.float64)
+        self._n_angles = len(self._at)
+        self._p_at = _dptr(self._at)
+        self._p_ia = _dptr(self._ia)
+        pg = planar_groups[:, :4] if len(planar_groups) else np.empty((0, 4), dtype=np.int32)
+        self._pg = _to_int32(pg)
+        self._n_planar = len(self._pg)
+        self._p_pg = _dptr(self._pg)
+        self._ci = _to_int32(chiral_info) if len(chiral_info) else np.empty((0, 5), dtype=np.int32)
+        self._ctv = (
+            _to_f64(chiral_target_vols)
+            if len(chiral_target_vols)
+            else np.empty(0, dtype=np.float64)
+        )
+        self._n_chiral = len(self._ci)
+        self._p_ci = _dptr(self._ci)
+        self._p_ctv = _dptr(self._ctv)
+        self._dq = _to_int32(dih_quads) if len(dih_quads) else np.empty((0, 4), dtype=np.int32)
+        self._dt = _to_f64(dih_targets) if len(dih_targets) else np.empty(0, dtype=np.float64)
+        self._n_dih = len(self._dq)
+        self._p_dq = _dptr(self._dq)
+        self._p_dt = _dptr(self._dt)
+        self._eq = _to_int32(ez_quads) if len(ez_quads) else np.empty((0, 4), dtype=np.int32)
+        self._et = _to_f64(ez_targets) if len(ez_targets) else np.empty(0, dtype=np.float64)
+        self._n_ez = len(self._eq)
+        self._p_eq = _dptr(self._eq)
+        self._p_et = _dptr(self._et)
+        self._w_bond = w_bond
+        self._w_angle = w_angle
+        self._w_planar = w_planar
+        self._w_chiral = w_chiral
+        self._w_dih = w_dih
+        self._w_ez = w_ez
+        lt = linear_triples if linear_triples is not None and len(linear_triples) else None
+        self._lt = _to_int32(lt) if lt is not None else np.empty((0, 3), dtype=np.int32)
+        self._n_linear = len(self._lt)
+        self._p_lt = _dptr(self._lt)
+        self._w_linear = w_linear
+
+    def __call__(self, x):
+        x = np.ascontiguousarray(x, dtype=np.float64)
+        grad = self._grad
+        cost = _cost_and_grad(
+            x.ctypes.data_as(ctypes.c_void_p),
+            grad.ctypes.data_as(ctypes.c_void_p),
+            self._n_free,
+            self._p_fc,
+            self._n_fixed,
+            self._p_bp,
+            self._p_il,
+            self._n_bonds,
+            self._p_at,
+            self._p_ia,
+            self._n_angles,
+            self._p_pg,
+            self._n_planar,
+            self._p_ci,
+            self._p_ctv,
+            self._n_chiral,
+            self._p_dq,
+            self._p_dt,
+            self._n_dih,
+            self._p_eq,
+            self._p_et,
+            self._n_ez,
+            self._p_lt,
+            self._n_linear,
+            self._w_bond,
+            self._w_angle,
+            self._w_planar,
+            self._w_chiral,
+            self._w_dih,
+            self._w_ez,
+            self._w_linear,
+        )
+        return cost, grad.copy()
+
 
 # ---------------------------------------------------------------------------
 # Ideal geometry tables
@@ -178,108 +426,13 @@ def _get_bond_angle(mol, a, b, c):
     return _HYBRID_ANGLES.get(hyb, 109.5)
 
 
-def _fix_equivalent_references(mol, bond_dihedral, coords, terminal_only=True):
-    """Fix dihedral reference-atom mismatches for graph-equivalent neighbors.
+def _fix_pseudo_ez(mol, coords):
+    """Fix pseudo-E/Z double bonds after embedding.
 
-    When the reference atom has a sibling with the same canonical rank
-    (graph-equivalent), the encoder and decoder may pick different ones.
-    Try each alternative and keep the best match.  Mutates bond_dihedral.
-
-    If terminal_only is True, only fix degree-1 terminal references (safe
-    before branch dihedrals are set).  If False, fix all equivalent
-    references (should be called after _set_dihedrals for reliable geometry).
+    For double bonds with graph-equivalent substituents on at least one
+    side, check if the E/Z geometry matches the tag and reflect if wrong.
     """
     ranks = list(Chem.CanonicalRankAtoms(mol, breakTies=False))
-    for (i, j), (mi, mj, angle) in list(bond_dihedral.items()):
-        if i > j:
-            continue
-        for side, ref, bond_end, other_end in [(0, mi, i, j), (1, mj, j, i)]:
-            if terminal_only and mol.GetAtomWithIdx(ref).GetDegree() != 1:
-                continue
-            ref_rank = ranks[ref]
-            siblings = [
-                nb.GetIdx()
-                for nb in mol.GetAtomWithIdx(bond_end).GetNeighbors()
-                if nb.GetIdx() != other_end
-                and nb.GetIdx() != ref
-                and ranks[nb.GetIdx()] == ref_rank
-            ]
-            if not siblings:
-                continue
-            cur_mi, cur_mj = bond_dihedral[(i, j)][:2]
-            best_ref = ref
-            cur_diff = abs(
-                (
-                    measure_torsion(coords[cur_mi], coords[i], coords[j], coords[cur_mj])
-                    - angle
-                    + 180
-                )
-                % 360
-                - 180
-            )
-            for alt in siblings:
-                alt_mi = alt if side == 0 else cur_mi
-                alt_mj = alt if side == 1 else cur_mj
-                alt_diff = abs(
-                    (
-                        measure_torsion(coords[alt_mi], coords[i], coords[j], coords[alt_mj])
-                        - angle
-                        + 180
-                    )
-                    % 360
-                    - 180
-                )
-                if alt_diff < cur_diff:
-                    best_ref = alt
-                    cur_diff = alt_diff
-            if best_ref != ref:
-                mi_new = best_ref if side == 0 else mi
-                mj_new = best_ref if side == 1 else mj
-                bond_dihedral[(i, j)] = (mi_new, mj_new, angle)
-                bond_dihedral[(j, i)] = (mj_new, mi_new, angle)
-
-
-def _fix_pseudo_stereo(mol, coords):
-    """Fix pseudo-chiral centers and pseudo-E/Z bonds after embedding.
-
-    ETKDG enforces real stereochemistry but not pseudo-stereo (where
-    substituents are graph-equivalent).  Check the embedding geometry
-    against the CW/CCW or E/Z tags and reflect if wrong.
-    """
-    ranks = list(Chem.CanonicalRankAtoms(mol, breakTies=False))
-
-    # Pseudo-chiral centers
-    for atom in mol.GetAtoms():
-        chiral = atom.GetChiralTag()
-        if chiral not in (CW, CCW):
-            continue
-        j = atom.GetIdx()
-        nbrs = [nb.GetIdx() for nb in atom.GetNeighbors()]
-        if len(nbrs) < 3:
-            continue
-        # Only fix pseudo-chiral: at least two neighbors share a rank
-        nbr_ranks = [ranks[n] for n in nbrs]
-        if len(set(nbr_ranks)) == len(nbr_ranks):
-            continue
-        # Check signed volume
-        rj = coords[j]
-        v1, v2, v3 = coords[nbrs[0]] - rj, coords[nbrs[1]] - rj, coords[nbrs[2]] - rj
-        vol = np.dot(v1, np.cross(v2, v3))
-        expected = -1 if chiral == CW else 1
-        if (vol > 0) == (expected > 0):
-            continue
-        # Reflect the smaller subtree through the plane of the first two neighbors
-        normal = np.cross(v1, v2)
-        nn = _norm3(normal)
-        if nn < 1e-10:
-            continue
-        normal /= nn
-        for nb in nbrs[2:]:
-            sub = _subtree(mol, nb, j)
-            for k in sub:
-                d = np.dot(coords[k] - rj, normal)
-                coords[k] -= 2.0 * d * normal
-
     # Pseudo-E/Z double bonds
     for bond in mol.GetBonds():
         stereo = bond.GetStereo()
@@ -344,6 +497,40 @@ def _rotate_subtree(coords, atoms, origin, axis_dir, angle_deg):
         coords[k] = (
             origin + v * cos_a + _cross3(axis, v) * sin_a + axis * np.dot(axis, v) * (1 - cos_a)
         )
+
+
+def _fix_chirality(mol, coords):
+    """Fix all chiral centers whose signed volume has the wrong sign.
+
+    For each CW/CCW-tagged atom, check if the embedding geometry matches
+    the tag.  If not, reflect the third (and higher) substituents through
+    the plane defined by the first two.
+    """
+    for atom in mol.GetAtoms():
+        chiral = atom.GetChiralTag()
+        if chiral not in (CW, CCW):
+            continue
+        j = atom.GetIdx()
+        nbrs = [nb.GetIdx() for nb in atom.GetNeighbors()]
+        if len(nbrs) < 3:
+            continue
+        rj = coords[j]
+        v1, v2, v3 = coords[nbrs[0]] - rj, coords[nbrs[1]] - rj, coords[nbrs[2]] - rj
+        vol = np.dot(v1, _cross3(v2, v3))
+        expected = -1 if chiral == CW else 1
+        if (vol > 0) == (expected > 0):
+            continue
+        # Reflect substituents 2+ through plane of first two
+        normal = _cross3(v1, v2)
+        nn = _norm3(normal)
+        if nn < 1e-10:
+            continue
+        normal /= nn
+        for nb in nbrs[2:]:
+            sub = _subtree(mol, nb, j)
+            for k in sub:
+                d = np.dot(coords[k] - rj, normal)
+                coords[k] -= 2.0 * d * normal
 
 
 def _set_dihedrals(mol, bond_dihedral, coords):
@@ -693,31 +880,72 @@ def _collect_ez_constraints(mol, atoms):
 # ============================================================
 
 
-def _rdkit_embed(mol, n_confs=1, seed=42):
-    """Embed molecule with RDKit distance geometry.
+def _dg_embed(mol, bond_dihedral, seed=42):
+    """Embed molecule using C distance-geometry with AMSR dihedrals.
 
-    Returns list of Nx3 coordinate arrays (one per conformer), or empty list
-    on failure.  Heavy-atom indices match the input mol.
+    Builds distance bounds from bond lengths, bond angles, and AMSR-encoded
+    dihedrals, then embeds via metric matrix eigendecomposition.
+    Returns Nx3 coordinate array.
     """
-    from rdkit.Chem import AllChem
+    n = mol.GetNumAtoms()
+    atoms = set(range(n))
 
-    mol_e = Chem.RWMol(mol)
-    for b in mol_e.GetBonds():
-        if b.GetStereo() != Chem.BondStereo.STEREONONE:
-            b.SetStereo(Chem.BondStereo.STEREONONE)
-    mol_h = Chem.AddHs(mol_e)
-    cids = AllChem.EmbedMultipleConfs(
-        mol_h, numConfs=n_confs, randomSeed=seed, enforceChirality=True
+    # Collect bonds
+    bond_pairs = []
+    bond_lengths = []
+    for b in mol.GetBonds():
+        i, j = b.GetBeginAtomIdx(), b.GetEndAtomIdx()
+        bond_pairs.append((i, j))
+        bond_lengths.append(_get_bond_length(mol, i, j))
+
+    # Collect angles
+    angle_triples = []
+    angle_values = []
+    for b_idx in sorted(atoms):
+        atom_b = mol.GetAtomWithIdx(b_idx)
+        if atom_b.GetHybridization() == Chem.HybridizationType.SP:
+            continue
+        nbrs = [nb.GetIdx() for nb in atom_b.GetNeighbors() if nb.GetIdx() in atoms]
+        for ia in range(len(nbrs)):
+            for ic in range(ia + 1, len(nbrs)):
+                a, c = nbrs[ia], nbrs[ic]
+                angle_triples.append((a, b_idx, c))
+                angle_values.append(_get_bond_angle(mol, a, b_idx, c))
+
+    # Collect AMSR dihedrals
+    dihedral_quads = []
+    dihedral_values = []
+    seen = set()
+    for (i, j), (mi, mj, angle) in bond_dihedral.items():
+        key = (min(i, j), max(i, j))
+        if key in seen:
+            continue
+        seen.add(key)
+        dihedral_quads.append((mi, i, j, mj))
+        dihedral_values.append(float(angle))
+
+    bp = _to_int32(bond_pairs) if bond_pairs else np.empty((0, 2), dtype=np.int32)
+    bl = _to_f64(bond_lengths) if bond_lengths else np.empty(0)
+    at = _to_int32(angle_triples) if angle_triples else np.empty((0, 3), dtype=np.int32)
+    av = _to_f64(angle_values) if angle_values else np.empty(0)
+    dq = _to_int32(dihedral_quads) if dihedral_quads else np.empty((0, 4), dtype=np.int32)
+    dv = _to_f64(dihedral_values) if dihedral_values else np.empty(0)
+    coords = np.zeros((n, 3), dtype=np.float64)
+    _c_embed(
+        n,
+        coords.ctypes.data,
+        len(bl),
+        bp.ctypes.data,
+        bl.ctypes.data,
+        len(av),
+        at.ctypes.data,
+        av.ctypes.data,
+        len(dv),
+        dq.ctypes.data,
+        dv.ctypes.data,
+        seed,
     )
-    results = []
-    for cid in cids:
-        conf = mol_h.GetConformer(cid)
-        c = np.zeros((mol.GetNumAtoms(), 3))
-        for i in range(mol.GetNumAtoms()):
-            pos = conf.GetAtomPosition(i)
-            c[i] = [pos.x, pos.y, pos.z]
-        results.append(c)
-    return results
+    return coords
 
 
 # ============================================================
@@ -756,9 +984,7 @@ def _optimize(mol, bond_dihedral, coords, ftol=1e-3, gtol=1e-1):
         dih_quads = np.concatenate([dih_quads, rp_quads]) if len(dih_quads) else rp_quads
         dih_targets = np.concatenate([dih_targets, rp_targets]) if len(dih_targets) else rp_targets
 
-    from .cost_grad import CostGradProblem
-
-    _objective = CostGradProblem(
+    _objective = _CostGradProblem(
         n,
         np.zeros((0, 3)),
         bonds,
@@ -894,8 +1120,9 @@ def GetConformer(
 ) -> Chem.Mol:
     """Generate 3D conformer.
 
-    1. Embed entire molecule with RDKit distance geometry.
-    2. Optimize all atom positions with a cost function enforcing ideal
+    1. Embed with distance geometry using AMSR-encoded dihedrals.
+    2. Fix chirality, pseudo-E/Z, ring puckers, and acyclic dihedrals.
+    3. Optimize all atom positions with a cost function enforcing ideal
        bond lengths, angles, planarity, chirality, and AMSR dihedrals.
     """
     n = mol.GetNumAtoms()
@@ -914,16 +1141,12 @@ def GetConformer(
     best_coords = None
 
     for attempt in range(max_confs):
-        ec_list = _rdkit_embed(mol, n_confs=1, seed=42 + attempt)
-        if not ec_list:
-            continue
-        bd = dict(bond_dihedral)  # copy — _fix_equivalent_references mutates
-        coords[:] = ec_list[0]
-        _fix_equivalent_references(mol, bd, coords, terminal_only=True)
-        _fix_pseudo_stereo(mol, coords)
-        _fix_ring_puckers(mol, bd, coords)
-        _set_dihedrals(mol, bd, coords)
-        oc = _optimize(mol, bd, coords, ftol=ftol, gtol=gtol)
+        coords[:] = _dg_embed(mol, bond_dihedral, seed=42 + attempt)
+        _fix_chirality(mol, coords)
+        _fix_pseudo_ez(mol, coords)
+        _fix_ring_puckers(mol, bond_dihedral, coords)
+        _set_dihedrals(mol, bond_dihedral, coords)
+        oc = _optimize(mol, bond_dihedral, coords, ftol=ftol, gtol=gtol)
         if oc < best_cost:
             best_cost = oc
             best_coords = coords.copy()

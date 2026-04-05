@@ -1,4 +1,4 @@
-# Build the required C extension for cost/gradient evaluation.
+# Build the required C extension for conformer generation.
 # Usage: make          (builds for current platform)
 #        make clean    (removes built libraries)
 
@@ -14,14 +14,14 @@ else
   LDFLAGS := -shared -lm
 endif
 
-TARGET := amsr/_cost_grad_c.$(EXT)
+TARGET := amsr/conf_util.$(EXT)
 
 .PHONY: all clean
 
 all: $(TARGET)
 
-$(TARGET): amsr/_cost_grad_c.c
+$(TARGET): amsr/conf_util.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $<
 
 clean:
-	rm -f amsr/_cost_grad_c.dylib amsr/_cost_grad_c.so
+	rm -f amsr/conf_util.dylib amsr/conf_util.so

@@ -4,7 +4,6 @@ import os
 
 import pytest
 
-import amsr.cost_grad as _cg
 from amsr.roundtrip import N_RANDOM_SEEDS, RoundtripSDF
 
 from .conftest import SDF_DIR
@@ -31,7 +30,7 @@ def _csv_output():
     with open(_csv_path, newline="") as f:
         rows = list(csv.reader(f))
     header, data = rows[0], rows[1:]
-    data.sort(key=lambda r: -float(r[3]) if r[3] else 0)
+    data.sort(key=lambda r: -float(r[3]) if len(r) > 3 and r[3] else 0)
     with open(_csv_path, "w", newline="") as f:
         w = csv.writer(f)
         w.writerow(header)
@@ -43,13 +42,11 @@ def test_roundtrip_sdf(sdf_path, seed):
 
     assert r["status"] != "ERROR", f"Error: {r.get('error', 'could not parse')}"
 
-    backend = "C" if _cg.is_available() else "Python"
     with open(_csv_path, "a", newline="") as f:
         csv.writer(f).writerow(
             [r["name"], r["seed"], r["amsr"], f"{r['rmsd']:.3f}", f"{r['time']:.3f}"]
         )
 
     assert r["rmsd"] < 1.0, (
-        f"RMSD {r['rmsd']:.3f} Å too large for {r['name']}"
-        f" (seed={r['seed']}, backend={backend})"
+        f"RMSD {r['rmsd']:.3f} Å too large for {r['name']}" f" (seed={r['seed']})"
     )
