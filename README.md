@@ -12,12 +12,6 @@ inspired by
 
 [amsr.harrystern.org](https://amsr.harrystern.org)
 
-## Installing
-```bash
-uv pip install .
-uv pip install ".[gpu]" # for GPU support
-```
-
 ## Usage
 ```py
 import amsr
@@ -2026,8 +2020,7 @@ width='160px' height='160px' viewBox='0 0 160 160'>
 <!-- END OF HEADER -->
 <rect style='opacity:1.0;fill:#FFFFFF;stroke:none' width='160.0' height='160.0' x='0.0' y='0.0'> </rect>
 <path class='bond-0 atom-1 atom-0' d='M 56.1,76.4 L 57.7,66.1 L 59.7,66.6 Z' style='fill:#000000;fill-rule:evenodd;fill-opacity:1;stroke:#000000;stroke-width:0.5px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
-<path class='bond-0 atom-1 atom-0' d='M 57.7,66.1 L 63.3,56.7 L 59.4,55.7 Z' style='fill:#0000FF;fill-rule:evenodd;fill-opacity:1;stroke:#0000FF;stroke-width:0.5px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
-<path class='bond-0 atom-1 atom-0' d='M 57.7,66.1 L 59.7,66.6 L 63.3,56.7 Z' style='fill:#0000FF;fill-rule:evenodd;fill-opacity:1;stroke:#0000FF;stroke-width:0.5px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path class='bond-0 atom-1 atom-0' d='M 63.3,56.7 L 59.4,55.7 L 57.7,66.1 L 59.7,66.6 Z' style='fill:#0000FF;fill-rule:evenodd;fill-opacity:1;stroke:#0000FF;stroke-width:0.5px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
 <path class='bond-1 atom-1 atom-2' d='M 56.1,76.4 L 75.0,95.1' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-2 atom-2 atom-3' d='M 75.0,95.1 L 100.7,88.1' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-3 atom-3 atom-4' d='M 100.7,88.1 L 107.4,62.3' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
