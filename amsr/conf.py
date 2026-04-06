@@ -427,7 +427,12 @@ def _get_bond_angle(mol, a, b, c):
                     mol.GetAtomWithIdx(x).GetHybridization() == SP2 for x in best_ring if x != b
                 ):
                     return poly
-    return _HYBRID_ANGLES.get(hyb, 109.5)
+    default = _HYBRID_ANGLES.get(hyb, 109.5)
+    # SP2 with degree 2 and one implicit H: the two heavy-atom
+    # neighbors occupy the wider angle (~126°) while the H takes ~117°.
+    if hyb == SP2 and atom_b.GetDegree() == 2 and atom_b.GetTotalNumHs() > 0:
+        return 126.0
+    return default
 
 
 def _fix_pseudo_ez(mol, coords):
