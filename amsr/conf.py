@@ -296,8 +296,11 @@ def _get_bond_angle(mol, a, b, c, atom_rings=None):
     default = _HYBRID_ANGLES.get(hyb, 109.5)
     # SP2 with degree 2 and one implicit H: the two heavy-atom
     # neighbors occupy the wider angle (~126°) while the H takes ~117°.
+    # Exception: if both neighbors are SP2 (conjugated system), use 120°.
     if hyb == SP2 and atom_b.GetDegree() == 2 and atom_b.GetTotalNumHs() > 0:
-        return 126.0
+        na, nc = mol.GetAtomWithIdx(a), mol.GetAtomWithIdx(c)
+        if na.GetHybridization() != SP2 or nc.GetHybridization() != SP2:
+            return 126.0
     # SP3 with degree 2 and implicit H: heavy-atom angle opens up
     # because H atoms occupy the smaller angular sectors (Bent's rule).
     if hyb == SP3 and atom_b.GetDegree() == 2 and atom_b.GetTotalNumHs() > 0:
