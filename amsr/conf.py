@@ -718,14 +718,22 @@ def _collect_angles(mol, atoms, atom_rings=None):
 
 
 def _collect_planar_atoms(mol, atoms):
-    """Collect planarity constraints for SP2 atoms with 3+ neighbors."""
+    """Collect planarity constraints for SP2 atoms with 3+ neighbors.
+
+    Also includes sulfonamide N (N bonded to S), which is experimentally
+    near-planar regardless of RDKit's hybridization assignment.
+    """
     groups = []
     for j in sorted(atoms):
         atom = mol.GetAtomWithIdx(j)
-        if atom.GetHybridization() != SP2:
-            continue
         nbrs = [nb.GetIdx() for nb in atom.GetNeighbors() if nb.GetIdx() in atoms]
-        if len(nbrs) >= 3:
+        if len(nbrs) < 3:
+            continue
+        if atom.GetHybridization() == SP2:
+            groups.append((j, nbrs[0], nbrs[1], nbrs[2]))
+        elif atom.GetSymbol() == "N" and any(
+            mol.GetAtomWithIdx(ni).GetSymbol() == "S" for ni in nbrs
+        ):
             groups.append((j, nbrs[0], nbrs[1], nbrs[2]))
     return _to_array(groups, cols=4)
 
