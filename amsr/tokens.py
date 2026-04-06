@@ -1,9 +1,14 @@
 from re import compile, escape
 
-DOT = "."
+# 12 dihedral symbols: 30 degree discretization
 DIHEDRALS = ["^", "^\\", "<\\", "<", "</", "_/", "_", "\\_", "\\>", ">", "/>", "/^"]
+
+# 24 dihedral symbols: 15 degree discretization
+# DIHEDRALS = [f"/{chr(x)}" for x in range(ord("a"), ord("y"))]
+
+N_DIHEDRALS = len(DIHEDRALS)
 Z = DIHEDRALS[0]
-E = DIHEDRALS[6]
+E = DIHEDRALS[N_DIHEDRALS // 2]
 CW = "'"
 CCW = "`"
 PLUS = "+"
@@ -18,8 +23,12 @@ R_PAREN = ")"
 SKIP = "@"
 MOLSEP = ";"
 AMPERSAND = "&"
+DOT = "."
 
-DIHEDRAL_FOR_BOND_SYMBOL = {s: 30 * (i - 12 if i > 6 else i) for i, s in enumerate(DIHEDRALS)}
+DIHEDRAL_FOR_BOND_SYMBOL = {
+    s: (360 // N_DIHEDRALS) * (i - N_DIHEDRALS if i > N_DIHEDRALS // 2 else i)
+    for i, s in enumerate(DIHEDRALS)
+}
 BOND_SYMBOL_FOR_DIHEDRAL = {v: k for k, v in DIHEDRAL_FOR_BOND_SYMBOL.items()}
 BOND_SYMBOL_FOR_DIHEDRAL[-180] = E
 

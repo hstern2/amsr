@@ -126,6 +126,25 @@ def FromMolToTokens(
             oop_dist = abs(vol) / cross_mag
             if oop_dist < 0.15:
                 continue
+            # Non-junction amide/carbamate N is planar by resonance;
+            # only ring-junction N can be forced pyramidal by strain.
+            if a.GetSymbol() == "N" and hyb == Chem.HybridizationType.SP2:
+                ri = mol.GetRingInfo()
+                is_junction = sum(1 for r in ri.AtomRings() if a.GetIdx() in r) > 1
+                if not is_junction:
+                    is_amide = any(
+                        nb.GetSymbol() == "C"
+                        and any(
+                            mol.GetBondBetweenAtoms(nb.GetIdx(), nb2.GetIdx()).GetBondTypeAsDouble()
+                            == 2
+                            and nb2.GetSymbol() == "O"
+                            for nb2 in nb.GetNeighbors()
+                            if nb2.GetIdx() != a.GetIdx()
+                        )
+                        for nb in a.GetNeighbors()
+                    )
+                    if is_amide:
+                        continue
             if vol > 0:
                 a.SetChiralTag(Chem.ChiralType.CHI_TETRAHEDRAL_CCW)
             elif vol < 0:

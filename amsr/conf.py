@@ -409,20 +409,24 @@ def _get_bond_angle(mol, a, b, c):
     b_ab = mol.GetBondBetweenAtoms(a, b)
     b_bc = mol.GetBondBetweenAtoms(b, c)
     if b_ab is not None and b_bc is not None:
-        common = set(ri.BondRingSizes(b_ab.GetIdx())) & set(ri.BondRingSizes(b_bc.GetIdx()))
-        if common:
-            n = min(common)
+        # Find the smallest ring that actually contains all three atoms a-b-c.
+        best_ring = None
+        for ring in ri.AtomRings():
+            if a in ring and b in ring and c in ring:
+                if best_ring is None or len(ring) < len(best_ring):
+                    best_ring = ring
+        if best_ring is not None:
+            n = len(best_ring)
             poly = (n - 2) * 180.0 / n
             if hyb in (SP2, Chem.HybridizationType.SP) and n <= 6:
                 return poly
+            if hyb == SP3 and n <= 4 and poly < 109.5:
+                return poly
             if hyb == SP3 and n <= 6 and poly < 109.5:
-                for ring in ri.AtomRings():
-                    if len(ring) == n and b in ring:
-                        if any(
-                            mol.GetAtomWithIdx(x).GetHybridization() == SP2 for x in ring if x != b
-                        ):
-                            return poly
-                        break
+                if any(
+                    mol.GetAtomWithIdx(x).GetHybridization() == SP2 for x in best_ring if x != b
+                ):
+                    return poly
     return _HYBRID_ANGLES.get(hyb, 109.5)
 
 
@@ -743,10 +747,19 @@ def _collect_angles(mol, atoms):
     For SP2 atoms with exactly 3 angles, adjusts targets so they sum to
     360° (important for fused ring junctions).
     """
+    ri = mol.GetRingInfo()
+    # Skip angle constraints for atoms in 3-membered rings — geometry
+    # is fully determined by bond lengths.
+    in_3ring = set()
+    for ring in ri.AtomRings():
+        if len(ring) == 3:
+            in_3ring.update(ring)
     triples, ideals = [], []
     center_indices: dict[int, list[int]] = {}
     for b in sorted(atoms):
         if mol.GetAtomWithIdx(b).GetHybridization() == SP:
+            continue
+        if b in in_3ring:
             continue
         nbrs = [nb.GetIdx() for nb in mol.GetAtomWithIdx(b).GetNeighbors() if nb.GetIdx() in atoms]
         for ia in range(len(nbrs)):
@@ -756,11 +769,12 @@ def _collect_angles(mol, atoms):
                 triples.append((a, b, c))
                 ideals.append(_get_bond_angle(mol, a, b, c))
                 center_indices.setdefault(b, []).append(idx)
-    ri = mol.GetRingInfo()
+    # For degree-3 SP2 centers, redistribute angles so they sum to 360°
+    # (important for fused ring junctions).
     for b, indices in center_indices.items():
-        if len(indices) != 3:
-            continue
         if mol.GetAtomWithIdx(b).GetHybridization() != SP2:
+            continue
+        if len(indices) != 3:
             continue
         total = sum(ideals[k] for k in indices)
         if abs(total - 360.0) < 1.0:
