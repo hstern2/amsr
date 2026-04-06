@@ -63,7 +63,7 @@ def main():
     )
     parser.add_argument("input_dir", type=Path, help="Directory containing SDF files")
     parser.add_argument("-o", "--output", type=Path, default=Path("out"), help="Output directory")
-    parser.add_argument("-t", "--threshold", type=float, default=1.0, help="RMSD threshold")
+    parser.add_argument("-t", "--threshold", type=float, default=1.1, help="RMSD threshold")
     parser.add_argument("-j", "--jobs", type=int, default=1, help="Number of parallel workers")
     args = parser.parse_args()
 

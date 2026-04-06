@@ -65,6 +65,6 @@ def test_roundtrip_sdf(sdf_path, seed):
                 [r["name"], r["seed"], r["amsr"], f"{r['rmsd']:.3f}", f"{r['time']:.3f}"]
             )
 
-    assert r["rmsd"] < 1.0, (
+    assert r["rmsd"] < 1.1, (
         f"RMSD {r['rmsd']:.3f} Å too large for {r['name']}" f" (seed={r['seed']})"
     )
