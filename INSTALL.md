@@ -1,33 +1,39 @@
 # Install and test
 
+## Prerequisites
+
+- Python 3.12+
+- [uv](https://docs.astral.sh/uv/)
+- C compiler (cc/gcc/clang)
+
 ## Install
 
 ```bash
-pip install -e ".[dev]"
+uv sync --extra dev
 ```
+
+## Build C extension
+
+```bash
+make
+```
+
+Required for conformer generation. Builds `amsr/conf_util.dylib` (macOS)
+or `amsr/conf_util.so` (Linux) from C sources in `amsr/src/`.
 
 ## Test
 
 ```bash
-pytest -n 8             # run all tests in parallel (8 workers)
-pytest                  # run all tests sequentially
+uv run --extra dev pytest -n 8     # run all tests in parallel (8 workers)
+uv run --extra dev pytest          # run all tests sequentially
 ```
 
 The conformer tests (`test_conf.py`) encode each SDF molecule with 6
 different AMSR encodings (1 canonical + 5 randomized) and check that
-the round-trip RMSD is below 0.8 Å.
-
-## Optional: C-accelerated conformer generation
-
-```bash
-make            # build C extension (~3.5x faster)
-make clean      # revert to pure Python
-```
-
-Requires a C compiler.  Used automatically when present.
+the round-trip RMSD is below 1.0 Å.
 
 ## Batch processing
 
 ```bash
-python roundtrip_sdf.py /path/to/sdf/dir -j 8     # 8 parallel workers
+uv run python roundtrip_sdf.py /path/to/sdf/dir -j 8     # 8 parallel workers
 ```
