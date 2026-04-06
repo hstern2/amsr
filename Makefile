@@ -5,6 +5,7 @@
 UNAME := $(shell uname -s)
 CC ?= cc
 CFLAGS := -O3 -fPIC
+CSRC := amsr/src
 
 ifeq ($(UNAME),Darwin)
   EXT := dylib
@@ -20,8 +21,8 @@ TARGET := amsr/conf_util.$(EXT)
 
 all: $(TARGET)
 
-$(TARGET): amsr/conf_util.c
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $<
+$(TARGET): $(CSRC)/conf_util.c $(CSRC)/lbfgs.c $(CSRC)/lbfgs.h $(CSRC)/arithmetic_ansi.h
+	$(CC) $(CFLAGS) -I$(CSRC) $(LDFLAGS) -o $@ $(CSRC)/conf_util.c $(CSRC)/lbfgs.c
 
 clean:
 	rm -f amsr/conf_util.dylib amsr/conf_util.so

@@ -302,6 +302,80 @@ double cost_and_grad(
 }
 
 /* ================================================================== */
+/* L-BFGS optimizer (via liblbfgs)                                     */
+/* ================================================================== */
+
+#include "lbfgs.h"
+
+/* Context passed to the liblbfgs evaluate callback. */
+typedef struct {
+    int n_free; const double *fixed; int n_fixed;
+    const int *bond_pairs; const double *ideal_lengths; int n_bonds;
+    const int *angle_triples; const double *ideal_angles_deg; int n_angles;
+    const int *planar_groups; int n_planar;
+    const int *chiral_info; const double *chiral_target_vols; int n_chiral;
+    const int *dih_quads; const double *dih_targets_deg; int n_dih;
+    const int *ez_quads; const double *ez_targets_deg; int n_ez;
+    const int *linear_triples; int n_linear;
+    double w_bond, w_angle, w_planar, w_chiral, w_dih, w_ez, w_linear;
+} opt_ctx;
+
+static lbfgsfloatval_t _evaluate(void *instance,
+    const lbfgsfloatval_t *x, lbfgsfloatval_t *g,
+    const int n, const lbfgsfloatval_t step)
+{
+    opt_ctx *c = (opt_ctx*)instance;
+    return cost_and_grad(x, g, c->n_free, c->fixed, c->n_fixed,
+        c->bond_pairs, c->ideal_lengths, c->n_bonds,
+        c->angle_triples, c->ideal_angles_deg, c->n_angles,
+        c->planar_groups, c->n_planar,
+        c->chiral_info, c->chiral_target_vols, c->n_chiral,
+        c->dih_quads, c->dih_targets_deg, c->n_dih,
+        c->ez_quads, c->ez_targets_deg, c->n_ez,
+        c->linear_triples, c->n_linear,
+        c->w_bond, c->w_angle, c->w_planar, c->w_chiral,
+        c->w_dih, c->w_ez, c->w_linear);
+}
+
+double lbfgs_optimize(
+    double *x, int ndim,
+    int n_free, const double *fixed, int n_fixed,
+    const int *bond_pairs, const double *ideal_lengths, int n_bonds,
+    const int *angle_triples, const double *ideal_angles_deg, int n_angles,
+    const int *planar_groups, int n_planar,
+    const int *chiral_info, const double *chiral_target_vols, int n_chiral,
+    const int *dih_quads, const double *dih_targets_deg, int n_dih,
+    const int *ez_quads, const double *ez_targets_deg, int n_ez,
+    const int *linear_triples, int n_linear,
+    double w_bond, double w_angle, double w_planar, double w_chiral,
+    double w_dih, double w_ez, double w_linear,
+    double ftol, double gtol, int max_iter)
+{
+    opt_ctx ctx = {
+        n_free, fixed, n_fixed,
+        bond_pairs, ideal_lengths, n_bonds,
+        angle_triples, ideal_angles_deg, n_angles,
+        planar_groups, n_planar,
+        chiral_info, chiral_target_vols, n_chiral,
+        dih_quads, dih_targets_deg, n_dih,
+        ez_quads, ez_targets_deg, n_ez,
+        linear_triples, n_linear,
+        w_bond, w_angle, w_planar, w_chiral, w_dih, w_ez, w_linear
+    };
+
+    lbfgs_parameter_t param;
+    lbfgs_parameter_init(&param);
+    param.epsilon = gtol;
+    param.delta = ftol;
+    param.max_iterations = max_iter;
+    param.m = 10;
+
+    lbfgsfloatval_t fx;
+    lbfgs(ndim, x, &fx, _evaluate, NULL, &ctx, &param);
+    return fx;
+}
+
+/* ================================================================== */
 /* Distance geometry embedding                                         */
 /* ================================================================== */
 
@@ -413,9 +487,11 @@ void embed(int n, double *coords_out,
     double min_dist = 1.5;
     for (int i=0;i<n;i++) for (int j=i+1;j<n;j++) lower[i*n+j]=lower[j*n+i]=min_dist;
 
-    /* Bond distances (exact) */
+    /* Build bond length lookup matrix for O(1) access. */
+    double *blen = (double*)calloc(n*n, sizeof(double));
     for (int k=0;k<n_bonds;k++) {
         int i=bond_pairs[2*k], j=bond_pairs[2*k+1];
+        blen[i*n+j]=blen[j*n+i]=bond_lengths[k];
         lower[i*n+j]=lower[j*n+i]=bond_lengths[k];
         upper[i*n+j]=upper[j*n+i]=bond_lengths[k];
     }
@@ -423,12 +499,7 @@ void embed(int n, double *coords_out,
     /* 1-3 distances from angles */
     for (int k=0;k<n_angles;k++) {
         int a=angle_triples[3*k], b=angle_triples[3*k+1], c=angle_triples[3*k+2];
-        double d_ab=-1, d_bc=-1;
-        for (int m=0;m<n_bonds;m++) {
-            int p=bond_pairs[2*m], q=bond_pairs[2*m+1];
-            if ((p==a&&q==b)||(p==b&&q==a)) d_ab=bond_lengths[m];
-            if ((p==b&&q==c)||(p==c&&q==b)) d_bc=bond_lengths[m];
-        }
+        double d_ab=blen[a*n+b], d_bc=blen[b*n+c];
         if (d_ab>0 && d_bc>0) {
             double d=dist_from_angle(d_ab, d_bc, angle_values[k]);
             lower[a*n+c]=lower[c*n+a]=d; upper[a*n+c]=upper[c*n+a]=d;
@@ -439,20 +510,15 @@ void embed(int n, double *coords_out,
     for (int k=0;k<n_dihedrals;k++) {
         int a=dihedral_quads[4*k], b=dihedral_quads[4*k+1];
         int c=dihedral_quads[4*k+2], dd=dihedral_quads[4*k+3];
-        double d_ab=-1, d_bc=-1, d_cd=-1;
-        for (int m=0;m<n_bonds;m++) {
-            int p=bond_pairs[2*m], q=bond_pairs[2*m+1];
-            if ((p==a&&q==b)||(p==b&&q==a)) d_ab=bond_lengths[m];
-            if ((p==b&&q==c)||(p==c&&q==b)) d_bc=bond_lengths[m];
-            if ((p==c&&q==dd)||(p==dd&&q==c)) d_cd=bond_lengths[m];
-        }
+        double d_ab=blen[a*n+b], d_bc=blen[b*n+c], d_cd=blen[c*n+dd];
+        if (d_ab<=0 || d_bc<=0 || d_cd<=0) continue;
         double ang_abc=-1, ang_bcd=-1;
         for (int m=0;m<n_angles;m++) {
             int ta=angle_triples[3*m], tb=angle_triples[3*m+1], tc=angle_triples[3*m+2];
             if (tb==b && ((ta==a&&tc==c)||(ta==c&&tc==a))) ang_abc=angle_values[m];
             if (tb==c && ((ta==b&&tc==dd)||(ta==dd&&tc==b))) ang_bcd=angle_values[m];
         }
-        if (d_ab>0 && d_bc>0 && d_cd>0 && ang_abc>0 && ang_bcd>0) {
+        if (ang_abc>0 && ang_bcd>0) {
             double d=dist_from_dihedral(d_ab,d_bc,d_cd,ang_abc,ang_bcd,dihedral_values[k]);
             double tol=0.1;
             double lo = d-tol>min_dist ? d-tol : min_dist;
@@ -544,13 +610,8 @@ void embed(int n, double *coords_out,
     for (int iter=0;iter<20;iter++) {
         for (int k=0;k<n_angles;k++) {
             int a=angle_triples[3*k], b=angle_triples[3*k+1], c=angle_triples[3*k+2];
-            double d_ab=-1, d_bc=-1;
-            for (int m=0;m<n_bonds;m++) {
-                int p=bond_pairs[2*m], q=bond_pairs[2*m+1];
-                if ((p==a&&q==b)||(p==b&&q==a)) d_ab=bond_lengths[m];
-                if ((p==b&&q==c)||(p==c&&q==b)) d_bc=bond_lengths[m];
-            }
-            if (d_ab<0||d_bc<0) continue;
+            double d_ab=blen[a*n+b], d_bc=blen[b*n+c];
+            if (d_ab<=0||d_bc<=0) continue;
             double target_ac=dist_from_angle(d_ab,d_bc,angle_values[k]);
             double dx=coords_out[c*3]-coords_out[a*3];
             double dy=coords_out[c*3+1]-coords_out[a*3+1];
@@ -576,4 +637,5 @@ void embed(int n, double *coords_out,
 
     free(lower); free(upper); free(D); free(D2);
     free(row_mean); free(G); free(evals); free(evecs);
+    free(blen);
 }

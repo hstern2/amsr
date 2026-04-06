@@ -9,6 +9,7 @@ centers, E/Z constraints, and AMSR dihedral restraints.
 import ctypes
 import os
 import sys
+from collections import deque
 from typing import Optional
 
 import numpy as np
@@ -22,14 +23,14 @@ _LIB_NAME = "conf_util.dylib" if sys.platform == "darwin" else "conf_util.so"
 _LIB_PATH = os.path.join(os.path.dirname(__file__), _LIB_NAME)
 _lib = ctypes.CDLL(_LIB_PATH)
 
-_cost_and_grad = _lib.cost_and_grad
-_cost_and_grad.restype = ctypes.c_double
-_cost_and_grad.argtypes = [
+_c_lbfgs = _lib.lbfgs_optimize
+_c_lbfgs.restype = ctypes.c_double
+_c_lbfgs.argtypes = [
     ctypes.c_void_p,
+    ctypes.c_int,  # x, ndim
+    ctypes.c_int,
     ctypes.c_void_p,
-    ctypes.c_int,  # x, grad, n_free
-    ctypes.c_void_p,
-    ctypes.c_int,  # fixed, n_fixed
+    ctypes.c_int,  # n_free, fixed, n_fixed
     ctypes.c_void_p,
     ctypes.c_void_p,
     ctypes.c_int,  # bonds
@@ -56,6 +57,9 @@ _cost_and_grad.argtypes = [
     ctypes.c_double,
     ctypes.c_double,  # w_chiral, w_dih, w_ez
     ctypes.c_double,  # w_linear
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_int,  # ftol, gtol, max_iter
 ]
 
 _c_embed = _lib.embed
@@ -76,7 +80,7 @@ _c_embed.argtypes = [
 ]
 
 
-def _to_int32(arr, cols=None):
+def _to_int32(arr):
     if isinstance(arr, np.ndarray) and arr.dtype == np.int32 and arr.flags["C_CONTIGUOUS"]:
         return arr
     a = np.asarray(arr, dtype=np.int32)
@@ -93,170 +97,6 @@ def _to_f64(arr):
 def _dptr(arr):
     """Data pointer for a numpy array, or NULL."""
     return arr.ctypes.data_as(ctypes.c_void_p) if arr.size else ctypes.c_void_p(0)
-
-
-class _CostGradProblem:
-    """Pre-cached C cost_and_grad arguments for repeated evaluation."""
-
-    __slots__ = (
-        "_grad",
-        "_n_free",
-        "_fc",
-        "_n_fixed",
-        "_p_fc",
-        "_bp",
-        "_il",
-        "_n_bonds",
-        "_p_bp",
-        "_p_il",
-        "_at",
-        "_ia",
-        "_n_angles",
-        "_p_at",
-        "_p_ia",
-        "_pg",
-        "_n_planar",
-        "_p_pg",
-        "_ci",
-        "_ctv",
-        "_n_chiral",
-        "_p_ci",
-        "_p_ctv",
-        "_dq",
-        "_dt",
-        "_n_dih",
-        "_p_dq",
-        "_p_dt",
-        "_eq",
-        "_et",
-        "_n_ez",
-        "_p_eq",
-        "_p_et",
-        "_lt",
-        "_n_linear",
-        "_p_lt",
-        "_w_bond",
-        "_w_angle",
-        "_w_planar",
-        "_w_chiral",
-        "_w_dih",
-        "_w_ez",
-        "_w_linear",
-    )
-
-    def __init__(
-        self,
-        n_free,
-        fixed_coords,
-        bonds,
-        ideal_lengths,
-        angle_triples,
-        ideal_angles,
-        planar_groups,
-        chiral_info,
-        chiral_target_vols,
-        dih_quads,
-        dih_targets,
-        ez_quads,
-        ez_targets,
-        w_bond,
-        w_angle,
-        w_planar,
-        w_chiral,
-        w_dih,
-        w_ez,
-        linear_triples=None,
-        w_linear=10.0,
-    ):
-        self._n_free = n_free
-        self._grad = np.zeros(n_free * 3)
-        self._fc = _to_f64(fixed_coords) if len(fixed_coords) else np.empty(0, dtype=np.float64)
-        self._n_fixed = len(fixed_coords)
-        self._p_fc = _dptr(self._fc)
-        self._bp = _to_int32(bonds) if len(bonds) else np.empty((0, 2), dtype=np.int32)
-        self._il = _to_f64(ideal_lengths) if len(ideal_lengths) else np.empty(0, dtype=np.float64)
-        self._n_bonds = len(self._bp)
-        self._p_bp = _dptr(self._bp)
-        self._p_il = _dptr(self._il)
-        self._at = (
-            _to_int32(angle_triples) if len(angle_triples) else np.empty((0, 3), dtype=np.int32)
-        )
-        self._ia = _to_f64(ideal_angles) if len(ideal_angles) else np.empty(0, dtype=np.float64)
-        self._n_angles = len(self._at)
-        self._p_at = _dptr(self._at)
-        self._p_ia = _dptr(self._ia)
-        pg = planar_groups[:, :4] if len(planar_groups) else np.empty((0, 4), dtype=np.int32)
-        self._pg = _to_int32(pg)
-        self._n_planar = len(self._pg)
-        self._p_pg = _dptr(self._pg)
-        self._ci = _to_int32(chiral_info) if len(chiral_info) else np.empty((0, 5), dtype=np.int32)
-        self._ctv = (
-            _to_f64(chiral_target_vols)
-            if len(chiral_target_vols)
-            else np.empty(0, dtype=np.float64)
-        )
-        self._n_chiral = len(self._ci)
-        self._p_ci = _dptr(self._ci)
-        self._p_ctv = _dptr(self._ctv)
-        self._dq = _to_int32(dih_quads) if len(dih_quads) else np.empty((0, 4), dtype=np.int32)
-        self._dt = _to_f64(dih_targets) if len(dih_targets) else np.empty(0, dtype=np.float64)
-        self._n_dih = len(self._dq)
-        self._p_dq = _dptr(self._dq)
-        self._p_dt = _dptr(self._dt)
-        self._eq = _to_int32(ez_quads) if len(ez_quads) else np.empty((0, 4), dtype=np.int32)
-        self._et = _to_f64(ez_targets) if len(ez_targets) else np.empty(0, dtype=np.float64)
-        self._n_ez = len(self._eq)
-        self._p_eq = _dptr(self._eq)
-        self._p_et = _dptr(self._et)
-        self._w_bond = w_bond
-        self._w_angle = w_angle
-        self._w_planar = w_planar
-        self._w_chiral = w_chiral
-        self._w_dih = w_dih
-        self._w_ez = w_ez
-        lt = linear_triples if linear_triples is not None and len(linear_triples) else None
-        self._lt = _to_int32(lt) if lt is not None else np.empty((0, 3), dtype=np.int32)
-        self._n_linear = len(self._lt)
-        self._p_lt = _dptr(self._lt)
-        self._w_linear = w_linear
-
-    def __call__(self, x):
-        x = np.ascontiguousarray(x, dtype=np.float64)
-        grad = self._grad
-        cost = _cost_and_grad(
-            x.ctypes.data_as(ctypes.c_void_p),
-            grad.ctypes.data_as(ctypes.c_void_p),
-            self._n_free,
-            self._p_fc,
-            self._n_fixed,
-            self._p_bp,
-            self._p_il,
-            self._n_bonds,
-            self._p_at,
-            self._p_ia,
-            self._n_angles,
-            self._p_pg,
-            self._n_planar,
-            self._p_ci,
-            self._p_ctv,
-            self._n_chiral,
-            self._p_dq,
-            self._p_dt,
-            self._n_dih,
-            self._p_eq,
-            self._p_et,
-            self._n_ez,
-            self._p_lt,
-            self._n_linear,
-            self._w_bond,
-            self._w_angle,
-            self._w_planar,
-            self._w_chiral,
-            self._w_dih,
-            self._w_ez,
-            self._w_linear,
-        )
-        return cost, grad.copy()
 
 
 # ---------------------------------------------------------------------------
@@ -394,55 +234,84 @@ _ELEMENT_ANGLES = {
 }
 
 
-def _get_bond_angle(mol, a, b, c):
+def _build_ring_index(mol):
+    """Pre-compute per-atom ring membership: atom_idx → list of (ring_size, ring_set, has_sp2)."""
+    ri = mol.GetRingInfo()
+    ring_data = []
+    for ring in ri.AtomRings():
+        rs = frozenset(ring)
+        n = len(ring)
+        has_sp2 = any(mol.GetAtomWithIdx(x).GetHybridization() == SP2 for x in ring)
+        ring_data.append((n, rs, has_sp2))
+    # Map each atom to the rings it belongs to
+    atom_rings: dict[int, list[tuple[int, frozenset[int], bool]]] = {}
+    for rd in ring_data:
+        for a in rd[1]:
+            atom_rings.setdefault(a, []).append(rd)
+    return atom_rings
+
+
+def _get_bond_angle(mol, a, b, c, atom_rings=None):
     """Ideal bond angle a-b-c in degrees."""
     atom_b = mol.GetAtomWithIdx(b)
     hyb = atom_b.GetHybridization()
     sym = atom_b.GetSymbol()
     if sym in _ELEMENT_ANGLES and hyb in _ELEMENT_ANGLES[sym]:
-        # Reduced angles only apply to low-coordination heteroatoms
-        # (e.g. thioether R-S-R).  High-coordination centers like
-        # sulfonyl S(=O)2 are approximately tetrahedral.
         if atom_b.GetDegree() <= 2:
             return _ELEMENT_ANGLES[sym][hyb]
-    ri = mol.GetRingInfo()
     b_ab = mol.GetBondBetweenAtoms(a, b)
     b_bc = mol.GetBondBetweenAtoms(b, c)
     if b_ab is not None and b_bc is not None:
-        # Find the smallest ring that actually contains all three atoms a-b-c.
+        # Find the smallest ring containing all three atoms a-b-c.
+        best_n = 0
         best_ring = None
-        for ring in ri.AtomRings():
-            if a in ring and b in ring and c in ring:
-                if best_ring is None or len(ring) < len(best_ring):
-                    best_ring = ring
+        best_has_sp2 = False
+        if atom_rings is not None:
+            b_rings = atom_rings.get(b)
+            if b_rings:
+                for n, rs, has_sp2 in b_rings:
+                    if a in rs and c in rs and (best_ring is None or n < best_n):
+                        best_n = n
+                        best_ring = rs
+                        best_has_sp2 = has_sp2
+        else:
+            for ring in mol.GetRingInfo().AtomRings():
+                if a in ring and b in ring and c in ring:
+                    n = len(ring)
+                    if best_ring is None or n < best_n:
+                        best_n = n
+                        best_ring = ring
+                        best_has_sp2 = any(
+                            mol.GetAtomWithIdx(x).GetHybridization() == SP2 for x in ring if x != b
+                        )
         if best_ring is not None:
-            n = len(best_ring)
-            poly = (n - 2) * 180.0 / n
-            if hyb in (SP2, Chem.HybridizationType.SP) and n <= 6:
+            poly = (best_n - 2) * 180.0 / best_n
+            if hyb in (SP2, Chem.HybridizationType.SP) and best_n <= 6:
                 return poly
-            if hyb == SP3 and n <= 4 and poly < 109.5:
+            if hyb == SP3 and best_n <= 4 and poly < 109.5:
                 return poly
-            if hyb == SP3 and n <= 6 and poly < 109.5:
-                if any(
-                    mol.GetAtomWithIdx(x).GetHybridization() == SP2 for x in best_ring if x != b
-                ):
+            if hyb == SP3 and best_n <= 6 and poly < 109.5:
+                if best_has_sp2:
                     return poly
     default = _HYBRID_ANGLES.get(hyb, 109.5)
     # SP2 with degree 2 and one implicit H: the two heavy-atom
     # neighbors occupy the wider angle (~126°) while the H takes ~117°.
     if hyb == SP2 and atom_b.GetDegree() == 2 and atom_b.GetTotalNumHs() > 0:
         return 126.0
+    # SP3 with degree 2 and implicit H: heavy-atom angle opens up
+    # because H atoms occupy the smaller angular sectors (Bent's rule).
+    if hyb == SP3 and atom_b.GetDegree() == 2 and atom_b.GetTotalNumHs() > 0:
+        return 112.0
     return default
 
 
-def _fix_pseudo_ez(mol, coords):
+def _fix_pseudo_ez(mol, coords, subtree_cache=None):
     """Fix pseudo-E/Z double bonds after embedding.
 
     For double bonds with graph-equivalent substituents on at least one
     side, check if the E/Z geometry matches the tag and reflect if wrong.
     """
     ranks = list(Chem.CanonicalRankAtoms(mol, breakTies=False))
-    # Pseudo-E/Z double bonds
     for bond in mol.GetBonds():
         stereo = bond.GetStereo()
         if stereo not in (Chem.BondStereo.STEREOZ, Chem.BondStereo.STEREOE):
@@ -459,15 +328,12 @@ def _fix_pseudo_ez(mol, coords):
         nj_ranks = [ranks[n] for n in nj]
         if len(set(ni_ranks)) == len(ni_ranks) and len(set(nj_ranks)) == len(nj_ranks):
             continue
-        # Check current torsion
         actual = measure_torsion(coords[si], coords[i], coords[j], coords[sj])
         target = 0.0 if stereo == Chem.BondStereo.STEREOZ else 180.0
         diff = abs((actual - target + 180) % 360 - 180)
         if diff < 45:
             continue
-        # Reflect the j-side substituents through the double bond plane
         bond_vec = coords[j] - coords[i]
-        # Normal to the plane containing the double bond and si
         v_si = coords[si] - coords[i]
         normal = np.cross(bond_vec, v_si)
         nn = _norm3(normal)
@@ -476,7 +342,7 @@ def _fix_pseudo_ez(mol, coords):
         normal /= nn
         mid = 0.5 * (coords[i] + coords[j])
         for nb_idx in nj:
-            sub = _subtree(mol, nb_idx, j)
+            sub = subtree_cache[(nb_idx, j)] if subtree_cache else _subtree(mol, nb_idx, j)
             for k in sub:
                 d = np.dot(coords[k] - mid, normal)
                 coords[k] -= 2.0 * d * normal
@@ -485,9 +351,9 @@ def _fix_pseudo_ez(mol, coords):
 def _subtree(mol, root, exclude):
     """BFS to find all atoms reachable from root without crossing exclude."""
     visited = {root}
-    queue = [root]
+    queue = deque([root])
     while queue:
-        a = queue.pop(0)
+        a = queue.popleft()
         for nb in mol.GetAtomWithIdx(a).GetNeighbors():
             ni = nb.GetIdx()
             if ni not in visited and ni != exclude:
@@ -508,7 +374,17 @@ def _rotate_subtree(coords, atoms, origin, axis_dir, angle_deg):
         )
 
 
-def _fix_chirality(mol, coords):
+def _build_subtree_cache(mol):
+    """Pre-compute subtrees for all bonds: cache[(root, exclude)] = set of atoms."""
+    cache = {}
+    for bond in mol.GetBonds():
+        i, j = bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()
+        cache[(i, j)] = _subtree(mol, i, j)
+        cache[(j, i)] = _subtree(mol, j, i)
+    return cache
+
+
+def _fix_chirality(mol, coords, subtree_cache=None):
     """Fix chiral centers whose signed volume has the wrong sign.
 
     For each wrong CW/CCW center, find the smallest neighbor subtree
@@ -536,7 +412,7 @@ def _fix_chirality(mol, coords):
             # Find smallest branch to reflect
             best = None
             for ni in nbrs[:3]:
-                sub = _subtree(mol, ni, j)
+                sub = subtree_cache[(ni, j)] if subtree_cache else _subtree(mol, ni, j)
                 if len(sub) <= n // 2 and (best is None or len(sub) < len(best[1])):
                     best = (ni, sub)
             if best is None:
@@ -557,7 +433,7 @@ def _fix_chirality(mol, coords):
             break
 
 
-def _set_dihedrals(mol, bond_dihedral, coords):
+def _set_dihedrals(mol, bond_dihedral, coords, subtree_cache=None):
     """Rotate subtrees around non-ring bonds to match AMSR dihedral targets."""
     seen = set()
     for (i, j), (mi, mj, target) in bond_dihedral.items():
@@ -577,18 +453,56 @@ def _set_dihedrals(mol, bond_dihedral, coords):
         delta = (target - current + 180) % 360 - 180
         if abs(delta) < 1.0:
             continue
-        tree_j = _subtree(mol, j, i)
-        tree_i = _subtree(mol, i, j)
-        # Prefer rotating the smaller subtree to minimize cascading
-        # disruption, but avoid rotating the side containing mi (the
-        # reference atom), which would change the dihedral by 2*delta.
+        tree_j = subtree_cache[(j, i)] if subtree_cache else _subtree(mol, j, i)
+        tree_i = subtree_cache[(i, j)] if subtree_cache else _subtree(mol, i, j)
         if len(tree_j) <= len(tree_i) or mi in tree_i:
             _rotate_subtree(coords, tree_j - {j}, coords[i], coords[j] - coords[i], delta)
         else:
             _rotate_subtree(coords, tree_i - {i}, coords[j], coords[i] - coords[j], -delta)
 
 
-def _fix_ring_puckers(mol, bond_dihedral, coords):
+def _build_ring_topology(mol, subtree_cache=None):
+    """Pre-compute ring topology data (invariant across conformer attempts)."""
+    all_rings = [list(r) for r in mol.GetRingInfo().AtomRings()]
+    all_ring_atoms = {}
+    for idx, ring in enumerate(all_rings):
+        for a in ring:
+            all_ring_atoms.setdefault(a, set()).add(idx)
+    shared_atoms = {a for a, rings in all_ring_atoms.items() if len(rings) > 1}
+
+    ring_sub_by_atom: list[dict[int, list[set[int]]]] = []
+    for ring in all_rings:
+        ring_set = set(ring)
+        per_atom: dict[int, list[set[int]]] = {}
+        for a in ring:
+            subs: list[set[int]] = []
+            for nb in mol.GetAtomWithIdx(a).GetNeighbors():
+                ni = nb.GetIdx()
+                if ni not in ring_set:
+                    sub = subtree_cache[(ni, a)] if subtree_cache else _subtree(mol, ni, a)
+                    subs.append(sub)
+            if subs:
+                per_atom[a] = subs
+        ring_sub_by_atom.append(per_atom)
+
+    # Pre-compute chiral info per ring atom (avoid repeated GetChiralTag calls)
+    ring_chiral: list[list[tuple[int, list[int], int]]] = []
+    for ring in all_rings:
+        chiral_atoms = []
+        for a in ring:
+            atom = mol.GetAtomWithIdx(a)
+            chiral = atom.GetChiralTag()
+            if chiral in (CW, CCW):
+                nbrs = [nb.GetIdx() for nb in atom.GetNeighbors()]
+                if len(nbrs) >= 3:
+                    expected = -1 if chiral == CW else 1
+                    chiral_atoms.append((a, nbrs[:3], expected))
+        ring_chiral.append(chiral_atoms)
+
+    return all_rings, shared_atoms, ring_sub_by_atom, ring_chiral
+
+
+def _fix_ring_puckers(mol, bond_dihedral, coords, atom_rings=None, ring_topo=None):
     """Fix ring conformations.
 
     Two strategies:
@@ -598,31 +512,21 @@ def _fix_ring_puckers(mol, bond_dihedral, coords):
        has the wrong sign, reflect the ring through its mean plane.
        Iterate until stable.
     """
-    all_rings = [list(r) for r in mol.GetRingInfo().AtomRings()]
-    all_ring_atoms = {}
-    for idx, ring in enumerate(all_rings):
-        for a in ring:
-            all_ring_atoms.setdefault(a, set()).add(idx)
-    shared_atoms = {a for a, rings in all_ring_atoms.items() if len(rings) > 1}
+    if ring_topo is None:
+        ring_topo = _build_ring_topology(mol)
+    all_rings, shared_atoms, ring_sub_by_atom, ring_chiral = ring_topo
+    if atom_rings is None:
+        atom_rings = _build_ring_index(mol)
 
     # Strategy 2: flip ring puckers where chiral atoms have wrong sign.
     for _iteration in range(10):
         flipped_any = False
-        for ring in all_rings:
-            ring_set = set(ring)
+        for ri_idx, ring in enumerate(all_rings):
             wrong = 0
-            for a in ring:
-                atom = mol.GetAtomWithIdx(a)
-                chiral = atom.GetChiralTag()
-                if chiral not in (CW, CCW):
-                    continue
-                nbrs = [nb.GetIdx() for nb in atom.GetNeighbors()]
-                if len(nbrs) < 3:
-                    continue
+            for a, nbrs, expected in ring_chiral[ri_idx]:
                 rj = coords[a]
-                v = [coords[ni] - rj for ni in nbrs[:3]]
+                v = [coords[ni] - rj for ni in nbrs]
                 vol = np.dot(v[0], _cross3(v[1], v[2]))
-                expected = -1 if chiral == CW else 1
                 if (vol > 0) != (expected > 0):
                     wrong += 1
             if wrong == 0:
@@ -636,19 +540,23 @@ def _fix_ring_puckers(mol, bond_dihedral, coords):
             for a in ring:
                 d = np.dot(coords[a] - center, normal)
                 coords[a] -= 2.0 * d * normal
-                for nb in mol.GetAtomWithIdx(a).GetNeighbors():
-                    ni = nb.GetIdx()
-                    if ni in ring_set:
-                        continue
-                    for k in _subtree(mol, ni, a):
+            for subs in ring_sub_by_atom[ri_idx].values():
+                for sub in subs:
+                    for k in sub:
                         d = np.dot(coords[k] - center, normal)
                         coords[k] -= 2.0 * d * normal
             flipped_any = True
         if not flipped_any:
             break
 
+    # Pre-index bond_dihedral by canonical bond key for fast lookup.
+    dih_by_bond: dict[tuple[int, int], list[tuple[int, int, float]]] = {}
+    for (bi, bj), (mi, mj, target) in bond_dihedral.items():
+        key = (min(bi, bj), max(bi, bj))
+        dih_by_bond.setdefault(key, []).append((mi, mj, target))
+
     # Strategy 1: rebuild isolated rings from internal coordinates.
-    for ring in all_rings:
+    for ri_idx, ring in enumerate(all_rings):
         ring_set = set(ring)
         if ring_set & shared_atoms:
             continue
@@ -661,8 +569,8 @@ def _fix_ring_puckers(mol, bond_dihedral, coords):
         for idx in range(n_ring):
             b, c = ring[(idx + 1) % n_ring], ring[(idx + 2) % n_ring]
             key_bc = (min(b, c), max(b, c))
-            for (bi, bj), (mi, mj, target) in bond_dihedral.items():
-                if (min(bi, bj), max(bi, bj)) == key_bc and mi in ring_set and mj in ring_set:
+            for mi, mj, target in dih_by_bond.get(key_bc, ()):
+                if mi in ring_set and mj in ring_set:
                     ring_dihedrals[idx] = target
                     break
         if len(ring_dihedrals) < n_ring:
@@ -671,7 +579,9 @@ def _fix_ring_puckers(mol, bond_dihedral, coords):
         # Bond lengths and angles around the ring
         lengths = [_get_bond_length(mol, ring[k], ring[(k + 1) % n_ring]) for k in range(n_ring)]
         angles = [
-            _get_bond_angle(mol, ring[(k - 1) % n_ring], ring[k], ring[(k + 1) % n_ring])
+            _get_bond_angle(
+                mol, ring[(k - 1) % n_ring], ring[k], ring[(k + 1) % n_ring], atom_rings
+            )
             for k in range(n_ring)
         ]
 
@@ -711,13 +621,11 @@ def _fix_ring_puckers(mol, bond_dihedral, coords):
         aligned = (new_pos - new_center) @ R.T + old_center
 
         # Move ring atoms and translate their substituent subtrees
+        sub_map = ring_sub_by_atom[ri_idx]
         for idx, ai in enumerate(ring):
             disp = aligned[idx] - coords[ai]
-            for nb in mol.GetAtomWithIdx(ai).GetNeighbors():
-                ni = nb.GetIdx()
-                if ni in ring_set:
-                    continue
-                for k in _subtree(mol, ni, ai):
+            for sub in sub_map.get(ai, ()):
+                for k in sub:
                     coords[k] += disp
             coords[ai] = aligned[idx]
 
@@ -746,16 +654,21 @@ def _collect_bonds(mol, atoms):
     return _to_array(pairs, cols=2), np.array(ideals) if ideals else np.empty(0)
 
 
-def _collect_angles(mol, atoms):
+def _collect_angles(mol, atoms, atom_rings=None):
     """Collect all bond angle triples.
 
     For SP2 atoms with exactly 3 angles, adjusts targets so they sum to
     360° (important for fused ring junctions).
     """
     ri = mol.GetRingInfo()
+    if atom_rings is None:
+        atom_rings = _build_ring_index(mol)
     # For angles where all three atoms are in the same 3-membered ring,
     # bond lengths alone determine the geometry — skip those angles.
-    three_rings = [set(ring) for ring in ri.AtomRings() if len(ring) == 3]
+    three_ring_atoms: set[frozenset[int]] = set()
+    for n, rs, _ in {rd for rds in atom_rings.values() for rd in rds}:
+        if n == 3:
+            three_ring_atoms.add(rs)
     triples, ideals = [], []
     center_indices: dict[int, list[int]] = {}
     for b in sorted(atoms):
@@ -765,11 +678,11 @@ def _collect_angles(mol, atoms):
         for ia in range(len(nbrs)):
             for ic in range(ia + 1, len(nbrs)):
                 a, c = nbrs[ia], nbrs[ic]
-                if any(a in r and b in r and c in r for r in three_rings):
+                if any(a in r and b in r and c in r for r in three_ring_atoms):
                     continue
                 idx = len(triples)
                 triples.append((a, b, c))
-                ideals.append(_get_bond_angle(mol, a, b, c))
+                ideals.append(_get_bond_angle(mol, a, b, c, atom_rings))
                 center_indices.setdefault(b, []).append(idx)
     # For degree-3 SP2 centers, redistribute angles so they sum to 360°
     # (important for fused ring junctions).
@@ -808,8 +721,6 @@ def _collect_planar_atoms(mol, atoms):
         atom = mol.GetAtomWithIdx(j)
         if atom.GetHybridization() != SP2:
             continue
-        if atom.GetChiralTag() in (CW, CCW):
-            continue
         nbrs = [nb.GetIdx() for nb in atom.GetNeighbors() if nb.GetIdx() in atoms]
         if len(nbrs) >= 3:
             groups.append((j, nbrs[0], nbrs[1], nbrs[2]))
@@ -828,8 +739,18 @@ def _collect_linear_atoms(mol, atoms):
     return _to_array(triples, cols=3)
 
 
+_CHIRAL_VOL_REF = 2.5  # target volume for C(SP3) with three C neighbors
+_CHIRAL_BL_REF = 1.54**3  # product of C-C bond lengths
+
+
 def _collect_chiral_atoms(mol, atoms):
-    """Collect chirality constraints for SP3 chiral atoms."""
+    """Collect chirality constraints for chiral atoms.
+
+    Target volume is scaled by the product of ideal bond lengths
+    relative to a C(C,C,C) reference.  SP2 atoms with chiral tags
+    (e.g. nitrogen pseudo-stereocenters) use a small target volume
+    to encode the face preference while remaining nearly planar.
+    """
     result = []
     target_vols = []
     for j in sorted(atoms):
@@ -841,7 +762,24 @@ def _collect_chiral_atoms(mol, atoms):
         if len(nbrs) < 3:
             continue
         sign = -1 if chiral == CW else 1
-        target_vols.append(sign * 2.5)
+        if atom.GetHybridization() == SP2:
+            # Sulfonamide N: partially pyramidal, use measured volume.
+            # All other SP2 chiral tags (amide N, etc.): skip — planarity
+            # constraint handles their geometry.
+            if atom.GetSymbol() == "N" and any(
+                mol.GetAtomWithIdx(ni).GetSymbol() == "S" for ni in nbrs[:3]
+            ):
+                vol = 1.7
+            else:
+                continue
+        else:
+            d = (
+                _get_bond_length(mol, j, nbrs[0])
+                * _get_bond_length(mol, j, nbrs[1])
+                * _get_bond_length(mol, j, nbrs[2])
+            )
+            vol = _CHIRAL_VOL_REF * d / _CHIRAL_BL_REF
+        target_vols.append(sign * vol)
         result.append((j, nbrs[0], nbrs[1], nbrs[2], sign))
     return _to_array(result, cols=5), _to_array(target_vols, dtype=float)
 
@@ -874,7 +812,14 @@ def _collect_dihedral_restraints(mol, atoms, bond_dihedral):
 
 
 def _collect_planarity_dihedrals(mol, atoms):
-    """Collect 0° torsion constraints for planar ring bonds."""
+    """Collect 0° torsion constraints for planar ring bonds.
+
+    Two sources:
+    1. Consecutive SP2 quads in aromatic/conjugated rings.
+    2. Double bonds in rings whose neighbors aren't all SP2 (e.g. alkenes
+       in partially saturated rings).  Each SP2 end gets a constraint
+       using its SP2 neighbor on the other side of the double bond.
+    """
     mol_k = Chem.RWMol(mol)
     try:
         Chem.Kekulize(mol_k, clearAromaticFlags=False)
@@ -900,6 +845,39 @@ def _collect_planarity_dihedrals(mol, atoms):
                 seen.add(key)
                 quads.append((a, b, c, d))
                 targets.append(0.0)
+    # Double bonds in rings: ensure planarity even when neighbors are SP3.
+    # Use ring neighbors (cis across the double bond) to form a 0° torsion.
+    ri = mol.GetRingInfo()
+    for bond in mol.GetBonds():
+        if bond.GetBondType() != Chem.BondType.DOUBLE or not bond.IsInRing():
+            continue
+        b, c = bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()
+        if b not in atoms or c not in atoms:
+            continue
+        if mol.GetAtomWithIdx(b).GetHybridization() != SP2:
+            continue
+        if mol.GetAtomWithIdx(c).GetHybridization() != SP2:
+            continue
+        key = (min(b, c), max(b, c))
+        if key in seen:
+            continue
+        # Find a ring containing both b and c, and pick the ring neighbors
+        # (which are cis across the double bond).
+        for ring in ri.AtomRings():
+            if b not in ring or c not in ring:
+                continue
+            ring = list(ring)
+            ib, ic = ring.index(b), ring.index(c)
+            n = len(ring)
+            # Ring neighbor of b on the far side from c
+            nb_b = ring[(ib - 1) % n] if ring[(ib + 1) % n] == c else ring[(ib + 1) % n]
+            # Ring neighbor of c on the far side from b
+            nb_c = ring[(ic + 1) % n] if ring[(ic - 1) % n] == b else ring[(ic - 1) % n]
+            if nb_b in atoms and nb_c in atoms:
+                seen.add(key)
+                quads.append((nb_b, b, c, nb_c))
+                targets.append(0.0)
+                break
     return _to_array(quads, cols=4), _to_array(targets, dtype=float)
 
 
@@ -930,7 +908,7 @@ def _collect_ez_constraints(mol, atoms):
 # ============================================================
 
 
-def _dg_embed(mol, bond_dihedral, seed=42):
+def _dg_embed(mol, bond_dihedral, atom_rings, seed=42):
     """Embed molecule using C distance-geometry with AMSR dihedrals.
 
     Builds distance bounds from bond lengths, bond angles, and AMSR-encoded
@@ -958,7 +936,7 @@ def _dg_embed(mol, bond_dihedral, seed=42):
             for ic in range(ia + 1, len(nbrs)):
                 a, c = nbrs[ia], nbrs[ic]
                 angle_triples.append((a, b_idx, c))
-                angle_values.append(_get_bond_angle(mol, a, b_idx, c))
+                angle_values.append(_get_bond_angle(mol, a, b_idx, c, atom_rings))
 
     # Collect AMSR dihedrals
     dihedral_quads = []
@@ -1002,25 +980,23 @@ def _dg_embed(mol, bond_dihedral, seed=42):
 
 _W_BOND = 5.0
 _W_ANGLE = 2.0
-_W_PLANAR = 3.0
+_W_PLANAR = 5.0
 _W_CHIRAL = 10.0
 _W_DIHEDRAL = 0.1
 _W_EZ = 0.3
 _W_LINEAR = 20.0
 
 
-def _optimize(mol, bond_dihedral, coords, ftol=1e-3, gtol=1e-1):
+def _optimize(mol, bond_dihedral, coords, atom_rings=None, ftol=1e-3, gtol=1e-1):
     """Optimize all atom positions to satisfy geometry constraints.
 
     Returns the optimizer cost.  Mutates coords in place.
     """
-    from scipy.optimize import minimize
-
     n = mol.GetNumAtoms()
     atoms = set(range(n))
 
     bonds, ideal_lengths = _collect_bonds(mol, atoms)
-    angle_triples, ideal_angles = _collect_angles(mol, atoms)
+    angle_triples, ideal_angles = _collect_angles(mol, atoms, atom_rings)
     planar_groups = _collect_planar_atoms(mol, atoms)
     chiral_info, chiral_target_vols = _collect_chiral_atoms(mol, atoms)
     dih_quads, dih_targets = _collect_dihedral_restraints(mol, atoms, bond_dihedral)
@@ -1032,39 +1008,60 @@ def _optimize(mol, bond_dihedral, coords, ftol=1e-3, gtol=1e-1):
         dih_quads = np.concatenate([dih_quads, rp_quads]) if len(dih_quads) else rp_quads
         dih_targets = np.concatenate([dih_targets, rp_targets]) if len(dih_targets) else rp_targets
 
-    _objective = _CostGradProblem(
+    bp = _to_int32(bonds) if len(bonds) else np.empty((0, 2), dtype=np.int32)
+    il = _to_f64(ideal_lengths) if len(ideal_lengths) else np.empty(0, dtype=np.float64)
+    at = _to_int32(angle_triples) if len(angle_triples) else np.empty((0, 3), dtype=np.int32)
+    ia = _to_f64(ideal_angles) if len(ideal_angles) else np.empty(0, dtype=np.float64)
+    pg = _to_int32(planar_groups[:, :4]) if len(planar_groups) else np.empty((0, 4), dtype=np.int32)
+    ci = _to_int32(chiral_info) if len(chiral_info) else np.empty((0, 5), dtype=np.int32)
+    ctv = _to_f64(chiral_target_vols) if len(chiral_target_vols) else np.empty(0, dtype=np.float64)
+    dq = _to_int32(dih_quads) if len(dih_quads) else np.empty((0, 4), dtype=np.int32)
+    dt = _to_f64(dih_targets) if len(dih_targets) else np.empty(0, dtype=np.float64)
+    eq = _to_int32(ez_quads) if len(ez_quads) else np.empty((0, 4), dtype=np.int32)
+    et = _to_f64(ez_targets) if len(ez_targets) else np.empty(0, dtype=np.float64)
+    lt = _to_int32(linear_triples) if len(linear_triples) else np.empty((0, 3), dtype=np.int32)
+
+    x = np.ascontiguousarray(coords.ravel(), dtype=np.float64)
+    fc = np.empty(0, dtype=np.float64)
+
+    cost = _c_lbfgs(
+        x.ctypes.data_as(ctypes.c_void_p),
+        len(x),
         n,
-        np.zeros((0, 3)),
-        bonds,
-        ideal_lengths,
-        angle_triples,
-        ideal_angles,
-        planar_groups,
-        chiral_info,
-        chiral_target_vols,
-        dih_quads,
-        dih_targets,
-        ez_quads,
-        ez_targets,
+        _dptr(fc),
+        0,
+        _dptr(bp),
+        _dptr(il),
+        len(bp),
+        _dptr(at),
+        _dptr(ia),
+        len(at),
+        _dptr(pg),
+        len(pg),
+        _dptr(ci),
+        _dptr(ctv),
+        len(ci),
+        _dptr(dq),
+        _dptr(dt),
+        len(dq),
+        _dptr(eq),
+        _dptr(et),
+        len(eq),
+        _dptr(lt),
+        len(lt),
         _W_BOND,
         _W_ANGLE,
         _W_PLANAR,
         _W_CHIRAL,
         _W_DIHEDRAL,
         _W_EZ,
-        linear_triples=linear_triples if len(linear_triples) else None,
-        w_linear=_W_LINEAR,
+        _W_LINEAR,
+        ftol,
+        gtol,
+        2000,
     )
-
-    result = minimize(
-        _objective,
-        coords.ravel(),
-        method="L-BFGS-B",
-        jac=True,
-        options={"ftol": ftol, "gtol": gtol},
-    )
-    coords[:] = result.x.reshape(-1, 3)
-    return result.fun
+    coords[:] = x.reshape(-1, 3)
+    return cost
 
 
 # ============================================================
@@ -1100,15 +1097,18 @@ def GetConformer(
 
     best_cost = float("inf")
     best_coords = None
+    atom_rings = _build_ring_index(mol)
+    subtree_cache = _build_subtree_cache(mol)
+    ring_topo = _build_ring_topology(mol, subtree_cache)
 
     for attempt in range(max_confs):
-        coords[:] = _dg_embed(mol, bond_dihedral, seed=42 + attempt)
-        _fix_chirality(mol, coords)
-        _set_dihedrals(mol, bond_dihedral, coords)
-        _fix_pseudo_ez(mol, coords)
-        _fix_ring_puckers(mol, bond_dihedral, coords)
-        _set_dihedrals(mol, bond_dihedral, coords)
-        oc = _optimize(mol, bond_dihedral, coords, ftol=ftol, gtol=gtol)
+        coords[:] = _dg_embed(mol, bond_dihedral, atom_rings, seed=42 + attempt)
+        _fix_chirality(mol, coords, subtree_cache)
+        _set_dihedrals(mol, bond_dihedral, coords, subtree_cache)
+        _fix_pseudo_ez(mol, coords, subtree_cache)
+        _fix_ring_puckers(mol, bond_dihedral, coords, atom_rings, ring_topo)
+        _set_dihedrals(mol, bond_dihedral, coords, subtree_cache)
+        oc = _optimize(mol, bond_dihedral, coords, atom_rings, ftol=ftol, gtol=gtol)
         if oc < best_cost:
             best_cost = oc
             best_coords = coords.copy()
