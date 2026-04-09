@@ -23,14 +23,17 @@ _SEEDS = [None] + list(range(N_RANDOM_SEEDS))
 
 
 def _sdf_work(input_dir: Path):
-    """Yield (sdf_path, seed) lazily by scanning the directory."""
-    for entry in sorted(os.scandir(input_dir), key=lambda e: e.name):
-        if entry.name.endswith(".sdf") and entry.is_file():
-            for seed in _SEEDS:
-                yield entry.path, seed
+    """Yield (sdf_path, seed) lazily by recursively scanning directories."""
+    for dirpath, dirnames, filenames in os.walk(input_dir):
+        dirnames.sort()
+        for fname in sorted(filenames):
+            if fname.endswith(".sdf"):
+                for seed in _SEEDS:
+                    yield os.path.join(dirpath, fname), seed
 
 
 def _report(r, counts):
+    counts[3] += 1
     if r["status"] == "PASSED":
         counts[0] += 1
         mark = "\033[32mPASSED\033[0m"
@@ -42,7 +45,12 @@ def _report(r, counts):
         mark = "\033[33mERROR\033[0m"
     rmsd_str = f"rmsd={r['rmsd']:.3f}" if isinstance(r["rmsd"], float) else r.get("error", "")
     time_str = f"{r['time']:.2f}s" if r["time"] else ""
-    sys.stdout.write(f"{r['name']}[seed{r['seed']}] {mark} {rmsd_str} {time_str}\n")
+    n = counts[3]
+    sys.stdout.write(f"[{n}] {r['name']}[seed{r['seed']}] {mark} {rmsd_str} {time_str}\n")
+    if n % 100 == 0:
+        sys.stdout.write(
+            f"  --- {counts[0]} passed, {counts[1]} failed, {counts[2]} errors / {n} total ---\n"
+        )
     sys.stdout.flush()
 
 
@@ -61,7 +69,9 @@ def main():
     parser = argparse.ArgumentParser(
         description="Round-trip verification: encode each SDF to AMSR, decode, compute RMSD."
     )
-    parser.add_argument("input_dir", type=Path, help="Directory containing SDF files")
+    parser.add_argument(
+        "input_dir", type=Path, help="Directory (recursively searched) containing SDF files"
+    )
     parser.add_argument("-o", "--output", type=Path, default=Path("out"), help="Output directory")
     parser.add_argument("-t", "--threshold", type=float, default=1.1, help="RMSD threshold")
     parser.add_argument("-j", "--jobs", type=int, default=1, help="Number of parallel workers")
@@ -79,7 +89,7 @@ def main():
     csv_writer = csv.writer(csv_file)
     csv_writer.writerow(["name", "seed", "amsr", "rmsd", "status", "time_s"])
 
-    counts = [0, 0, 0]  # pass, fail, error
+    counts = [0, 0, 0, 0]  # pass, fail, error, total
 
     def _record(r):
         _report(r, counts)
@@ -128,7 +138,7 @@ def main():
                         exhausted = True
 
     csv_file.close()
-    total = sum(counts)
+    total = counts[3]
     print(f"\n{'='*60}")
     print(f"{counts[0]} passed, {counts[1]} failed, {counts[2]} errors / {total} total")
     print(f"Results: {csv_path}")
