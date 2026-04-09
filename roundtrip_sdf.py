@@ -17,18 +17,17 @@ import sys
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
-from amsr.roundtrip import N_RANDOM_SEEDS, RoundtripSDF
-
-_SEEDS = [None] + list(range(N_RANDOM_SEEDS))
+from amsr.roundtrip import RoundtripSDF
 
 
-def _sdf_work(input_dir: Path):
+def _sdf_work(input_dir: Path, n_seeds: int):
     """Yield (sdf_path, seed) lazily by recursively scanning directories."""
+    seeds = [None] + list(range(n_seeds))
     for dirpath, dirnames, filenames in os.walk(input_dir):
         dirnames.sort()
         for fname in sorted(filenames):
             if fname.endswith(".sdf"):
-                for seed in _SEEDS:
+                for seed in seeds:
                     yield os.path.join(dirpath, fname), seed
 
 
@@ -75,6 +74,9 @@ def main():
     parser.add_argument("-o", "--output", type=Path, default=Path("out"), help="Output directory")
     parser.add_argument("-t", "--threshold", type=float, default=1.1, help="RMSD threshold")
     parser.add_argument("-j", "--jobs", type=int, default=1, help="Number of parallel workers")
+    parser.add_argument(
+        "-n", "--nseeds", type=int, default=10, help="Number of random seeds per molecule"
+    )
     args = parser.parse_args()
 
     if not args.input_dir.is_dir():
@@ -100,11 +102,11 @@ def main():
         csv_file.flush()
 
     if args.jobs <= 1:
-        for path, seed in _sdf_work(args.input_dir):
+        for path, seed in _sdf_work(args.input_dir, args.nseeds):
             _record(RoundtripSDF(path, seed, args.threshold, output_dir))
     else:
         max_pending = args.jobs * 2
-        work = _sdf_work(args.input_dir)
+        work = _sdf_work(args.input_dir, args.nseeds)
         with ProcessPoolExecutor(max_workers=args.jobs) as executor:
             futures = {}
             exhausted = False
