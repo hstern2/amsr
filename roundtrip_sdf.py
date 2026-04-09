@@ -10,12 +10,14 @@ Usage:
     python roundtrip_sdf.py ~/sdf -j 10 -t 0.5 # stricter threshold
 """
 
-import argparse
 import csv
 import os
 import sys
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
+from typing import Annotated
+
+import typer
 
 from amsr.roundtrip import RoundtripSDF
 
@@ -64,26 +66,23 @@ def _error_result(path, seed):
     }
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Round-trip verification: encode each SDF to AMSR, decode, compute RMSD."
-    )
-    parser.add_argument(
-        "input_dir", type=Path, help="Directory (recursively searched) containing SDF files"
-    )
-    parser.add_argument("-o", "--output", type=Path, default=Path("out"), help="Output directory")
-    parser.add_argument("-t", "--threshold", type=float, default=1.1, help="RMSD threshold")
-    parser.add_argument("-j", "--jobs", type=int, default=1, help="Number of parallel workers")
-    parser.add_argument(
-        "-n", "--nseeds", type=int, default=10, help="Number of random seeds per molecule"
-    )
-    args = parser.parse_args()
-
-    if not args.input_dir.is_dir():
-        print(f"Error: {args.input_dir} is not a directory", file=sys.stderr)
+def main(
+    input_dir: Annotated[
+        Path, typer.Argument(help="Directory (recursively searched) containing SDF files")
+    ],
+    output: Annotated[Path, typer.Option("-o", help="Output directory")] = Path("out"),
+    threshold: Annotated[float, typer.Option("-t", help="RMSD threshold")] = 1.1,
+    jobs: Annotated[int, typer.Option("-j", help="Number of parallel workers")] = (
+        os.cpu_count() or 1
+    ),
+    nseeds: Annotated[int, typer.Option("-n", help="Number of random seeds per molecule")] = 10,
+):
+    """Round-trip verification: encode each SDF to AMSR, decode, compute RMSD."""
+    if not input_dir.is_dir():
+        print(f"Error: {input_dir} is not a directory", file=sys.stderr)
         sys.exit(1)
 
-    output_dir = str(args.output)
+    output_dir = str(output)
     os.makedirs(output_dir, exist_ok=True)
 
     csv_path = os.path.join(output_dir, "roundtrip_results.csv")
@@ -101,18 +100,18 @@ def main():
         )
         csv_file.flush()
 
-    if args.jobs <= 1:
-        for path, seed in _sdf_work(args.input_dir, args.nseeds):
-            _record(RoundtripSDF(path, seed, args.threshold, output_dir))
+    if jobs <= 1:
+        for path, seed in _sdf_work(input_dir, nseeds):
+            _record(RoundtripSDF(path, seed, threshold, output_dir))
     else:
-        max_pending = args.jobs * 2
-        work = _sdf_work(args.input_dir, args.nseeds)
-        with ProcessPoolExecutor(max_workers=args.jobs) as executor:
+        max_pending = jobs * 2
+        work = _sdf_work(input_dir, nseeds)
+        with ProcessPoolExecutor(max_workers=jobs) as executor:
             futures = {}
             exhausted = False
             # Fill initial batch
             for path, seed in work:
-                futures[executor.submit(RoundtripSDF, path, seed, args.threshold, output_dir)] = (
+                futures[executor.submit(RoundtripSDF, path, seed, threshold, output_dir)] = (
                     path,
                     seed,
                 )
@@ -132,7 +131,7 @@ def main():
                 if not exhausted:
                     for path, seed in work:
                         futures[
-                            executor.submit(RoundtripSDF, path, seed, args.threshold, output_dir)
+                            executor.submit(RoundtripSDF, path, seed, threshold, output_dir)
                         ] = (path, seed)
                         if len(futures) >= max_pending:
                             break
@@ -147,4 +146,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    typer.run(main)
