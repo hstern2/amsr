@@ -70,7 +70,9 @@ def main(
     input_dir: Annotated[
         Path, typer.Argument(help="Directory (recursively searched) containing SDF files")
     ],
-    output: Annotated[Path, typer.Option("-o", help="Output directory")] = Path("out"),
+    output: Annotated[
+        Path | None, typer.Option("-o", help="Output directory for SDF files (omit to skip)")
+    ] = None,
     threshold: Annotated[float, typer.Option("-t", help="RMSD threshold")] = 1.1,
     jobs: Annotated[int, typer.Option("-j", help="Number of parallel workers")] = (
         os.cpu_count() or 1
@@ -82,10 +84,11 @@ def main(
         print(f"Error: {input_dir} is not a directory", file=sys.stderr)
         sys.exit(1)
 
-    output_dir = str(output)
-    os.makedirs(output_dir, exist_ok=True)
+    output_dir = str(output) if output is not None else None
+    if output_dir is not None:
+        os.makedirs(output_dir, exist_ok=True)
 
-    csv_path = os.path.join(output_dir, "roundtrip_results.csv")
+    csv_path = os.path.join(".", "roundtrip_results.csv")
     csv_file = open(csv_path, "w", newline="")
     csv_writer = csv.writer(csv_file)
     csv_writer.writerow(["name", "seed", "amsr", "rmsd", "status", "time_s"])
