@@ -1,6 +1,8 @@
 from rdkit import Chem
+from rdkit.Chem import AllChem
 
 import amsr
+from amsr.tokens import _insert_implicit_carbon, _remove_implicit_carbon
 
 caffeine_smi = "Cn1cnc2c1c(=O)n(C)c(=O)n2C"
 taxol_smi = (
@@ -35,3 +37,61 @@ def test_canonical() -> None:
     s = amsr.FromSmiles(Chem.MolToSmiles(m, doRandom=True), canonical=True)
     for _ in range(20):
         assert amsr.FromSmiles(Chem.MolToSmiles(m, doRandom=True), canonical=True) == s
+
+
+def _mol_with_3d(smi):
+    mol = Chem.AddHs(Chem.MolFromSmiles(smi))
+    AllChem.EmbedMolecule(mol, AllChem.ETKDG())
+    AllChem.MMFFOptimizeMolecule(mol)
+    return Chem.RemoveHs(mol)
+
+
+def test_implicit_carbon_insert() -> None:
+    assert _insert_implicit_carbon("^^__") == "^^C__"
+    assert _insert_implicit_carbon("^^__>>") == "^^C__C>>"
+    assert _insert_implicit_carbon("C^^__C") == "C^^C__C"
+    assert _insert_implicit_carbon("C^^C__C") == "C^^C__C"
+    # multi-char dihedrals
+    assert _insert_implicit_carbon("^\\<\\") == "^\\C<\\"
+    assert _insert_implicit_carbon("_/<\\") == "_/C<\\"
+
+
+def test_implicit_carbon_remove() -> None:
+    assert _remove_implicit_carbon(["C", "^^", "C", "__", "C"]) == ["C", "^^", "__", "C"]
+    assert _remove_implicit_carbon(["C", "^^", "C", "__", "C", "^^", "C"]) == [
+        "C",
+        "^^",
+        "__",
+        "^^",
+        "C",
+    ]
+    # modified carbons should NOT be removed
+    assert _remove_implicit_carbon(["C", "^^", "C'", "__", "C"]) == [
+        "C",
+        "^^",
+        "C'",
+        "__",
+        "C",
+    ]
+    assert _remove_implicit_carbon(["C", "^^", "c", "__", "C"]) == [
+        "C",
+        "^^",
+        "c",
+        "__",
+        "C",
+    ]
+
+
+def test_implicit_carbon_roundtrip() -> None:
+    for smi in ["CCCCC", "CCCCCC", "CCCCCCC", "CCCCCCCC"]:
+        mol = _mol_with_3d(smi)
+        s = amsr.FromMol(mol)
+        # roundtrip check
+        mol2 = amsr.ToMol(s)
+        assert Chem.MolToInchi(mol, options="-FixedH") == Chem.MolToInchi(
+            mol2, options="-FixedH"
+        ), f"InChI mismatch for {smi}: {s}"
+        # verify dihedral info survives roundtrip
+        dihedral: dict[tuple[int, int, int, int], int] = {}
+        amsr.ToMol(s, dihedral=dihedral)
+        assert len(dihedral) > 0, f"No dihedrals decoded for {smi}: {s}"

@@ -9,7 +9,14 @@ from .bond import Bond
 from .groups import DecodeGroups
 from .parity import IsEvenParity
 from .pibonds import PiBonds
-from .tokens import DIHEDRAL_FOR_BOND_SYMBOL, L_BRACKET, R_BRACKET, SKIP, RegExp
+from .tokens import (
+    DIHEDRAL_FOR_BOND_SYMBOL,
+    L_BRACKET,
+    R_BRACKET,
+    SKIP,
+    RegExp,
+    _insert_implicit_carbon,
+)
 
 
 def _dihedral_ref(candidates, mol, parent=None):
@@ -115,7 +122,7 @@ def ToMol(
     dihedral_for_bond: dict[int, int] = {}
     makeBond = False
     isSaturated_save = None
-    for m in RegExp.finditer(DecodeGroups(s)):
+    for m in RegExp.finditer(_insert_implicit_carbon(DecodeGroups(s))):
         if m.group("ring"):
             _ring(
                 mol,

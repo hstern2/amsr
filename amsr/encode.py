@@ -9,7 +9,7 @@ from .atom import Atom, GetSeenIndex, IsSeen, SetSeenIndex, UnSee
 from .bfs import BFSFind
 from .bond import Bond
 from .groups import EncodeGroups
-from .tokens import DOT, MOLSEP, SKIP
+from .tokens import DOT, MOLSEP, SKIP, _remove_implicit_carbon
 
 
 def _ringTokens(n, nSkip):
@@ -234,6 +234,8 @@ def FromMolToTokens(
 
     if useGroups:
         t = EncodeGroups(t)
+
+    t = _remove_implicit_carbon(t)
 
     return _removeTrailingDots(t)
 

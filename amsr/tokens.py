@@ -1,7 +1,7 @@
 from re import compile, escape
 
 # 12 dihedral symbols: 30 degree discretization
-DIHEDRALS = ["^", "^\\", "<\\", "<", "</", "_/", "_", "\\_", "\\>", ">", "/>", "/^"]
+DIHEDRALS = ["^^", "^\\", "<\\", ">>", "</", "_/", "__", "\\_", "\\>", "<<", "/>", "/^"]
 
 # 24 dihedral symbols: 15 degree discretization
 # DIHEDRALS = [f"/{chr(x)}" for x in range(ord("a"), ord("y"))]
@@ -45,6 +45,29 @@ _pampersand = f"(?P<ampersand>{escape(AMPERSAND)})"
 
 RegExp = compile(f"({_pbond}?({_patom}|({_pring})))|{_psaturate}|{_pmolsep}|{_pampersand}")
 
+_dihedral_pat = "|".join(map(escape, sorted(DIHEDRALS, key=len, reverse=True)))
+_implicit_c_re = compile(f"({_dihedral_pat})(?={_dihedral_pat})")
+_dihedral_set = set(DIHEDRALS)
+
+
+def _insert_implicit_carbon(s: str) -> str:
+    return _implicit_c_re.sub(r"\1C", s)
+
+
+def _remove_implicit_carbon(t: list[str]) -> list[str]:
+    result: list[str] = []
+    for i, tok in enumerate(t):
+        if (
+            tok == "C"
+            and len(result) > 0
+            and result[-1] in _dihedral_set
+            and i + 1 < len(t)
+            and t[i + 1] in _dihedral_set
+        ):
+            continue
+        result.append(tok)
+    return result
+
 
 def ToTokens(s: str) -> list[str]:
     """Convert AMSR string to a list of tokens
@@ -53,7 +76,7 @@ def ToTokens(s: str) -> list[str]:
     :return: list of tokens
     """
     t = []
-    for m in RegExp.finditer(s):
+    for m in RegExp.finditer(_insert_implicit_carbon(s)):
         g = m.groupdict()
         for k in ["bond", "atom", "saturate", "molsep"]:
             if g[k] is not None:
