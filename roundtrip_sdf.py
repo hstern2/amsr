@@ -15,7 +15,7 @@ import os
 import sys
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Optional
 
 import typer
 
@@ -71,7 +71,7 @@ def main(
         Path, typer.Argument(help="Directory (recursively searched) containing SDF files")
     ],
     output: Annotated[
-        Path | None, typer.Option("-o", help="Output directory for SDF files (omit to skip)")
+        Optional[Path], typer.Option("-o", help="Output directory for SDF files (omit to skip)")
     ] = None,
     threshold: Annotated[float, typer.Option("-t", help="RMSD threshold")] = 1.1,
     jobs: Annotated[int, typer.Option("-j", help="Number of parallel workers")] = (
