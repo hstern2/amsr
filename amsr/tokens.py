@@ -35,7 +35,7 @@ BOND_SYMBOL_FOR_DIHEDRAL[-180] = E
 _pbond = f"(?P<bond>{'|'.join(map(escape, sorted(DIHEDRALS, key=len, reverse=True)))})"
 _c = f"[{''.join(map(escape, [PLUS,MINUS,RADICAL,EXTRA_PI,BANG,CW,CCW]))}]*"
 _patom = (
-    f"(?P<atom>{escape(L_BRACKET)}[0-9]*[A-Za-z]+{_c}{escape(R_BRACKET)}|"
+    f"(?P<atom>{escape(L_BRACKET)}[0-9]*[A-Za-z][A-Za-z0-9]*{_c}{escape(R_BRACKET)}|"
     f"{escape(L_PAREN)}[0-9A-Za-z]+{escape(R_PAREN)}|[A-Za-z]{_c})"
 )
 _pring = f"(?P<ring>({escape(L_BRACKET)}[0-9]+{escape(R_BRACKET)}|[3-9]){escape(SKIP)}*)"

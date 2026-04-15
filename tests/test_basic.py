@@ -2,7 +2,7 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 
 import amsr
-from amsr.tokens import _insert_implicit_carbon, _remove_implicit_carbon
+from amsr.tokens import ToTokens, _insert_implicit_carbon, _remove_implicit_carbon
 
 caffeine_smi = "Cn1cnc2c1c(=O)n(C)c(=O)n2C"
 taxol_smi = (
@@ -44,6 +44,16 @@ def _mol_with_3d(smi):
     AllChem.EmbedMolecule(mol, AllChem.ETKDG())
     AllChem.MMFFOptimizeMolecule(mol)
     return Chem.RemoveHs(mol)
+
+
+def test_tokenize_bracketed_group_with_digits() -> None:
+    # bracketed groups may contain digits after letters (e.g., [NMe2], [NO2], [CF3])
+    assert ToTokens("[NMe2]") == ["[NMe2]"]
+    assert ToTokens("[NO2]") == ["[NO2]"]
+    assert ToTokens("[CF3]") == ["[CF3]"]
+    # isotope-style brackets (digits first) must still tokenize as one atom
+    assert ToTokens("[12C]") == ["[12C]"]
+    assert ToTokens("[13CH3]") == ["[13CH3]"]
 
 
 def test_implicit_carbon_insert() -> None:
