@@ -20,7 +20,7 @@ from rdkit import Chem
 # ---------------------------------------------------------------------------
 
 _LIB_NAME = "conf_util.dylib" if sys.platform == "darwin" else "conf_util.so"
-_LIB_PATH = os.path.join(os.path.dirname(__file__), _LIB_NAME)
+_LIB_PATH = os.path.join(os.path.dirname(__file__), "src", _LIB_NAME)
 _lib = ctypes.CDLL(_LIB_PATH)
 
 _c_lbfgs = _lib.lbfgs_optimize
