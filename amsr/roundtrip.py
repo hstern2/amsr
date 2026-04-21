@@ -87,3 +87,54 @@ def RoundtripSDF(
         "status": status,
         "time": elapsed,
     }
+
+
+def RoundtripSMI(smiles: str, name: str, seed) -> dict:
+    """Round-trip one SMILES with one seed, using an InChI (-FixedH) comparison.
+
+    Returns a dict with keys: name, smiles, seed, amsr, status, time.
+    Status is PASSED when the post-roundtrip InChI matches the original,
+    FAILED when it differs, or ERROR on exception.
+    """
+    seed_str = "0" if seed is None else str(seed + 1)
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is None:
+        return {
+            "name": name,
+            "smiles": smiles,
+            "seed": seed_str,
+            "amsr": "",
+            "status": "ERROR",
+            "time": 0.0,
+            "error": "MolFromSmiles returned None",
+        }
+
+    try:
+        t0 = time.time()
+        i1 = Chem.MolToInchi(mol, options="-FixedH")
+        if seed is not None:
+            random.seed(seed)
+        s = FromMol(mol, randomize=(seed is not None))
+        mol2 = ToMol(s)
+        i2 = Chem.MolToInchi(mol2, options="-FixedH")
+        elapsed = time.time() - t0
+    except Exception as e:
+        return {
+            "name": name,
+            "smiles": smiles,
+            "seed": seed_str,
+            "amsr": "",
+            "status": "ERROR",
+            "time": 0.0,
+            "error": str(e),
+        }
+
+    status = "PASSED" if i1 == i2 else "FAILED"
+    return {
+        "name": name,
+        "smiles": smiles,
+        "seed": seed_str,
+        "amsr": s,
+        "status": status,
+        "time": elapsed,
+    }
