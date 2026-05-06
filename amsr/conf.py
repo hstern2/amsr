@@ -522,9 +522,13 @@ def _fix_ring_puckers(mol, bond_dihedral, coords, atom_rings=None, ring_topo=Non
         atom_rings = _build_ring_index(mol)
 
     # Strategy 2: flip ring puckers where chiral atoms have wrong sign.
+    # Only applies to small rings (≤8); reflecting a macrocycle through its
+    # mean plane is geometrically ill-defined and destroys fused-ring geometry.
     for _iteration in range(10):
         flipped_any = False
         for ri_idx, ring in enumerate(all_rings):
+            if len(ring) > 8:
+                continue
             wrong = 0
             for a, nbrs, expected in ring_chiral[ri_idx]:
                 rj = coords[a]
@@ -697,22 +701,24 @@ def _collect_angles(mol, atoms, atom_rings=None):
         total = sum(ideals[k] for k in indices)
         if abs(total - 360.0) < 1.0:
             continue
-        no_common = []
-        has_large_ring = False
+        # Angles not constrained by any small ring (≤6) are adjustable.
+        # This includes angles with no common ring AND angles whose only
+        # common ring is a large ring (macrocycle), so that SP2 junction
+        # atoms in small-ring + macrocycle systems sum to 360°.
+        adjustable = []
         for k in indices:
             a, _, c = triples[k]
             b_ab = mol.GetBondBetweenAtoms(a, b)
             b_bc = mol.GetBondBetweenAtoms(b, c)
             if b_ab is None or b_bc is None:
+                adjustable.append(k)
                 continue
             common = set(ri.BondRingSizes(b_ab.GetIdx())) & set(ri.BondRingSizes(b_bc.GetIdx()))
-            if not common:
-                no_common.append(k)
-            elif min(common) > 6:
-                has_large_ring = True
-        if no_common and not has_large_ring:
-            per = (360.0 - total) / len(no_common)
-            for k in no_common:
+            if not common or min(common) > 6:
+                adjustable.append(k)
+        if adjustable:
+            per = (360.0 - total) / len(adjustable)
+            for k in adjustable:
                 ideals[k] += per
     return _to_array(triples, cols=3), np.array(ideals) if ideals else np.empty(0)
 
@@ -792,6 +798,11 @@ def _collect_chiral_atoms(mol, atoms):
             vol = _CHIRAL_VOL_REF * d / _CHIRAL_BL_REF
         target_vols.append(sign * vol)
         result.append((j, nbrs[0], nbrs[1], nbrs[2], sign))
+        # For 4-neighbor sp3 centers, constrain the 4th neighbor too.
+        # V(n0,n1,n3) has the opposite sign from V(n0,n1,n2) in a valid tetrahedron.
+        if len(nbrs) >= 4 and atom.GetHybridization() != SP2:
+            target_vols.append(-sign * vol)
+            result.append((j, nbrs[0], nbrs[1], nbrs[3], -sign))
     return _to_array(result, cols=5), _to_array(target_vols, dtype=float)
 
 
@@ -842,15 +853,12 @@ def _collect_planarity_dihedrals(mol, atoms):
         if not all(a in atoms for a in ring):
             continue
         n = len(ring)
-        all_sp2 = all(mol.GetAtomWithIdx(a).GetHybridization() == SP2 for a in ring)
+        if n > 7:
+            continue
         for i in range(n):
             a, b, c, d = ring[i], ring[(i + 1) % n], ring[(i + 2) % n], ring[(i + 3) % n]
             if not all(mol.GetAtomWithIdx(x).GetHybridization() == SP2 for x in (a, b, c, d)):
                 continue
-            if all_sp2 and n > 6:
-                bond_bc = mol_k.GetBondBetweenAtoms(b, c)
-                if bond_bc is not None and bond_bc.GetBondType() == Chem.BondType.SINGLE:
-                    continue
             key = (min(b, c), max(b, c))
             if key not in seen:
                 seen.add(key)
