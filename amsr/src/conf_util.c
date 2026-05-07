@@ -9,12 +9,15 @@
  *   macOS:  cc -O3 -shared -fPIC -o conf_util.dylib conf_util.c -lm
  *   Linux:  cc -O3 -shared -fPIC -o conf_util.so conf_util.c -lm
  *
- * Portable C99, no external dependencies.
+ * Portable C99 with an optional Accelerate eigensolver on macOS.
  */
 
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef __APPLE__
+#include <Accelerate/Accelerate.h>
+#endif
 
 /* ================================================================== */
 /* 3-vector helpers                                                    */
@@ -65,24 +68,24 @@ static double measure_torsion(const double *p0, const double *p1,
 /* Cost function + gradient                                            */
 /* ================================================================== */
 
-static inline const double *coord(const double *x, const double *fixed,
-                                  int n_free, int slot) {
-    if (slot < n_free) return x + 3*slot;
-    return fixed + 3*(slot - n_free);
+static inline const double *coord(const double *x, int slot) {
+    return x + 3*slot;
 }
 
-static inline void scatter(double *grad, int slot, int n_free,
-                           const double *contrib) {
-    if (slot < n_free) {
-        grad[3*slot]   += contrib[0];
-        grad[3*slot+1] += contrib[1];
-        grad[3*slot+2] += contrib[2];
-    }
+static inline void scatter(double *grad, int slot, const double *contrib) {
+    grad[3*slot]   += contrib[0];
+    grad[3*slot+1] += contrib[1];
+    grad[3*slot+2] += contrib[2];
+}
+
+static inline double wrap_degrees(double diff) {
+    while (diff >= 180.0) diff -= 360.0;
+    while (diff < -180.0) diff += 360.0;
+    return diff;
 }
 
 double cost_and_grad(
-    const double *x, double *grad, int n_free,
-    const double *fixed, int n_fixed,
+    const double *x, double *grad, int n_atoms,
     const int *bond_pairs, const double *ideal_lengths, int n_bonds,
     const int *angle_triples, const double *ideal_angles_deg, int n_angles,
     const int *planar_groups, int n_planar,
@@ -94,13 +97,13 @@ double cost_and_grad(
     double w_dih, double w_ez, double w_linear)
 {
     double cost = 0.0;
-    memset(grad, 0, 3 * n_free * sizeof(double));
+    memset(grad, 0, 3 * n_atoms * sizeof(double));
 
     /* Bond terms */
     for (int ib = 0; ib < n_bonds; ib++) {
         int si = bond_pairs[2*ib], sj = bond_pairs[2*ib+1];
-        const double *ri = coord(x, fixed, n_free, si);
-        const double *rj = coord(x, fixed, n_free, sj);
+        const double *ri = coord(x, si);
+        const double *rj = coord(x, sj);
         double d[3]; sub3(ri, rj, d);
         double dist = norm3(d);
         if (dist < 1e-10) continue;
@@ -108,9 +111,9 @@ double cost_and_grad(
         cost += r * r;
         double scale = 2.0 * w_bond * r / dist;
         double g[3] = {scale*d[0], scale*d[1], scale*d[2]};
-        scatter(grad, si, n_free, g);
+        scatter(grad, si, g);
         double ng[3] = {-g[0], -g[1], -g[2]};
-        scatter(grad, sj, n_free, ng);
+        scatter(grad, sj, ng);
     }
 
     /* Angle terms */
@@ -118,9 +121,9 @@ double cost_and_grad(
         int sa = angle_triples[3*ia];
         int sb = angle_triples[3*ia+1];
         int sc = angle_triples[3*ia+2];
-        const double *ra = coord(x, fixed, n_free, sa);
-        const double *rb = coord(x, fixed, n_free, sb);
-        const double *rc = coord(x, fixed, n_free, sc);
+        const double *ra = coord(x, sa);
+        const double *rb = coord(x, sb);
+        const double *rc = coord(x, sc);
         double v1[3], v2[3]; sub3(ra, rb, v1); sub3(rc, rb, v2);
         double n1 = norm3(v1), n2 = norm3(v2);
         if (n1 < 1e-10 || n2 < 1e-10) continue;
@@ -131,14 +134,16 @@ double cost_and_grad(
         double theta = acos(cos_a);
         double theta0 = ideal_angles_deg[ia] * (M_PI / 180.0);
         double dh = (theta - theta0) / 2.0;
-        double r = w_angle * 2.0 * L * sin(dh);
+        double sin_dh = sin(dh);
+        double cos_dh = cos(dh);
+        double r = w_angle * 2.0 * L * sin_dh;
         cost += r * r;
         double sin_th = sin(theta);
         if (sin_th < 1e-10) continue;
         double v1h[3] = {v1[0]/n1, v1[1]/n1, v1[2]/n1};
         double v2h[3] = {v2[0]/n2, v2[1]/n2, v2[2]/n2};
-        double dr_dtheta = w_angle * L * cos(dh);
-        double dr_dL = w_angle * 2.0 * sin(dh);
+        double dr_dtheta = w_angle * L * cos_dh;
+        double dr_dL = w_angle * 2.0 * sin_dh;
         double dth_dra[3], dth_drc[3], dth_drb[3];
         for (int k = 0; k < 3; k++) {
             dth_dra[k] = (cos_a * v1h[k] - v2h[k]) / (sin_th * n1);
@@ -152,19 +157,19 @@ double cost_and_grad(
             gc[k] = sc2r * (dr_dtheta * dth_drc[k] + dr_dL * 0.5 * v2h[k]);
             gb[k] = sc2r * (dr_dtheta * dth_drb[k] - dr_dL * 0.5 * (v1h[k] + v2h[k]));
         }
-        scatter(grad, sa, n_free, ga);
-        scatter(grad, sb, n_free, gb);
-        scatter(grad, sc, n_free, gc);
+        scatter(grad, sa, ga);
+        scatter(grad, sb, gb);
+        scatter(grad, sc, gc);
     }
 
     /* Planarity terms */
     for (int ip = 0; ip < n_planar; ip++) {
         int sj = planar_groups[4*ip], sa = planar_groups[4*ip+1];
         int sb = planar_groups[4*ip+2], sc = planar_groups[4*ip+3];
-        const double *rj = coord(x, fixed, n_free, sj);
-        const double *ra = coord(x, fixed, n_free, sa);
-        const double *rb = coord(x, fixed, n_free, sb);
-        const double *rc = coord(x, fixed, n_free, sc);
+        const double *rj = coord(x, sj);
+        const double *ra = coord(x, sa);
+        const double *rb = coord(x, sb);
+        const double *rc = coord(x, sc);
         double v1[3], v2[3], v3[3];
         sub3(ra, rj, v1); sub3(rb, rj, v2); sub3(rc, rj, v3);
         double c23[3], c31[3], c12[3];
@@ -189,10 +194,10 @@ double cost_and_grad(
             gc[k] = sc2r * w_planar * (c12[k]*inv - q*dnorm_c[k]*inv);
             gj[k] = -(ga[k]+gb[k]+gc[k]);
         }
-        scatter(grad, sj, n_free, gj);
-        scatter(grad, sa, n_free, ga);
-        scatter(grad, sb, n_free, gb);
-        scatter(grad, sc, n_free, gc);
+        scatter(grad, sj, gj);
+        scatter(grad, sa, ga);
+        scatter(grad, sb, gb);
+        scatter(grad, sc, gc);
     }
 
     /* Chirality terms */
@@ -201,10 +206,10 @@ double cost_and_grad(
         int sb = chiral_info[5*ic+2], sc = chiral_info[5*ic+3];
         double sign = (double)chiral_info[5*ic+4];
         double target = chiral_target_vols[ic];
-        const double *rj = coord(x, fixed, n_free, sj);
-        const double *ra = coord(x, fixed, n_free, sa);
-        const double *rb = coord(x, fixed, n_free, sb);
-        const double *rc = coord(x, fixed, n_free, sc);
+        const double *rj = coord(x, sj);
+        const double *ra = coord(x, sa);
+        const double *rb = coord(x, sb);
+        const double *rc = coord(x, sc);
         double v1[3], v2[3], v3[3], c23[3];
         sub3(ra, rj, v1); sub3(rb, rj, v2); sub3(rc, rj, v3);
         cross3(v2, v3, c23);
@@ -224,10 +229,10 @@ double cost_and_grad(
             gc[k] = sc2r * dr_dvol * c12[k];
             gj[k] = -(ga[k]+gb[k]+gc[k]);
         }
-        scatter(grad, sj, n_free, gj);
-        scatter(grad, sa, n_free, ga);
-        scatter(grad, sb, n_free, gb);
-        scatter(grad, sc, n_free, gc);
+        scatter(grad, sj, gj);
+        scatter(grad, sa, ga);
+        scatter(grad, sb, gb);
+        scatter(grad, sc, gc);
     }
 
     /* Dihedral + EZ terms (shared loop) */
@@ -243,8 +248,8 @@ double cost_and_grad(
         double w = dih_sets[iset].w;
         for (int id = 0; id < n; id++) {
             int s0=quads[4*id], s1=quads[4*id+1], s2=quads[4*id+2], s3=quads[4*id+3];
-            const double *p0=coord(x,fixed,n_free,s0), *p1=coord(x,fixed,n_free,s1);
-            const double *p2=coord(x,fixed,n_free,s2), *p3=coord(x,fixed,n_free,s3);
+            const double *p0=coord(x,s0), *p1=coord(x,s1);
+            const double *p2=coord(x,s2), *p3=coord(x,s3);
             double b1[3], b2[3], b3[3], n1v[3], n2v[3];
             sub3(p1,p0,b1); sub3(p2,p1,b2); sub3(p3,p2,b3);
             cross3(b1,b2,n1v); cross3(b2,b3,n2v);
@@ -257,7 +262,7 @@ double cost_and_grad(
                 actual = atan2(dot3(cn, b2) * inv / b2n, dot3(n1v, n2v) * inv)
                     * (180.0 / M_PI);
             }
-            double diff = fmod(actual - targets[id] + 540.0, 360.0) - 180.0;
+            double diff = wrap_degrees(actual - targets[id]);
             double r = w * diff;
             cost += r * r;
             if (n1n<1e-10 || n2n<1e-10 || b2n<1e-10) continue;
@@ -277,17 +282,17 @@ double cost_and_grad(
                 g0[k]=sc*dt_dp0[k]; g1[k]=sc*dt_dp1[k];
                 g2[k]=sc*dt_dp2[k]; g3[k]=sc*dt_dp3[k];
             }
-            scatter(grad,s0,n_free,g0); scatter(grad,s1,n_free,g1);
-            scatter(grad,s2,n_free,g2); scatter(grad,s3,n_free,g3);
+            scatter(grad,s0,g0); scatter(grad,s1,g1);
+            scatter(grad,s2,g2); scatter(grad,s3,g3);
         }
     }
 
     /* Linearity terms */
     for (int il = 0; il < n_linear; il++) {
         int sa=linear_triples[3*il], sb=linear_triples[3*il+1], sc=linear_triples[3*il+2];
-        const double *ra=coord(x,fixed,n_free,sa);
-        const double *rb=coord(x,fixed,n_free,sb);
-        const double *rc=coord(x,fixed,n_free,sc);
+        const double *ra=coord(x,sa);
+        const double *rb=coord(x,sb);
+        const double *rc=coord(x,sc);
         double v1[3], v2[3]; sub3(ra,rb,v1); sub3(rc,rb,v2);
         double n1sq=dot3(v1,v1), n2sq=dot3(v2,v2), d12=dot3(v1,v2);
         double denom=n1sq*n2sq+1e-20;
@@ -302,7 +307,7 @@ double cost_and_grad(
             double dc = w2*2.0*((n1sq*v2[k]-d12*v1[k])*inv - sin2*v2[k]/n2sq);
             gb[k] = -(da+dc);
         }
-        scatter(grad, sb, n_free, gb);
+        scatter(grad, sb, gb);
     }
 
     return cost;
@@ -316,7 +321,7 @@ double cost_and_grad(
 
 /* Context passed to the liblbfgs evaluate callback. */
 typedef struct {
-    int n_free; const double *fixed; int n_fixed;
+    int n_atoms;
     const int *bond_pairs; const double *ideal_lengths; int n_bonds;
     const int *angle_triples; const double *ideal_angles_deg; int n_angles;
     const int *planar_groups; int n_planar;
@@ -332,7 +337,7 @@ static lbfgsfloatval_t _evaluate(void *instance,
     const int n, const lbfgsfloatval_t step)
 {
     opt_ctx *c = (opt_ctx*)instance;
-    return cost_and_grad(x, g, c->n_free, c->fixed, c->n_fixed,
+    return cost_and_grad(x, g, c->n_atoms,
         c->bond_pairs, c->ideal_lengths, c->n_bonds,
         c->angle_triples, c->ideal_angles_deg, c->n_angles,
         c->planar_groups, c->n_planar,
@@ -346,7 +351,7 @@ static lbfgsfloatval_t _evaluate(void *instance,
 
 double lbfgs_optimize(
     double *x, int ndim,
-    int n_free, const double *fixed, int n_fixed,
+    int n_atoms,
     const int *bond_pairs, const double *ideal_lengths, int n_bonds,
     const int *angle_triples, const double *ideal_angles_deg, int n_angles,
     const int *planar_groups, int n_planar,
@@ -359,7 +364,7 @@ double lbfgs_optimize(
     double ftol, double gtol, int max_iter)
 {
     opt_ctx ctx = {
-        n_free, fixed, n_fixed,
+        n_atoms,
         bond_pairs, ideal_lengths, n_bonds,
         angle_triples, ideal_angles_deg, n_angles,
         planar_groups, n_planar,
@@ -457,6 +462,41 @@ static void jacobi_rotate(double *A, double *V, int n, int p, int q) {
 }
 
 static void eigen_symmetric(double *A, double *evals, double *evecs, int n) {
+#ifdef __APPLE__
+    {
+    double *M = (double*)malloc(n*n*sizeof(double));
+    memcpy(M, A, n*n*sizeof(double));
+    char jobz = 'V';
+    char uplo = 'U';
+    __CLPK_integer nn = (__CLPK_integer)n;
+    __CLPK_integer lda = (__CLPK_integer)n;
+    __CLPK_integer lwork = -1;
+    __CLPK_integer info = 0;
+    double work_query = 0.0;
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
+    dsyev_(&jobz, &uplo, &nn, M, &lda, evals, &work_query, &lwork, &info);
+    if (info == 0 && work_query > 0.0) {
+        lwork = (__CLPK_integer)work_query;
+        double *work = (double*)malloc((size_t)lwork * sizeof(double));
+        dsyev_(&jobz, &uplo, &nn, M, &lda, evals, work, &lwork, &info);
+        free(work);
+    }
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+    if (info == 0) {
+        for (int i=0;i<n;i++)
+            for (int j=0;j<n;j++)
+                evecs[i*n+j] = M[i + j*n];
+        free(M);
+        return;
+    }
+    free(M);
+    }
+#endif
     double *M = (double*)malloc(n*n*sizeof(double));
     memcpy(M, A, n*n*sizeof(double));
     memset(evecs, 0, n*n*sizeof(double));

@@ -28,9 +28,7 @@ _c_lbfgs.restype = ctypes.c_double
 _c_lbfgs.argtypes = [
     ctypes.c_void_p,
     ctypes.c_int,  # x, ndim
-    ctypes.c_int,
-    ctypes.c_void_p,
-    ctypes.c_int,  # n_free, fixed, n_fixed
+    ctypes.c_int,  # n_atoms
     ctypes.c_void_p,
     ctypes.c_void_p,
     ctypes.c_int,  # bonds
@@ -1236,8 +1234,6 @@ def _optimize(
         _dptr(x),
         len(x),
         n,
-        0,
-        0,
         _dptr(bp),
         _dptr(il),
         len(bp),

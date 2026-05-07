@@ -10,6 +10,7 @@ SRC := amsr/src
 
 ifeq ($(UNAME),Darwin)
   EXT := dylib
+  LDFLAGS += -framework Accelerate
 else
   EXT := so
 endif
