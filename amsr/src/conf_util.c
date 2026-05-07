@@ -464,15 +464,11 @@ static void eigen_symmetric(double *A, double *evals, double *evecs, int n) {
     free(M);
 }
 
-void embed(int n, double *coords_out,
+void prepare_embed_bounds(int n, double *lower, double *upper, double *angle_distances,
            int n_bonds, const int *bond_pairs, const double *bond_lengths,
            int n_angles, const int *angle_triples, const double *angle_values,
-           int n_dihedrals, const int *dihedral_quads, const double *dihedral_values,
-           unsigned int seed) {
+           int n_dihedrals, const int *dihedral_quads, const double *dihedral_values) {
     if (n <= 0) return;
-
-    double *lower = (double*)calloc(n*n, sizeof(double));
-    double *upper = (double*)malloc(n*n*sizeof(double));
 
     /* Default upper bound: rough molecular diameter estimate. */
     double avg_bond = 0;
@@ -481,7 +477,10 @@ void embed(int n, double *coords_out,
     double max_dist = sqrt((double)n) * avg_bond * 2.0;
     if (max_dist < 5.0) max_dist = 5.0;
 
-    for (int i = 0; i < n*n; i++) upper[i] = max_dist;
+    for (int i = 0; i < n*n; i++) {
+        lower[i] = 0.0;
+        upper[i] = max_dist;
+    }
     for (int i = 0; i < n; i++) { lower[i*n+i] = 0; upper[i*n+i] = 0; }
 
     double min_dist = 1.5;
@@ -502,7 +501,10 @@ void embed(int n, double *coords_out,
         double d_ab=blen[a*n+b], d_bc=blen[b*n+c];
         if (d_ab>0 && d_bc>0) {
             double d=dist_from_angle(d_ab, d_bc, angle_values[k]);
+            angle_distances[k] = d;
             lower[a*n+c]=lower[c*n+a]=d; upper[a*n+c]=upper[c*n+a]=d;
+        } else {
+            angle_distances[k] = 0.0;
         }
     }
 
@@ -529,6 +531,15 @@ void embed(int n, double *coords_out,
     }
 
     smooth_bounds(lower, upper, n);
+    free(blen);
+}
+
+static void embed_prepared(int n, double *coords_out,
+           const double *lower, const double *upper,
+           int n_bonds, const int *bond_pairs, const double *bond_lengths,
+           int n_angles, const int *angle_triples, const double *angle_distances,
+           unsigned int seed) {
+    if (n <= 0) return;
 
     /* Sample distances.  Use lower bounds plus a small random
      * perturbation to produce a compact, nearly-realizable matrix.
@@ -610,9 +621,8 @@ void embed(int n, double *coords_out,
     for (int iter=0;iter<20;iter++) {
         for (int k=0;k<n_angles;k++) {
             int a=angle_triples[3*k], b=angle_triples[3*k+1], c=angle_triples[3*k+2];
-            double d_ab=blen[a*n+b], d_bc=blen[b*n+c];
-            if (d_ab<=0||d_bc<=0) continue;
-            double target_ac=dist_from_angle(d_ab,d_bc,angle_values[k]);
+            double target_ac=angle_distances[k];
+            if (target_ac <= 0.0) continue;
             double dx=coords_out[c*3]-coords_out[a*3];
             double dy=coords_out[c*3+1]-coords_out[a*3+1];
             double dz=coords_out[c*3+2]-coords_out[a*3+2];
@@ -635,7 +645,40 @@ void embed(int n, double *coords_out,
         }
     }
 
-    free(lower); free(upper); free(D); free(D2);
+    free(D); free(D2);
     free(row_mean); free(G); free(evals); free(evecs);
-    free(blen);
+}
+
+void embed_bounds(int n, double *coords_out,
+           const double *lower, const double *upper,
+           int n_bonds, const int *bond_pairs, const double *bond_lengths,
+           int n_angles, const int *angle_triples, const double *angle_distances,
+           unsigned int seed) {
+    embed_prepared(n, coords_out, lower, upper,
+        n_bonds, bond_pairs, bond_lengths,
+        n_angles, angle_triples, angle_distances,
+        seed);
+}
+
+void embed(int n, double *coords_out,
+           int n_bonds, const int *bond_pairs, const double *bond_lengths,
+           int n_angles, const int *angle_triples, const double *angle_values,
+           int n_dihedrals, const int *dihedral_quads, const double *dihedral_values,
+           unsigned int seed) {
+    if (n <= 0) return;
+
+    double *lower = (double*)malloc(n*n*sizeof(double));
+    double *upper = (double*)malloc(n*n*sizeof(double));
+    double *angle_distances = (double*)malloc((n_angles > 0 ? n_angles : 1)*sizeof(double));
+
+    prepare_embed_bounds(n, lower, upper, angle_distances,
+        n_bonds, bond_pairs, bond_lengths,
+        n_angles, angle_triples, angle_values,
+        n_dihedrals, dihedral_quads, dihedral_values);
+    embed_prepared(n, coords_out, lower, upper,
+        n_bonds, bond_pairs, bond_lengths,
+        n_angles, angle_triples, angle_distances,
+        seed);
+
+    free(lower); free(upper); free(angle_distances);
 }

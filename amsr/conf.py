@@ -79,6 +79,40 @@ _c_embed.argtypes = [
     ctypes.c_uint,  # seed
 ]
 
+_c_prepare_embed_bounds = _lib.prepare_embed_bounds
+_c_prepare_embed_bounds.restype = None
+_c_prepare_embed_bounds.argtypes = [
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,  # n, lower, upper, angle_distances
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,  # bonds
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,  # angles
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,  # dihedrals
+]
+
+_c_embed_bounds = _lib.embed_bounds
+_c_embed_bounds.restype = None
+_c_embed_bounds.argtypes = [
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,  # n, coords_out, lower, upper
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,  # bonds
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,  # angles
+    ctypes.c_uint,  # seed
+]
+
 
 def _to_int32(arr):
     if isinstance(arr, np.ndarray) and arr.dtype == np.int32 and arr.flags["C_CONTIGUOUS"]:
@@ -367,9 +401,20 @@ def _subtree(mol, root, exclude):
 
 def _rotate_subtree(coords, atoms, origin, axis_dir, angle_deg):
     """Rotate atoms around an axis through origin by angle_deg (Rodrigues)."""
+    if len(atoms) == 0:
+        return
     rad = np.radians(angle_deg)
     axis = axis_dir / _norm3(axis_dir)
     cos_a, sin_a = np.cos(rad), np.sin(rad)
+    if len(atoms) >= 4:
+        v = coords[atoms] - origin
+        coords[atoms] = (
+            origin
+            + v * cos_a
+            + np.cross(axis, v) * sin_a
+            + axis * (v @ axis)[:, None] * (1 - cos_a)
+        )
+        return
     for k in atoms:
         v = coords[k] - origin
         coords[k] = (
@@ -385,6 +430,34 @@ def _build_subtree_cache(mol):
         cache[(i, j)] = _subtree(mol, i, j)
         cache[(j, i)] = _subtree(mol, j, i)
     return cache
+
+
+def _build_dihedral_ops(mol, bond_dihedral, subtree_cache=None):
+    """Pre-compute non-ring dihedral rotations for _set_dihedrals."""
+    ops = []
+    seen = set()
+    for (i, j), (mi, mj, target) in bond_dihedral.items():
+        key = (min(i, j), max(i, j))
+        if key in seen:
+            continue
+        seen.add(key)
+        bond = mol.GetBondBetweenAtoms(i, j)
+        if bond is not None and bond.IsInRing():
+            continue
+        if mol.GetAtomWithIdx(i).GetHybridization() == SP:
+            continue
+        if mol.GetAtomWithIdx(j).GetHybridization() == SP:
+            continue
+
+        tree_j = subtree_cache[(j, i)] if subtree_cache else _subtree(mol, j, i)
+        tree_i = subtree_cache[(i, j)] if subtree_cache else _subtree(mol, i, j)
+        if len(tree_j) <= len(tree_i) or mi in tree_i:
+            atoms = np.fromiter(tree_j - {j}, dtype=np.intp)
+            ops.append((mi, i, j, mj, target, atoms, i, j, 1.0))
+        else:
+            atoms = np.fromiter(tree_i - {i}, dtype=np.intp)
+            ops.append((mi, i, j, mj, target, atoms, j, i, -1.0))
+    return ops
 
 
 def _fix_chirality(mol, coords, subtree_cache=None):
@@ -436,37 +509,28 @@ def _fix_chirality(mol, coords, subtree_cache=None):
             break
 
 
-def _set_dihedrals(mol, bond_dihedral, coords, subtree_cache=None):
+def _set_dihedrals(mol, bond_dihedral, coords, subtree_cache=None, dihedral_ops=None):
     """Rotate subtrees around non-ring bonds to match AMSR dihedral targets."""
-    seen = set()
-    for (i, j), (mi, mj, target) in bond_dihedral.items():
-        key = (min(i, j), max(i, j))
-        if key in seen:
-            continue
-        seen.add(key)
-        bond = mol.GetBondBetweenAtoms(i, j)
-        if bond is not None and bond.IsInRing():
-            continue
-        # Skip bonds involving SP (linear) atoms — torsion is undefined
-        if mol.GetAtomWithIdx(i).GetHybridization() == SP:
-            continue
-        if mol.GetAtomWithIdx(j).GetHybridization() == SP:
-            continue
+    if dihedral_ops is None:
+        dihedral_ops = _build_dihedral_ops(mol, bond_dihedral, subtree_cache)
+    for mi, i, j, mj, target, atoms, origin_idx, axis_end_idx, delta_sign in dihedral_ops:
         current = measure_torsion(coords[mi], coords[i], coords[j], coords[mj])
         delta = (target - current + 180) % 360 - 180
         if abs(delta) < 1.0:
             continue
-        tree_j = subtree_cache[(j, i)] if subtree_cache else _subtree(mol, j, i)
-        tree_i = subtree_cache[(i, j)] if subtree_cache else _subtree(mol, i, j)
-        if len(tree_j) <= len(tree_i) or mi in tree_i:
-            _rotate_subtree(coords, tree_j - {j}, coords[i], coords[j] - coords[i], delta)
-        else:
-            _rotate_subtree(coords, tree_i - {i}, coords[j], coords[i] - coords[j], -delta)
+        _rotate_subtree(
+            coords,
+            atoms,
+            coords[origin_idx],
+            coords[axis_end_idx] - coords[origin_idx],
+            delta_sign * delta,
+        )
 
 
 def _build_ring_topology(mol, subtree_cache=None):
     """Pre-compute ring topology data (invariant across conformer attempts)."""
     all_rings = [list(r) for r in mol.GetRingInfo().AtomRings()]
+    ring_atom_arrays = [np.asarray(r, dtype=np.intp) for r in all_rings]
     all_ring_atoms = {}
     for idx, ring in enumerate(all_rings):
         for a in ring:
@@ -488,6 +552,20 @@ def _build_ring_topology(mol, subtree_cache=None):
                 per_atom[a] = subs
         ring_sub_by_atom.append(per_atom)
 
+    # Reflection atom sets for pucker flips.  The original operation reflects
+    # the ring atoms and then each attached subtree through the same plane.
+    # Since a reflection is its own inverse, only atoms reached an odd number
+    # of times need to be transformed.
+    ring_reflect_atoms: list[np.ndarray] = []
+    for ring_idx, per_atom in enumerate(ring_sub_by_atom):
+        atoms_to_reflect: set[int] = set()
+        for a in all_rings[ring_idx]:
+            atoms_to_reflect.symmetric_difference_update((a,))
+        for a in all_rings[ring_idx]:
+            for sub in per_atom.get(a, ()):
+                atoms_to_reflect.symmetric_difference_update(sub)
+        ring_reflect_atoms.append(np.fromiter(atoms_to_reflect, dtype=np.intp))
+
     # Pre-compute chiral info per ring atom (avoid repeated GetChiralTag calls)
     ring_chiral: list[list[tuple[int, list[int], int]]] = []
     for ring in all_rings:
@@ -502,7 +580,14 @@ def _build_ring_topology(mol, subtree_cache=None):
                     chiral_atoms.append((a, nbrs[:3], expected))
         ring_chiral.append(chiral_atoms)
 
-    return all_rings, shared_atoms, ring_sub_by_atom, ring_chiral
+    return (
+        all_rings,
+        ring_atom_arrays,
+        shared_atoms,
+        ring_sub_by_atom,
+        ring_reflect_atoms,
+        ring_chiral,
+    )
 
 
 def _fix_ring_puckers(mol, bond_dihedral, coords, atom_rings=None, ring_topo=None):
@@ -517,7 +602,14 @@ def _fix_ring_puckers(mol, bond_dihedral, coords, atom_rings=None, ring_topo=Non
     """
     if ring_topo is None:
         ring_topo = _build_ring_topology(mol)
-    all_rings, shared_atoms, ring_sub_by_atom, ring_chiral = ring_topo
+    (
+        all_rings,
+        ring_atom_arrays,
+        shared_atoms,
+        ring_sub_by_atom,
+        ring_reflect_atoms,
+        ring_chiral,
+    ) = ring_topo
     if atom_rings is None:
         atom_rings = _build_ring_index(mol)
 
@@ -539,19 +631,15 @@ def _fix_ring_puckers(mol, bond_dihedral, coords, atom_rings=None, ring_topo=Non
             if wrong == 0:
                 continue
             # Reflect ring atoms through mean plane
-            ring_coords = coords[ring]
+            ring_atoms = ring_atom_arrays[ri_idx]
+            ring_coords = coords[ring_atoms]
             center = ring_coords.mean(axis=0)
             centered = ring_coords - center
-            _, _, Vt = np.linalg.svd(centered)
-            normal = Vt[2]
-            for a in ring:
-                d = np.dot(coords[a] - center, normal)
-                coords[a] -= 2.0 * d * normal
-            for subs in ring_sub_by_atom[ri_idx].values():
-                for sub in subs:
-                    for k in sub:
-                        d = np.dot(coords[k] - center, normal)
-                        coords[k] -= 2.0 * d * normal
+            _, vecs = np.linalg.eigh(centered.T @ centered)
+            normal = vecs[:, 0]
+            atoms = ring_reflect_atoms[ri_idx]
+            group = coords[atoms]
+            coords[atoms] = group - 2.0 * ((group - center) @ normal)[:, None] * normal
             flipped_any = True
         if not flipped_any:
             break
@@ -927,17 +1015,11 @@ def _collect_ez_constraints(mol, atoms):
 # ============================================================
 
 
-def _dg_embed(mol, bond_dihedral, atom_rings, seed=42):
-    """Embed molecule using C distance-geometry with AMSR dihedrals.
-
-    Builds distance bounds from bond lengths, bond angles, and AMSR-encoded
-    dihedrals, then embeds via metric matrix eigendecomposition.
-    Returns Nx3 coordinate array.
-    """
+def _build_embed_data(mol, bond_dihedral, atom_rings):
+    """Build static arrays for C distance-geometry embedding."""
     n = mol.GetNumAtoms()
     atoms = set(range(n))
 
-    # Collect bonds
     bond_pairs = []
     bond_lengths = []
     for b in mol.GetBonds():
@@ -945,7 +1027,6 @@ def _dg_embed(mol, bond_dihedral, atom_rings, seed=42):
         bond_pairs.append((i, j))
         bond_lengths.append(_get_bond_length(mol, i, j))
 
-    # Collect angles
     angle_triples = []
     angle_values = []
     for b_idx in sorted(atoms):
@@ -957,7 +1038,6 @@ def _dg_embed(mol, bond_dihedral, atom_rings, seed=42):
                 angle_triples.append((a, b_idx, c))
                 angle_values.append(_get_bond_angle(mol, a, b_idx, c, atom_rings))
 
-    # Collect AMSR dihedrals
     dihedral_quads = []
     dihedral_values = []
     seen = set()
@@ -975,21 +1055,70 @@ def _dg_embed(mol, bond_dihedral, atom_rings, seed=42):
     av = _to_f64(angle_values) if angle_values else np.empty(0)
     dq = _to_int32(dihedral_quads) if dihedral_quads else np.empty((0, 4), dtype=np.int32)
     dv = _to_f64(dihedral_values) if dihedral_values else np.empty(0)
-    coords = np.zeros((n, 3), dtype=np.float64)
-    _c_embed(
+
+    lower = np.empty((n, n), dtype=np.float64)
+    upper = np.empty((n, n), dtype=np.float64)
+    angle_distances = np.empty(len(at), dtype=np.float64)
+    _c_prepare_embed_bounds(
         n,
-        coords.ctypes.data,
-        len(bl),
-        bp.ctypes.data,
-        bl.ctypes.data,
-        len(av),
-        at.ctypes.data,
-        av.ctypes.data,
-        len(dv),
-        dq.ctypes.data,
-        dv.ctypes.data,
-        seed,
+        _dptr(lower),
+        _dptr(upper),
+        _dptr(angle_distances),
+        len(bp),
+        _dptr(bp),
+        _dptr(bl),
+        len(at),
+        _dptr(at),
+        _dptr(av),
+        len(dq),
+        _dptr(dq),
+        _dptr(dv),
     )
+    return bp, bl, at, av, dq, dv, lower, upper, angle_distances
+
+
+def _dg_embed(mol, bond_dihedral, atom_rings, seed=42, embed_data=None):
+    """Embed molecule using C distance-geometry with AMSR dihedrals.
+
+    Builds distance bounds from bond lengths, bond angles, and AMSR-encoded
+    dihedrals, then embeds via metric matrix eigendecomposition.
+    Returns Nx3 coordinate array.
+    """
+    n = mol.GetNumAtoms()
+    if embed_data is None:
+        embed_data = _build_embed_data(mol, bond_dihedral, atom_rings)
+    coords = np.zeros((n, 3), dtype=np.float64)
+    if len(embed_data) == 9:
+        bp, bl, at, _, _, _, lower, upper, angle_distances = embed_data
+        _c_embed_bounds(
+            n,
+            _dptr(coords),
+            _dptr(lower),
+            _dptr(upper),
+            len(bp),
+            _dptr(bp),
+            _dptr(bl),
+            len(at),
+            _dptr(at),
+            _dptr(angle_distances),
+            seed,
+        )
+    else:
+        bp, bl, at, av, dq, dv = embed_data
+        _c_embed(
+            n,
+            _dptr(coords),
+            len(bp),
+            _dptr(bp),
+            _dptr(bl),
+            len(at),
+            _dptr(at),
+            _dptr(av),
+            len(dq),
+            _dptr(dq),
+            _dptr(dv),
+            seed,
+        )
     return coords
 
 
@@ -1005,12 +1134,11 @@ _W_DIHEDRAL = 0.1
 _W_EZ = 0.3
 _W_LINEAR = 20.0
 
+DEFAULT_MAX_CONFS = 500
 
-def _optimize(mol, bond_dihedral, coords, atom_rings=None, ftol=1e-3, gtol=1e-1):
-    """Optimize all atom positions to satisfy geometry constraints.
 
-    Returns the optimizer cost.  Mutates coords in place.
-    """
+def _build_optimizer_data(mol, bond_dihedral, atom_rings=None):
+    """Build static arrays for the C optimizer."""
     n = mol.GetNumAtoms()
     atoms = set(range(n))
 
@@ -1039,6 +1167,27 @@ def _optimize(mol, bond_dihedral, coords, atom_rings=None, ftol=1e-3, gtol=1e-1)
     eq = _to_int32(ez_quads) if len(ez_quads) else np.empty((0, 4), dtype=np.int32)
     et = _to_f64(ez_targets) if len(ez_targets) else np.empty(0, dtype=np.float64)
     lt = _to_int32(linear_triples) if len(linear_triples) else np.empty((0, 3), dtype=np.int32)
+
+    return bp, il, at, ia, pg, ci, ctv, dq, dt, eq, et, lt
+
+
+def _optimize(
+    mol,
+    bond_dihedral,
+    coords,
+    atom_rings=None,
+    ftol=1e-3,
+    gtol=1e-1,
+    optimizer_data=None,
+):
+    """Optimize all atom positions to satisfy geometry constraints.
+
+    Returns the optimizer cost.  Mutates coords in place.
+    """
+    n = mol.GetNumAtoms()
+    if optimizer_data is None:
+        optimizer_data = _build_optimizer_data(mol, bond_dihedral, atom_rings)
+    bp, il, at, ia, pg, ci, ctv, dq, dt, eq, et, lt = optimizer_data
 
     x = np.ascontiguousarray(coords.ravel(), dtype=np.float64)
     fc = np.empty(0, dtype=np.float64)
@@ -1093,7 +1242,7 @@ def GetConformer(
     dihedral: Optional[dict[tuple[int, int, int, int], int]] = None,
     ftol: float = 1e-3,
     gtol: float = 1e-1,
-    max_confs: int = 30,
+    max_confs: int = DEFAULT_MAX_CONFS,
 ) -> Chem.Mol:
     """Generate 3D conformer.
 
@@ -1101,6 +1250,8 @@ def GetConformer(
     2. Fix chirality, pseudo-E/Z, ring puckers, and acyclic dihedrals.
     3. Optimize all atom positions with a cost function enforcing ideal
        bond lengths, angles, planarity, chirality, and AMSR dihedrals.
+
+    Stops early if any start reaches a very low internal cost.
     """
     n = mol.GetNumAtoms()
     if n == 0:
@@ -1118,16 +1269,33 @@ def GetConformer(
     best_coords = None
     atom_rings = _build_ring_index(mol)
     subtree_cache = _build_subtree_cache(mol)
+    dihedral_ops = _build_dihedral_ops(mol, bond_dihedral, subtree_cache)
     ring_topo = _build_ring_topology(mol, subtree_cache)
+    embed_data = _build_embed_data(mol, bond_dihedral, atom_rings)
+    optimizer_data = _build_optimizer_data(mol, bond_dihedral, atom_rings)
 
     for attempt in range(max_confs):
-        coords[:] = _dg_embed(mol, bond_dihedral, atom_rings, seed=42 + attempt)
+        coords[:] = _dg_embed(
+            mol,
+            bond_dihedral,
+            atom_rings,
+            seed=42 + attempt,
+            embed_data=embed_data,
+        )
         _fix_chirality(mol, coords, subtree_cache)
-        _set_dihedrals(mol, bond_dihedral, coords, subtree_cache)
+        _set_dihedrals(mol, bond_dihedral, coords, subtree_cache, dihedral_ops)
         _fix_pseudo_ez(mol, coords, subtree_cache)
         _fix_ring_puckers(mol, bond_dihedral, coords, atom_rings, ring_topo)
-        _set_dihedrals(mol, bond_dihedral, coords, subtree_cache)
-        oc = _optimize(mol, bond_dihedral, coords, atom_rings, ftol=ftol, gtol=gtol)
+        _set_dihedrals(mol, bond_dihedral, coords, subtree_cache, dihedral_ops)
+        oc = _optimize(
+            mol,
+            bond_dihedral,
+            coords,
+            atom_rings,
+            ftol=ftol,
+            gtol=gtol,
+            optimizer_data=optimizer_data,
+        )
         if oc < best_cost:
             best_cost = oc
             best_coords = coords.copy()
