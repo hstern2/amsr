@@ -130,7 +130,7 @@ def _to_f64(arr):
 
 def _dptr(arr):
     """Data pointer for a numpy array, or NULL."""
-    return arr.ctypes.data_as(ctypes.c_void_p) if arr.size else ctypes.c_void_p(0)
+    return arr.ctypes.data if arr.size else 0
 
 
 # ---------------------------------------------------------------------------
@@ -342,12 +342,9 @@ def _get_bond_angle(mol, a, b, c, atom_rings=None):
     return default
 
 
-def _fix_pseudo_ez(mol, coords, subtree_cache=None):
-    """Fix pseudo-E/Z double bonds after embedding.
-
-    For double bonds with graph-equivalent substituents on at least one
-    side, check if the E/Z geometry matches the tag and reflect if wrong.
-    """
+def _build_pseudo_ez_ops(mol, subtree_cache=None):
+    """Pre-compute pseudo-E/Z reflections for _fix_pseudo_ez."""
+    ops = []
     ranks = list(Chem.CanonicalRankAtoms(mol, breakTies=False))
     for bond in mol.GetBonds():
         stereo = bond.GetStereo()
@@ -358,15 +355,32 @@ def _fix_pseudo_ez(mol, coords, subtree_cache=None):
         if len(stereo_atoms) < 2:
             continue
         si, sj = stereo_atoms[0], stereo_atoms[1]
-        # Only fix pseudo-E/Z: substituents on at least one side share a rank
         ni = [nb.GetIdx() for nb in mol.GetAtomWithIdx(i).GetNeighbors() if nb.GetIdx() != j]
         nj = [nb.GetIdx() for nb in mol.GetAtomWithIdx(j).GetNeighbors() if nb.GetIdx() != i]
         ni_ranks = [ranks[n] for n in ni]
         nj_ranks = [ranks[n] for n in nj]
         if len(set(ni_ranks)) == len(ni_ranks) and len(set(nj_ranks)) == len(nj_ranks):
             continue
+        atoms_to_reflect: set[int] = set()
+        for nb_idx in nj:
+            sub = subtree_cache[(nb_idx, j)] if subtree_cache else _subtree(mol, nb_idx, j)
+            atoms_to_reflect.symmetric_difference_update(sub)
+        if atoms_to_reflect:
+            target = 0.0 if stereo == Chem.BondStereo.STEREOZ else 180.0
+            ops.append((si, i, j, sj, target, np.fromiter(atoms_to_reflect, dtype=np.intp)))
+    return ops
+
+
+def _fix_pseudo_ez(mol, coords, subtree_cache=None, pseudo_ez_ops=None):
+    """Fix pseudo-E/Z double bonds after embedding.
+
+    For double bonds with graph-equivalent substituents on at least one
+    side, check if the E/Z geometry matches the tag and reflect if wrong.
+    """
+    if pseudo_ez_ops is None:
+        pseudo_ez_ops = _build_pseudo_ez_ops(mol, subtree_cache)
+    for si, i, j, sj, target, atoms in pseudo_ez_ops:
         actual = measure_torsion(coords[si], coords[i], coords[j], coords[sj])
-        target = 0.0 if stereo == Chem.BondStereo.STEREOZ else 180.0
         diff = abs((actual - target + 180) % 360 - 180)
         if diff < 45:
             continue
@@ -378,11 +392,7 @@ def _fix_pseudo_ez(mol, coords, subtree_cache=None):
             continue
         normal /= nn
         mid = 0.5 * (coords[i] + coords[j])
-        for nb_idx in nj:
-            sub = subtree_cache[(nb_idx, j)] if subtree_cache else _subtree(mol, nb_idx, j)
-            for k in sub:
-                d = np.dot(coords[k] - mid, normal)
-                coords[k] -= 2.0 * d * normal
+        _reflect_atoms(coords, atoms, mid, normal)
 
 
 def _subtree(mol, root, exclude):
@@ -420,6 +430,17 @@ def _rotate_subtree(coords, atoms, origin, axis_dir, angle_deg):
         coords[k] = (
             origin + v * cos_a + _cross3(axis, v) * sin_a + axis * np.dot(axis, v) * (1 - cos_a)
         )
+
+
+def _reflect_atoms(coords, atoms, center, normal):
+    """Reflect atoms through the plane defined by center and normal."""
+    if len(atoms) >= 4:
+        group = coords[atoms]
+        coords[atoms] = group - 2.0 * ((group - center) @ normal)[:, None] * normal
+        return
+    for k in atoms:
+        d = np.dot(coords[k] - center, normal)
+        coords[k] -= 2.0 * d * normal
 
 
 def _build_subtree_cache(mol):
@@ -460,7 +481,42 @@ def _build_dihedral_ops(mol, bond_dihedral, subtree_cache=None):
     return ops
 
 
-def _fix_chirality(mol, coords, subtree_cache=None):
+def _build_chirality_ops(mol, subtree_cache=None):
+    """Pre-compute chiral-center reflections for _fix_chirality."""
+    ops = []
+    n = mol.GetNumAtoms()
+    for atom in mol.GetAtoms():
+        chiral = atom.GetChiralTag()
+        if chiral not in (CW, CCW):
+            continue
+        j = atom.GetIdx()
+        nbrs = [nb.GetIdx() for nb in atom.GetNeighbors()]
+        if len(nbrs) < 3:
+            continue
+        nbrs3 = tuple(nbrs[:3])
+        expected = -1 if chiral == CW else 1
+        best = None
+        for ni in nbrs3:
+            sub = subtree_cache[(ni, j)] if subtree_cache else _subtree(mol, ni, j)
+            if len(sub) <= n // 2 and (best is None or len(sub) < len(best[1])):
+                best = (ni, sub)
+        if best is None:
+            continue
+        reflect_nb, reflect_sub = best
+        others = tuple(ni for ni in nbrs3 if ni != reflect_nb)
+        ops.append(
+            (
+                j,
+                nbrs3,
+                expected,
+                np.fromiter(reflect_sub, dtype=np.intp),
+                others,
+            )
+        )
+    return ops
+
+
+def _fix_chirality(mol, coords, subtree_cache=None, chirality_ops=None):
     """Fix chiral centers whose signed volume has the wrong sign.
 
     For each wrong CW/CCW center, find the smallest neighbor subtree
@@ -468,42 +524,23 @@ def _fix_chirality(mol, coords, subtree_cache=None):
     the plane of the other two neighbors.  Processes from interior
     to exterior and iterates until stable.
     """
-    n = mol.GetNumAtoms()
+    if chirality_ops is None:
+        chirality_ops = _build_chirality_ops(mol, subtree_cache)
     for _iteration in range(10):
         fixed_any = False
-        for atom in mol.GetAtoms():
-            chiral = atom.GetChiralTag()
-            if chiral not in (CW, CCW):
-                continue
-            j = atom.GetIdx()
-            nbrs = [nb.GetIdx() for nb in atom.GetNeighbors()]
-            if len(nbrs) < 3:
-                continue
+        for j, nbrs, expected, reflect_atoms, others in chirality_ops:
             rj = coords[j]
             v = [coords[ni] - rj for ni in nbrs[:3]]
             vol = np.dot(v[0], _cross3(v[1], v[2]))
-            expected = -1 if chiral == CW else 1
             if (vol > 0) == (expected > 0):
                 continue
-            # Find smallest branch to reflect
-            best = None
-            for ni in nbrs[:3]:
-                sub = subtree_cache[(ni, j)] if subtree_cache else _subtree(mol, ni, j)
-                if len(sub) <= n // 2 and (best is None or len(sub) < len(best[1])):
-                    best = (ni, sub)
-            if best is None:
-                continue
-            reflect_nb, reflect_sub = best
-            others = [ni for ni in nbrs[:3] if ni != reflect_nb]
             va, vb = coords[others[0]] - rj, coords[others[1]] - rj
             normal = _cross3(va, vb)
             nn = _norm3(normal)
             if nn < 1e-10:
                 continue
             normal /= nn
-            for k in reflect_sub:
-                d = np.dot(coords[k] - rj, normal)
-                coords[k] -= 2.0 * d * normal
+            _reflect_atoms(coords, reflect_atoms, rj, normal)
             fixed_any = True
         if not fixed_any:
             break
@@ -1077,7 +1114,7 @@ def _build_embed_data(mol, bond_dihedral, atom_rings):
     return bp, bl, at, av, dq, dv, lower, upper, angle_distances
 
 
-def _dg_embed(mol, bond_dihedral, atom_rings, seed=42, embed_data=None):
+def _dg_embed(mol, bond_dihedral, atom_rings, seed=42, embed_data=None, coords=None):
     """Embed molecule using C distance-geometry with AMSR dihedrals.
 
     Builds distance bounds from bond lengths, bond angles, and AMSR-encoded
@@ -1087,7 +1124,8 @@ def _dg_embed(mol, bond_dihedral, atom_rings, seed=42, embed_data=None):
     n = mol.GetNumAtoms()
     if embed_data is None:
         embed_data = _build_embed_data(mol, bond_dihedral, atom_rings)
-    coords = np.zeros((n, 3), dtype=np.float64)
+    if coords is None:
+        coords = np.zeros((n, 3), dtype=np.float64)
     if len(embed_data) == 9:
         bp, bl, at, _, _, _, lower, upper, angle_distances = embed_data
         _c_embed_bounds(
@@ -1189,14 +1227,16 @@ def _optimize(
         optimizer_data = _build_optimizer_data(mol, bond_dihedral, atom_rings)
     bp, il, at, ia, pg, ci, ctv, dq, dt, eq, et, lt = optimizer_data
 
-    x = np.ascontiguousarray(coords.ravel(), dtype=np.float64)
-    fc = np.empty(0, dtype=np.float64)
+    x = coords.ravel()
+    copied = x.dtype != np.float64 or not x.flags["C_CONTIGUOUS"]
+    if copied:
+        x = np.ascontiguousarray(x, dtype=np.float64)
 
     cost = _c_lbfgs(
-        x.ctypes.data_as(ctypes.c_void_p),
+        _dptr(x),
         len(x),
         n,
-        _dptr(fc),
+        0,
         0,
         _dptr(bp),
         _dptr(il),
@@ -1228,7 +1268,8 @@ def _optimize(
         gtol,
         2000,
     )
-    coords[:] = x.reshape(-1, 3)
+    if copied:
+        coords[:] = x.reshape(-1, 3)
     return cost
 
 
@@ -1269,24 +1310,32 @@ def GetConformer(
     best_coords = None
     atom_rings = _build_ring_index(mol)
     subtree_cache = _build_subtree_cache(mol)
+    chirality_ops = _build_chirality_ops(mol, subtree_cache)
     dihedral_ops = _build_dihedral_ops(mol, bond_dihedral, subtree_cache)
+    pseudo_ez_ops = _build_pseudo_ez_ops(mol, subtree_cache)
     ring_topo = _build_ring_topology(mol, subtree_cache)
     embed_data = _build_embed_data(mol, bond_dihedral, atom_rings)
     optimizer_data = _build_optimizer_data(mol, bond_dihedral, atom_rings)
 
     for attempt in range(max_confs):
-        coords[:] = _dg_embed(
+        _dg_embed(
             mol,
             bond_dihedral,
             atom_rings,
             seed=42 + attempt,
             embed_data=embed_data,
+            coords=coords,
         )
-        _fix_chirality(mol, coords, subtree_cache)
-        _set_dihedrals(mol, bond_dihedral, coords, subtree_cache, dihedral_ops)
-        _fix_pseudo_ez(mol, coords, subtree_cache)
-        _fix_ring_puckers(mol, bond_dihedral, coords, atom_rings, ring_topo)
-        _set_dihedrals(mol, bond_dihedral, coords, subtree_cache, dihedral_ops)
+        if chirality_ops:
+            _fix_chirality(mol, coords, subtree_cache, chirality_ops)
+        if dihedral_ops:
+            _set_dihedrals(mol, bond_dihedral, coords, subtree_cache, dihedral_ops)
+        if pseudo_ez_ops:
+            _fix_pseudo_ez(mol, coords, subtree_cache, pseudo_ez_ops)
+        if ring_topo[0]:
+            _fix_ring_puckers(mol, bond_dihedral, coords, atom_rings, ring_topo)
+        if dihedral_ops:
+            _set_dihedrals(mol, bond_dihedral, coords, subtree_cache, dihedral_ops)
         oc = _optimize(
             mol,
             bond_dihedral,

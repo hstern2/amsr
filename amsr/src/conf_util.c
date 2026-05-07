@@ -245,14 +245,21 @@ double cost_and_grad(
             int s0=quads[4*id], s1=quads[4*id+1], s2=quads[4*id+2], s3=quads[4*id+3];
             const double *p0=coord(x,fixed,n_free,s0), *p1=coord(x,fixed,n_free,s1);
             const double *p2=coord(x,fixed,n_free,s2), *p3=coord(x,fixed,n_free,s3);
-            double actual = measure_torsion(p0, p1, p2, p3);
-            double diff = fmod(actual - targets[id] + 540.0, 360.0) - 180.0;
-            double r = w * diff;
-            cost += r * r;
             double b1[3], b2[3], b3[3], n1v[3], n2v[3];
             sub3(p1,p0,b1); sub3(p2,p1,b2); sub3(p3,p2,b3);
             cross3(b1,b2,n1v); cross3(b2,b3,n2v);
             double n1n=norm3(n1v), n2n=norm3(n2v), b2n=norm3(b2);
+            double actual = 0.0;
+            if (n1n>=1e-10 && n2n>=1e-10 && b2n>=1e-10) {
+                double inv = 1.0 / (n1n * n2n);
+                double cn[3];
+                cross3(n1v, n2v, cn);
+                actual = atan2(dot3(cn, b2) * inv / b2n, dot3(n1v, n2v) * inv)
+                    * (180.0 / M_PI);
+            }
+            double diff = fmod(actual - targets[id] + 540.0, 360.0) - 180.0;
+            double r = w * diff;
+            cost += r * r;
             if (n1n<1e-10 || n2n<1e-10 || b2n<1e-10) continue;
             double f0 = -b2n/(n1n*n1n), f3 = b2n/(n2n*n2n);
             double dt_dp0[3], dt_dp3[3];
@@ -368,7 +375,7 @@ double lbfgs_optimize(
     param.epsilon = gtol;
     param.delta = ftol;
     param.max_iterations = max_iter;
-    param.m = 10;
+    param.m = 6;
 
     lbfgsfloatval_t fx;
     lbfgs(ndim, x, &fx, _evaluate, NULL, &ctx, &param);
