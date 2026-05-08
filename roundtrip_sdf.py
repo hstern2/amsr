@@ -19,7 +19,7 @@ from typing import Annotated, Optional
 
 import typer
 
-from amsr.roundtrip import RoundtripSDF
+from amsr.roundtrip import SDF_RMSD_THRESHOLD, RoundtripSDF
 
 app = typer.Typer(
     add_completion=False,
@@ -79,7 +79,7 @@ def main(
     output: Annotated[
         Optional[Path], typer.Option("-o", help="Output directory for SDF files (omit to skip)")
     ] = None,
-    threshold: Annotated[float, typer.Option("-t", help="RMSD threshold")] = 1.1,
+    threshold: Annotated[float, typer.Option("-t", help="RMSD threshold")] = SDF_RMSD_THRESHOLD,
     jobs: Annotated[int, typer.Option("-j", help="Number of parallel workers")] = (
         os.cpu_count() or 1
     ),

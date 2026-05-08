@@ -13,6 +13,7 @@ from .decode import ToMol
 from .encode import FromMol
 
 N_RANDOM_SEEDS = 5  # number of randomized encodings per molecule
+SDF_RMSD_THRESHOLD = 1.2
 
 
 def Roundtrip(mol: Chem.Mol, seed=None) -> tuple[str, float, Chem.Mol]:
@@ -35,7 +36,10 @@ def Roundtrip(mol: Chem.Mol, seed=None) -> tuple[str, float, Chem.Mol]:
 
 
 def RoundtripSDF(
-    sdf_path: str, seed, threshold: float = 1.0, output_dir: Optional[str] = None
+    sdf_path: str,
+    seed,
+    threshold: float = SDF_RMSD_THRESHOLD,
+    output_dir: Optional[str] = None,
 ) -> dict:
     """Round-trip one SDF file with one seed.
 

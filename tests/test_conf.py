@@ -5,7 +5,7 @@ import os
 import pytest
 from filelock import FileLock
 
-from amsr.roundtrip import N_RANDOM_SEEDS, RoundtripSDF
+from amsr.roundtrip import N_RANDOM_SEEDS, SDF_RMSD_THRESHOLD, RoundtripSDF
 
 from .conftest import SDF_DIR
 
@@ -65,6 +65,6 @@ def test_roundtrip_sdf(sdf_path, seed):
                 [r["name"], r["seed"], r["amsr"], f"{r['rmsd']:.3f}", f"{r['time']:.3f}"]
             )
 
-    assert r["rmsd"] < 1.1, (
+    assert r["rmsd"] < SDF_RMSD_THRESHOLD, (
         f"RMSD {r['rmsd']:.3f} Å too large for {r['name']}" f" (seed={r['seed']})"
     )

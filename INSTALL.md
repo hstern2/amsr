@@ -30,7 +30,7 @@ uv run --extra dev pytest          # run all tests sequentially
 
 The conformer tests (`test_conf.py`) encode each SDF molecule with 6
 different AMSR encodings (1 canonical + 5 randomized) and check that
-the round-trip RMSD is below 1.0 Å.
+the round-trip RMSD is below 1.2 Å.
 
 ## Batch processing
 
