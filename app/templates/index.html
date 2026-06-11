@@ -50,7 +50,7 @@
             autocapitalize="off"
             autocorrect="off"
             autocomplete="on"
-            onkeyup="mol_changed(false, true, true)" // amsr to smiles
+            onkeyup="mol_changed(false, true, false)" // amsr to smiles
             title="Enter an AMSR (ASCII Molecular String Representation) string to convert to SMILES and visualize"
         ></input></td>
     </tr>
@@ -64,7 +64,7 @@
             autocapitalize="off"
             autocorrect="off"
             autocomplete="on"
-            onkeyup="mol_changed(true, true, true)" // smiles to amsr
+            onkeyup="mol_changed(true, true, false)" // smiles to amsr
             title="Enter a SMILES (Simplified Molecular Input Line Entry System) string to convert to AMSR and visualize"
         ></input>
     </td></tr>
@@ -92,7 +92,7 @@
             id="stringent"
             name="stringent"
             checked
-            onclick="mol_changed(false, true, true)"
+            onclick="mol_changed(false, true, false)"
             title="Enable stringent mode for more strict AMSR encoding/decoding"
             >stringent
     <input
@@ -100,7 +100,7 @@
             id="threeD"
             name="threeD"
             checked
-            onclick="mol_changed(true, false, true)"
+            onclick="mol_changed(true, false, false)"
             title="Show 3D molecular viewer and calculate conformer energy"
             >3D
     &nbsp; &nbsp; &nbsp;
@@ -283,7 +283,7 @@
             function(response) {
                 var data = JSON.parse(response);
                 element('amsr').value = data.amsr;
-                mol_changed(false, true, true); // amsr to smiles
+                mol_changed(false, true, false); // amsr to smiles
             }
         );
     }

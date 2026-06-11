@@ -17,12 +17,17 @@ from rdkit.Chem.Lipinski import (
 )
 from rdkit.Chem.QED import qed
 
-import amsr
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(APP_DIR)
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
+import amsr  # noqa: E402
 
 # synthetic accessibility score; smaller means more accessible
 # Ertl & Schuffenhauer, J. Cheminf. 2009, 1 (8)
 sys.path.append(os.path.join(Chem.RDConfig.RDContribDir, "SA_Score"))
-import sascorer
+import sascorer  # noqa: E402
 
 # store the last rendered molecule (with 2D coords) for alignment
 prev_mol = None
@@ -144,7 +149,7 @@ def mol_isOK(mol):
 
 app = Flask(__name__)
 methods = ["GET", "POST"]
-model_path = os.path.join(os.path.dirname("__file__"), "..", "models", "model.pth")
+model_path = os.path.join(PROJECT_ROOT, "models", "model.pth")
 lstm = amsr.LSTMModel.from_saved_model(model_path)
 
 
