@@ -29,9 +29,9 @@ def run_morph(smiles_1: str, smiles_2: str):
 
 def mols_to_svgs(mols, mol_size: int = 180):
     """Render RDKit molecules to SVG strings."""
-    from rdkit.Chem import Draw
+    from rdkit.Chem.Draw import rdMolDraw2D
 
-    return [Draw.MolToSVG(mol, size=(mol_size, mol_size)) for mol in mols]
+    return [rdMolDraw2D.MolToSVG(mol, mol_size, mol_size) for mol in mols]
 
 
 st.set_page_config(page_title="Morph", layout="wide")

@@ -55,7 +55,7 @@ def test_run_morph_integration():
 
 
 def test_mols_to_svgs_renders_rdkit_molecules():
-    """Molecule rendering passes RDKit's expected size tuple to MolToSVG."""
+    """Molecule rendering uses RDKit's width/height MolToSVG signature."""
     Chem = pytest.importorskip("rdkit.Chem")
 
     import morph_app
