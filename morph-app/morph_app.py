@@ -27,6 +27,13 @@ def run_morph(smiles_1: str, smiles_2: str):
     return morph, smiles_text
 
 
+def mols_to_svgs(mols, mol_size: int = 180):
+    """Render RDKit molecules to SVG strings."""
+    from rdkit.Chem import Draw
+
+    return [Draw.MolToSVG(mol, size=(mol_size, mol_size)) for mol in mols]
+
+
 st.set_page_config(page_title="Morph", layout="wide")
 
 st.markdown(
@@ -72,11 +79,10 @@ if submitted:
     # Molecules first (SVG in iframe), then SMILES below
     try:
         import streamlit.components.v1 as components
-        from rdkit.Chem import Draw
 
         COLS_PER_ROW = 4
         MOL_SIZE = 180
-        svgs = [Draw.MolToSVG(mol, MOL_SIZE, MOL_SIZE) for mol in morph.mol]
+        svgs = mols_to_svgs(morph.mol, MOL_SIZE)
         if svgs:
             cells = "".join(f'<div style="flex: 0 0 auto;">{s}</div>' for s in svgs)
             html = f"""<!DOCTYPE html><html><body style="margin:0;padding:8px;">

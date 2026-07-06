@@ -52,3 +52,16 @@ def test_run_morph_integration():
     assert isinstance(smiles_text, str)
     assert hasattr(morph, "mol")
     assert len(morph.mol) >= 2
+
+
+def test_mols_to_svgs_renders_rdkit_molecules():
+    """Molecule rendering passes RDKit's expected size tuple to MolToSVG."""
+    Chem = pytest.importorskip("rdkit.Chem")
+
+    import morph_app
+
+    mol = Chem.MolFromSmiles("CCO")
+    svgs = morph_app.mols_to_svgs([mol], mol_size=120)
+
+    assert len(svgs) == 1
+    assert "<svg" in svgs[0]

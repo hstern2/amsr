@@ -52,6 +52,9 @@ gpu = [
 [tool.setuptools]
 packages = ["amsr"]
 
+[tool.setuptools.package-data]
+amsr = ["src/*"]
+
 
 [tool.ruff]
 target-version = "py39"

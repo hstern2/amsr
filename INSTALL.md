@@ -18,8 +18,8 @@ uv sync --extra dev
 make
 ```
 
-Required for conformer generation. Builds `amsr/conf_util.dylib` (macOS)
-or `amsr/conf_util.so` (Linux) from C sources in `amsr/src/`.
+Required for conformer generation. Builds `amsr/src/conf_util.dylib` (macOS)
+or `amsr/src/conf_util.so` (Linux) from C sources in `amsr/src/`.
 
 ## Test
 
