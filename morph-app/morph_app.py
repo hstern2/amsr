@@ -3,9 +3,8 @@
 
 import streamlit as st
 
-# Default SMILES (epothilone A, rocaglamide)
-DEFAULT_SMILES_1 = "CC1=C(C(=O)CC(C)C1CC=CC2CC(CC(=O)O2)C)C"
-DEFAULT_SMILES_2 = "COC1=CC(=C2C(=C1)C(=O)C3CC(CC(O3)C=C(C)C)O2)C4=CC=CC=N4"
+DEFAULT_SMILES_1 = "CC[C@H]1C[C@@H]2C[C@H]3c4[nH]c5ccc(OC)cc5c4CC[N@@](C2)[C@@H]13"  # ibogaine
+DEFAULT_SMILES_2 = "CCN(CC)C(=O)[C@H]1CN([C@@H]2Cc3c[nH]c4c3c(ccc4)C2=C1)C"  # LSD
 
 
 def run_morph(smiles_1: str, smiles_2: str):
