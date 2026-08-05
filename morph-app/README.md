@@ -1,11 +1,13 @@
 # Morph
 
-Streamlit app for **molecular morphing**: compute the minimum-edit pathway between two molecules (SMILES). Based on the logic in `morph.ipynb` using the `amsr` library.
+Streamlit app for **molecular morphing**: compute the minimum-edit pathway between two molecules. Based on the logic in `morph.ipynb` using the `amsr` library.
 
 ## Features
 
-- Two SMILES inputs with optional names (defaults: epithilone, rocaglamide)
-- **Morph** button runs `amsr.Morph.fromSmiles(s, t)` to get the pathway
+- Two molecule fields that accept catalog labels, typed names, or raw SMILES
+- Local quick lookup catalog with interesting natural products and FDA-approved drugs
+- Catalog entries include PubChem CIDs for SMILES traceability; typed names still fall back to PubChem PUG REST
+- **Morph** button runs `amsr.Morph(...)` on the resolved SMILES to get the pathway
 - Output: pathway SMILES in a text box (one per line) and rendered molecule grid
 
 ## Requirements
@@ -27,7 +29,7 @@ pip install -r requirements.txt
 streamlit run morph_app.py
 ```
 
-1. Optionally edit names and SMILES (defaults: Epithilone, Rocaglamide).
+1. Use **From** and **To** with names such as `epibatidine`, catalog labels, or raw SMILES.
 2. Click **Morph** to compute the pathway.
 3. View SMILES in the text area and the molecule grid below.
 

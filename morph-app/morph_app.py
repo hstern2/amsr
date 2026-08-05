@@ -1,10 +1,156 @@
 #!/usr/bin/env python3
-"""Morph: Streamlit app for molecular morph (two SMILES → pathway). Based on morph.ipynb."""
+"""Morph: Streamlit app for molecular morph (two SMILES -> pathway). Based on morph.ipynb."""
 
-import streamlit as st
+import json
+import re
+from dataclasses import dataclass
+from functools import lru_cache
+from typing import Optional
+from urllib.error import HTTPError, URLError
+from urllib.parse import quote
+from urllib.request import Request, urlopen
 
-DEFAULT_SMILES_1 = "CC[C@H]1C[C@@H]2C[C@H]3c4[nH]c5ccc(OC)cc5c4CC[N@@](C2)[C@@H]13"  # ibogaine
-DEFAULT_SMILES_2 = "CCN(CC)C(=O)[C@H]1CN([C@@H]2Cc3c[nH]c4c3c(ccc4)C2=C1)C"  # LSD
+from molecule_catalog import (
+    KNOWN_MOLECULE_KEYS,
+    KNOWN_MOLECULES,
+)
+
+
+@dataclass(frozen=True)
+class MoleculeResolution:
+    name: str
+    smiles: str
+    source: str
+
+
+def _molecule_lookup_key(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "", value.lower())
+
+
+MOLECULE_NAME_INDEX = {
+    _molecule_lookup_key(name): key
+    for key, molecule in KNOWN_MOLECULES.items()
+    for name in (molecule.name, key, *molecule.aliases)
+}
+SMILES_CHARS = re.compile(r"^[A-Za-z0-9@+\-\[\]\(\)\\/#=%.:]+$")
+SMILES_ATOM_TOKEN = re.compile(
+    r"Br|Cl|Si|Se|Na|Li|Mg|Ca|Zn|Fe|Al|Ag|As|Au|Ba|Bi|Cd|Co|Cu|Hg|Mn|Ni|Pb|Pt|Sn|Ti|"
+    r"B|C|N|O|P|S|F|I|H|K|V|Y|W|U|b|c|n|o|p|s"
+)
+
+
+def format_molecule_option(key: str) -> str:
+    molecule = KNOWN_MOLECULES[key]
+    return f"{molecule.name} ({molecule.collection})"
+
+
+CATALOG_OPTION_INDEX = {
+    _molecule_lookup_key(format_molecule_option(key)): key for key in KNOWN_MOLECULE_KEYS
+}
+
+
+def molecule_source_label(molecule) -> str:
+    """Return a concise source label for a curated molecule."""
+    if molecule.pubchem_cid:
+        return f"{molecule.collection}, PubChem CID {molecule.pubchem_cid}"
+    return molecule.collection
+
+
+def lookup_known_molecule(query: str) -> Optional[MoleculeResolution]:
+    """Resolve a curated molecule name or alias to SMILES."""
+    key = MOLECULE_NAME_INDEX.get(_molecule_lookup_key(query.strip()))
+    if not key:
+        return None
+
+    molecule = KNOWN_MOLECULES[key]
+    return MoleculeResolution(molecule.name, molecule.smiles, molecule_source_label(molecule))
+
+
+def looks_like_smiles(value: str) -> bool:
+    """Best-effort guard so names go to lookup while obvious SMILES stay local."""
+    value = value.strip()
+    if not value or " " in value:
+        return False
+    if not SMILES_CHARS.fullmatch(value):
+        return False
+
+    unbracketed = re.sub(r"\[[^\]]+\]", "C", value)
+    if not SMILES_ATOM_TOKEN.search(unbracketed):
+        return False
+
+    without_atoms = SMILES_ATOM_TOKEN.sub("", unbracketed)
+    return not re.search(r"[A-Za-z]", without_atoms)
+
+
+@lru_cache(maxsize=128)
+def lookup_pubchem_molecule(name: str) -> Optional[MoleculeResolution]:
+    """Resolve a molecule name through PubChem PUG REST."""
+    name = name.strip()
+    if not name:
+        return None
+
+    url = (
+        "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/"
+        f"{quote(name, safe='')}/property/Title,CanonicalSMILES,IsomericSMILES/JSON"
+    )
+    request = Request(url, headers={"User-Agent": "morph-app/1.0"})
+
+    try:
+        with urlopen(request, timeout=8) as response:
+            payload = json.load(response)
+    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError, ValueError):
+        return None
+
+    properties = payload.get("PropertyTable", {}).get("Properties", [])
+    if not properties:
+        return None
+
+    first = properties[0]
+    smiles = (
+        first.get("SMILES")
+        or first.get("IsomericSMILES")
+        or first.get("CanonicalSMILES")
+        or first.get("ConnectivitySMILES")
+    )
+    if not smiles:
+        return None
+
+    cid = first.get("CID")
+    source = f"PubChem CID {cid}" if cid else "PubChem"
+    return MoleculeResolution(first.get("Title") or name, smiles, source)
+
+
+def resolve_molecule_input(value: Optional[str]) -> MoleculeResolution:
+    """Resolve a catalog selection, typed molecule name, or SMILES string."""
+    value = (value or "").strip()
+    if not value:
+        raise ValueError("Choose a molecule or enter a valid SMILES string.")
+
+    selected_key = KNOWN_MOLECULES.get(value) and value
+    selected_key = selected_key or CATALOG_OPTION_INDEX.get(_molecule_lookup_key(value))
+    if selected_key:
+        molecule = KNOWN_MOLECULES[selected_key]
+        return MoleculeResolution(molecule.name, molecule.smiles, molecule_source_label(molecule))
+
+    known = lookup_known_molecule(value)
+    if known:
+        return known
+
+    if looks_like_smiles(value):
+        return MoleculeResolution("Custom SMILES", value, "Manual input")
+
+    pubchem = lookup_pubchem_molecule(value)
+    if pubchem:
+        return pubchem
+
+    raise ValueError(
+        f"Could not look up '{value}'. Choose a catalog molecule or enter a valid SMILES string."
+    )
+
+
+def default_molecule(default_key: str) -> MoleculeResolution:
+    molecule = KNOWN_MOLECULES[default_key]
+    return MoleculeResolution(molecule.name, molecule.smiles, molecule_source_label(molecule))
 
 
 def run_morph(smiles_1: str, smiles_2: str):
@@ -33,10 +179,24 @@ def mols_to_svgs(mols, mol_size: int = 180):
     return [rdMolDraw2D.MolToSVG(mol, mol_size, mol_size) for mol in mols]
 
 
-st.set_page_config(page_title="Morph", layout="wide")
+def molecule_input(st, label: str, key: str, default_key: str):
+    """Render one searchable molecule field."""
+    return st.text_input(
+        label,
+        value=format_molecule_option(default_key),
+        key=key,
+        placeholder="Name, SMILES, or catalog molecule",
+        autocomplete="off",
+    )
 
-st.markdown(
-    """
+
+def main():
+    import streamlit as st
+
+    st.set_page_config(page_title="Morph molecules", layout="wide")
+
+    st.markdown(
+        """
 <style>
     * { font-family: Arial, Helvetica, sans-serif !important; }
     .stMainBlockContainer { font-size: 14px; padding-top: 1rem !important; }
@@ -48,56 +208,70 @@ st.markdown(
         margin-top: 0.75rem !important; margin-bottom: 0.25rem !important; }
 </style>
 """,
-    unsafe_allow_html=True,
-)
-
-with st.form("morph_form"):
-    smiles_1 = st.text_input(
-        "Molecule 1 SMILES", value="", placeholder=DEFAULT_SMILES_1, key="smiles1"
+        unsafe_allow_html=True,
     )
-    smiles_2 = st.text_input(
-        "Molecule 2 SMILES", value="", placeholder=DEFAULT_SMILES_2, key="smiles2"
-    )
-    submitted = st.form_submit_button("morph")
 
-if submitted:
-    # Form widget values are available on the run after submit
-    s1 = (smiles_1 or "").strip() or DEFAULT_SMILES_1
-    s2 = (smiles_2 or "").strip() or DEFAULT_SMILES_2
+    with st.form("morph_form"):
+        col1, col2 = st.columns(2)
+        with col1:
+            molecule_1_value = molecule_input(st, "From (name or SMILES)", "molecule_1", "ibogaine")
+        with col2:
+            molecule_2_value = molecule_input(
+                st, "To (name or SMILES)", "molecule_2", "epibatidine"
+            )
+        submitted = st.form_submit_button("morph")
 
-    try:
-        with st.spinner("Computing morph pathway..."):
-            morph, smiles_text = run_morph(s1, s2)
-    except Exception as e:
-        st.error(f"Morph failed: {e}")
-        import traceback
+    if submitted:
+        try:
+            molecule_1 = resolve_molecule_input(molecule_1_value)
+            molecule_2 = resolve_molecule_input(molecule_2_value)
+        except ValueError as e:
+            st.error(str(e))
+            st.stop()
 
-        st.code(traceback.format_exc())
-        st.stop()
+        st.caption(
+            f"Morphing {molecule_1.name} ({molecule_1.source}) -> "
+            f"{molecule_2.name} ({molecule_2.source})"
+        )
 
-    # Molecules first (SVG in iframe), then SMILES below
-    try:
-        import streamlit.components.v1 as components
+        try:
+            with st.spinner("Computing morph pathway..."):
+                morph, smiles_text = run_morph(molecule_1.smiles, molecule_2.smiles)
+        except Exception as e:
+            st.error(f"Morph failed: {e}")
+            import traceback
 
-        COLS_PER_ROW = 4
-        MOL_SIZE = 180
-        svgs = mols_to_svgs(morph.mol, MOL_SIZE)
-        if svgs:
-            cells = "".join(f'<div style="flex: 0 0 auto;">{s}</div>' for s in svgs)
-            html = f"""<!DOCTYPE html><html><body style="margin:0;padding:8px;">
-            <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;">{cells}</div>
-            </body></html>"""
-            rows = (len(svgs) + COLS_PER_ROW - 1) // COLS_PER_ROW
-            iframe_height = 24 + rows * (MOL_SIZE + 12)
-            components.html(html, height=iframe_height, scrolling=False)
-    except Exception as e:
-        st.warning(f"Could not render molecules: {e}")
+            st.code(traceback.format_exc())
+            st.stop()
 
-    # SMILES output — key per content so it updates on each morph (no stale state)
-    st.text_area(
-        "",
-        value=smiles_text,
-        height=200,
-        key=f"morph_smiles_{hash(smiles_text) & 0xFFFFFFFF:X}",
-        label_visibility="collapsed",
-    )
+        # Molecules first (SVG in iframe), then SMILES below
+        try:
+            import streamlit.components.v1 as components
+
+            COLS_PER_ROW = 4
+            MOL_SIZE = 180
+            svgs = mols_to_svgs(morph.mol, MOL_SIZE)
+            if svgs:
+                cells = "".join(f'<div style="flex: 0 0 auto;">{s}</div>' for s in svgs)
+                html = f"""<!DOCTYPE html><html><body style="margin:0;padding:8px;">
+                <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;">
+                {cells}</div>
+                </body></html>"""
+                rows = (len(svgs) + COLS_PER_ROW - 1) // COLS_PER_ROW
+                iframe_height = 24 + rows * (MOL_SIZE + 12)
+                components.html(html, height=iframe_height, scrolling=False)
+        except Exception as e:
+            st.warning(f"Could not render molecules: {e}")
+
+        # SMILES output: key per content so it updates on each morph (no stale state)
+        st.text_area(
+            "",
+            value=smiles_text,
+            height=200,
+            key=f"morph_smiles_{hash(smiles_text) & 0xFFFFFFFF:X}",
+            label_visibility="collapsed",
+        )
+
+
+if __name__ == "__main__":
+    main()
