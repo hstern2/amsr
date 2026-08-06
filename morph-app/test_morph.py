@@ -2,6 +2,7 @@
 """Pytest suite for morph app."""
 
 import builtins
+import subprocess
 import sys
 from pathlib import Path
 from unittest import mock
@@ -104,6 +105,79 @@ def test_smiles_classifier_leaves_hyphenated_names_for_lookup():
     assert morph_app.looks_like_smiles("CCO")
     assert morph_app.looks_like_smiles("C-C")
     assert not morph_app.looks_like_smiles("L-DOPA")
+
+
+def test_lilly_filter_default_is_enabled():
+    """The Streamlit option defaults to applying Lilly Medchem Rules."""
+    import morph_app
+
+    assert morph_app.DEFAULT_APPLY_LILLY_FILTER is True
+
+
+def test_filter_mols_with_lilly_uses_relaxed_and_filters(monkeypatch):
+    """The Lilly wrapper passes -relaxed and keeps only accepted morph outputs."""
+    Chem = pytest.importorskip("rdkit.Chem")
+
+    import morph_app
+
+    mols = [Chem.MolFromSmiles(smiles) for smiles in ("CCCCCCCC", "CCO", "c1ccccc1O")]
+    captured = {}
+
+    monkeypatch.setattr(morph_app.shutil, "which", lambda name: f"/usr/local/bin/{name}")
+
+    def fake_run(cmd, cwd, text, capture_output, check, timeout):
+        captured["cmd"] = cmd
+        captured["cwd"] = cwd
+        captured["input"] = Path(cmd[-1]).read_text(encoding="utf-8")
+        captured["text"] = text
+        captured["capture_output"] = capture_output
+        captured["check"] = check
+        captured["timeout"] = timeout
+        return subprocess.CompletedProcess(
+            cmd,
+            0,
+            stdout="CCCCCCCC morph_0000\nOc1ccccc1 morph_0002\n",
+            stderr="",
+        )
+
+    monkeypatch.setattr(morph_app.subprocess, "run", fake_run)
+
+    result = morph_app.filter_mols_with_lilly(mols)
+
+    assert captured["cmd"][:2] == ["/usr/local/bin/Lilly_Medchem_Rules.rb", "-relaxed"]
+    assert captured["cwd"] in captured["cmd"][-1]
+    assert captured["text"] is True
+    assert captured["capture_output"] is True
+    assert captured["check"] is False
+    assert captured["timeout"] == morph_app.LILLY_FILTER_TIMEOUT_SECONDS
+    assert "morph_0000" in captured["input"]
+    assert "morph_0001" in captured["input"]
+    assert "morph_0002" in captured["input"]
+    assert len(result.mols) == 2
+    assert result.rejected_count == 1
+    assert result.smiles_text.splitlines() == ["CCCCCCCC", "Oc1ccccc1"]
+
+
+def test_filter_morph_output_with_lilly_preserves_input_endpoints(monkeypatch):
+    """The Lilly filter applies only to generated intermediates, not endpoints."""
+    Chem = pytest.importorskip("rdkit.Chem")
+
+    import morph_app
+
+    mols = [Chem.MolFromSmiles(smiles) for smiles in ("CCO", "CCCCCCCC", "c1ccccc1O")]
+    seen = {}
+
+    def fake_filter(intermediates):
+        seen["smiles"] = [Chem.MolToSmiles(mol) for mol in intermediates]
+        return morph_app.LillyFilterResult([], "", 1)
+
+    monkeypatch.setattr(morph_app, "filter_mols_with_lilly", fake_filter)
+
+    result = morph_app.filter_morph_output_with_lilly(mols)
+
+    assert seen["smiles"] == ["CCCCCCCC"]
+    assert result.rejected_count == 1
+    assert result.smiles_text.splitlines() == ["CCO", "Oc1ccccc1"]
 
 
 def test_resolve_molecule_input_uses_pubchem_fallback(monkeypatch):

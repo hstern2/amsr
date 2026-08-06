@@ -8,6 +8,7 @@ Streamlit app for **molecular morphing**: compute the minimum-edit pathway betwe
 - Local quick lookup catalog with interesting natural products and FDA-approved drugs
 - Catalog entries include PubChem CIDs for SMILES traceability; typed names still fall back to PubChem PUG REST
 - **Morph** button runs `amsr.Morph(...)` on the resolved SMILES to get the pathway
+- Optional filtering of generated morph intermediates through `Lilly_Medchem_Rules.rb -relaxed`, enabled by default
 - Output: pathway SMILES in a text box (one per line) and rendered molecule grid
 
 ## Requirements
@@ -15,6 +16,7 @@ Streamlit app for **molecular morphing**: compute the minimum-edit pathway betwe
 - Python 3.x
 - [Streamlit](https://streamlit.io/) (`pip install streamlit`)
 - **amsr** — install from your environment (e.g. `pip install -e /path/to/amsr`); not on PyPI
+- `Lilly_Medchem_Rules.rb` on `$PATH` to use the default intermediate filter
 
 ## Install
 
@@ -30,7 +32,7 @@ streamlit run morph_app.py
 ```
 
 1. Use **From** and **To** with names such as `epibatidine`, catalog labels, or raw SMILES.
-2. Click **Morph** to compute the pathway.
+2. Leave the Lilly Medchem Rules intermediate filter enabled, or uncheck it to see the raw morph pathway. The selected input endpoints are not filtered.
 3. View SMILES in the text area and the molecule grid below.
 
 ## Test

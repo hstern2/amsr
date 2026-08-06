@@ -3,8 +3,12 @@
 
 import json
 import re
+import shutil
+import subprocess
+import tempfile
 from dataclasses import dataclass
 from functools import lru_cache
+from pathlib import Path
 from typing import Optional
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote
@@ -21,6 +25,22 @@ class MoleculeResolution:
     name: str
     smiles: str
     source: str
+
+
+@dataclass(frozen=True)
+class LillyFilterResult:
+    mols: list
+    smiles_text: str
+    rejected_count: int
+
+
+DEFAULT_MOLECULE_1_KEY = "ibogaine"
+DEFAULT_MOLECULE_2_KEY = "epibatidine"
+DEFAULT_SMILES_1 = KNOWN_MOLECULES[DEFAULT_MOLECULE_1_KEY].smiles
+DEFAULT_SMILES_2 = KNOWN_MOLECULES[DEFAULT_MOLECULE_2_KEY].smiles
+DEFAULT_APPLY_LILLY_FILTER = True
+LILLY_MEDCHEM_RULES = "Lilly_Medchem_Rules.rb"
+LILLY_FILTER_TIMEOUT_SECONDS = 120
 
 
 def _molecule_lookup_key(value: str) -> str:
@@ -153,22 +173,111 @@ def default_molecule(default_key: str) -> MoleculeResolution:
     return MoleculeResolution(molecule.name, molecule.smiles, molecule_source_label(molecule))
 
 
-def run_morph(smiles_1: str, smiles_2: str):
+def mols_to_smiles_text(mols) -> str:
+    """Return one canonical SMILES string per molecule."""
+    from rdkit import Chem
+
+    return "\n".join(Chem.MolToSmiles(mol) for mol in mols)
+
+
+def _accepted_lilly_ids(stdout: str):
+    accepted_ids = set()
+    for line in stdout.splitlines():
+        fields = line.strip().split()
+        if len(fields) >= 2:
+            accepted_ids.add(fields[1])
+
+    return accepted_ids
+
+
+def filter_mols_with_lilly(mols) -> LillyFilterResult:
+    """Filter generated molecules through Lilly_Medchem_Rules.rb -relaxed."""
+    from rdkit import Chem
+
+    lilly_rules = shutil.which(LILLY_MEDCHEM_RULES)
+    if not lilly_rules:
+        raise RuntimeError(f"{LILLY_MEDCHEM_RULES} was not found on PATH.")
+
+    entries = []
+    for index, mol in enumerate(mols):
+        smiles = Chem.MolToSmiles(mol)
+        entries.append((f"morph_{index:04d}", mol, smiles))
+
+    if not entries:
+        return LillyFilterResult([], "", 0)
+
+    with tempfile.TemporaryDirectory(prefix="morph_lilly_") as tmpdir:
+        input_path = Path(tmpdir) / "morph_output.smi"
+        input_path.write_text(
+            "".join(f"{smiles} {molecule_id}\n" for molecule_id, _mol, smiles in entries),
+            encoding="utf-8",
+        )
+        completed = subprocess.run(
+            [lilly_rules, "-relaxed", str(input_path)],
+            cwd=tmpdir,
+            text=True,
+            capture_output=True,
+            check=False,
+            timeout=LILLY_FILTER_TIMEOUT_SECONDS,
+        )
+
+    if completed.returncode != 0:
+        details = (completed.stderr or completed.stdout or "").strip()
+        message = f"Lilly Medchem filter failed with exit code {completed.returncode}."
+        if details:
+            message = f"{message} {details}"
+        raise RuntimeError(message)
+
+    accepted_ids = _accepted_lilly_ids(completed.stdout)
+    filtered_mols = [mol for molecule_id, mol, _smiles in entries if molecule_id in accepted_ids]
+
+    return LillyFilterResult(
+        filtered_mols,
+        mols_to_smiles_text(filtered_mols),
+        len(entries) - len(filtered_mols),
+    )
+
+
+def filter_morph_output_with_lilly(mols) -> LillyFilterResult:
+    """Filter generated morph intermediates while preserving input endpoints."""
+    mols = list(mols)
+    if len(mols) <= 2:
+        return LillyFilterResult(mols, mols_to_smiles_text(mols), 0)
+
+    first_mol = mols[0]
+    last_mol = mols[-1]
+    filter_result = filter_mols_with_lilly(mols[1:-1])
+    filtered_mols = [first_mol, *filter_result.mols, last_mol]
+    return LillyFilterResult(
+        filtered_mols,
+        mols_to_smiles_text(filtered_mols),
+        filter_result.rejected_count,
+    )
+
+
+def run_morph(smiles_1: str, smiles_2: str, apply_lilly_filter: bool = False):
     """Run morph between two SMILES. Returns (morph, smiles_text).
 
     morph.mol is the list of RDKit Mol objects for the pathway (use for SVG).
     Uses randomize=True so each run can produce a different pathway.
+    Lilly_Medchem_Rules.rb filtering is optional and applies only after morphing.
     Raises ImportError if amsr is not installed.
     """
-    from rdkit import Chem
-
     import amsr
 
     s_tok = amsr.FromSmilesToTokens(smiles_1.strip(), randomize=True)
     t_tok = amsr.FromSmilesToTokens(smiles_2.strip(), randomize=True)
     morph = amsr.Morph(s_tok, t_tok)
 
-    smiles_text = "\n".join(Chem.MolToSmiles(m) for m in morph.mol)
+    if apply_lilly_filter:
+        filter_result = filter_morph_output_with_lilly(morph.mol)
+        morph.mol = filter_result.mols
+        setattr(morph, "lilly_rejected_count", filter_result.rejected_count)
+        smiles_text = filter_result.smiles_text
+    else:
+        setattr(morph, "lilly_rejected_count", 0)
+        smiles_text = mols_to_smiles_text(morph.mol)
+
     return morph, smiles_text
 
 
@@ -214,11 +323,17 @@ def main():
     with st.form("morph_form"):
         col1, col2 = st.columns(2)
         with col1:
-            molecule_1_value = molecule_input(st, "From (name or SMILES)", "molecule_1", "ibogaine")
+            molecule_1_value = molecule_input(
+                st, "From (name or SMILES)", "molecule_1", DEFAULT_MOLECULE_1_KEY
+            )
         with col2:
             molecule_2_value = molecule_input(
-                st, "To (name or SMILES)", "molecule_2", "epibatidine"
+                st, "To (name or SMILES)", "molecule_2", DEFAULT_MOLECULE_2_KEY
             )
+        apply_lilly_filter = st.checkbox(
+            "Filter morph output with Lilly Medchem Rules (-relaxed)",
+            value=DEFAULT_APPLY_LILLY_FILTER,
+        )
         submitted = st.form_submit_button("morph")
 
     if submitted:
@@ -236,13 +351,24 @@ def main():
 
         try:
             with st.spinner("Computing morph pathway..."):
-                morph, smiles_text = run_morph(molecule_1.smiles, molecule_2.smiles)
+                morph, smiles_text = run_morph(
+                    molecule_1.smiles,
+                    molecule_2.smiles,
+                    apply_lilly_filter=apply_lilly_filter,
+                )
         except Exception as e:
             st.error(f"Morph failed: {e}")
             import traceback
 
             st.code(traceback.format_exc())
             st.stop()
+
+        if apply_lilly_filter:
+            st.caption(
+                f"Lilly Medchem Rules rejected "
+                f"{getattr(morph, 'lilly_rejected_count', 0)} generated intermediates; "
+                f"input endpoints were preserved."
+            )
 
         # Molecules first (SVG in iframe), then SMILES below
         try:
