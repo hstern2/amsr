@@ -251,3 +251,48 @@ def test_mols_to_svgs_renders_rdkit_molecules():
 
     assert len(svgs) == 1
     assert "<svg" in svgs[0]
+
+
+def test_molecule_properties_match_amsr_2d_labels():
+    """Morph hover properties use the same descriptor labels as the AMSR 2D view."""
+    Chem = pytest.importorskip("rdkit.Chem")
+
+    import morph_app
+
+    mol = Chem.MolFromSmiles("CCO")
+    properties = morph_app.molecule_properties(mol)
+
+    assert [label for label, _value in properties] == [
+        "QED score",
+        "TPSA",
+        "SA score",
+        "Heavy atom count",
+        "Molecular weight",
+        "LogP",
+        "H-bond donors",
+        "H-bond acceptors",
+        "Rotatable bonds",
+        "Passes Rule of 5",
+    ]
+    assert dict(properties)["TPSA"].endswith("&#8491;<sup>2</sup>")
+    assert dict(properties)["Passes Rule of 5"] == "Yes"
+
+
+def test_molecule_hover_grid_html_embeds_property_tooltips():
+    """Rendered morph molecules expose descriptor tooltips on hover/focus."""
+    Chem = pytest.importorskip("rdkit.Chem")
+
+    import morph_app
+
+    mol = Chem.MolFromSmiles("CCO")
+    html = morph_app.molecule_hover_grid_html([mol], mol_size=120)
+
+    assert '<div class="mol-card"' in html
+    assert 'class="mol-tooltip"' in html
+    assert 'role="tooltip"' in html
+    assert "<strong>QED score:</strong>" in html
+    assert "<strong>Passes Rule of 5:</strong> Yes" in html
+    assert "width: 120px" in html
+    assert "width: 240px" in html
+    assert "position: fixed" in html
+    assert "placeTooltip" in html

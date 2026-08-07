@@ -5,9 +5,11 @@ import json
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 from dataclasses import dataclass
 from functools import lru_cache
+from html import escape
 from pathlib import Path
 from typing import Optional
 from urllib.error import HTTPError, URLError
@@ -41,6 +43,7 @@ DEFAULT_SMILES_2 = KNOWN_MOLECULES[DEFAULT_MOLECULE_2_KEY].smiles
 DEFAULT_APPLY_LILLY_FILTER = True
 LILLY_MEDCHEM_RULES = "Lilly_Medchem_Rules.rb"
 LILLY_FILTER_TIMEOUT_SECONDS = 120
+GITHUB_REPO_URL = "https://github.com/hstern2/amsr"
 
 
 def _molecule_lookup_key(value: str) -> str:
@@ -288,6 +291,187 @@ def mols_to_svgs(mols, mol_size: int = 180):
     return [rdMolDraw2D.MolToSVG(mol, mol_size, mol_size) for mol in mols]
 
 
+@lru_cache(maxsize=1)
+def _sascorer():
+    from rdkit import RDConfig
+
+    sa_score_dir = str(Path(RDConfig.RDContribDir) / "SA_Score")
+    if sa_score_dir not in sys.path:
+        sys.path.append(sa_score_dir)
+
+    import sascorer
+
+    return sascorer
+
+
+def molecule_properties(mol) -> list[tuple[str, str]]:
+    """Return the same 2D descriptor set shown in the AMSR Flask app."""
+    from rdkit.Chem.Crippen import MolLogP
+    from rdkit.Chem.Descriptors import TPSA, MolWt
+    from rdkit.Chem.Lipinski import (
+        HeavyAtomCount,
+        NumHAcceptors,
+        NumHDonors,
+        NumRotatableBonds,
+    )
+    from rdkit.Chem.QED import qed
+
+    hac = HeavyAtomCount(mol)
+    mw = MolWt(mol)
+    clogp = MolLogP(mol)
+    hbd = NumHDonors(mol)
+    hba = NumHAcceptors(mol)
+    n_rot_bonds = NumRotatableBonds(mol)
+    passes_ro5 = mw <= 500 and clogp <= 5 and hbd <= 5 and hba <= 10
+
+    return [
+        ("QED score", f"{qed(mol):.3f}"),
+        ("TPSA", f"{TPSA(mol):.3f} &#8491;<sup>2</sup>"),
+        ("SA score", f"{_sascorer().calculateScore(mol):.3f}"),
+        ("Heavy atom count", str(hac)),
+        ("Molecular weight", f"{mw:.2f} Da"),
+        ("LogP", f"{clogp:.3f}"),
+        ("H-bond donors", str(hbd)),
+        ("H-bond acceptors", str(hba)),
+        ("Rotatable bonds", str(n_rot_bonds)),
+        ("Passes Rule of 5", "Yes" if passes_ro5 else "No"),
+    ]
+
+
+def molecule_hover_grid_html(mols, mol_size: int = 180) -> str:
+    """Render molecules as an HTML grid with descriptor tooltips on hover."""
+    mols = list(mols)
+    svgs = mols_to_svgs(mols, mol_size)
+    cells = []
+    for index, (mol, svg) in enumerate(zip(mols, svgs)):
+        properties = "".join(
+            f"<div><strong>{escape(label)}:</strong> {value}</div>"
+            for label, value in molecule_properties(mol)
+        )
+        cells.append(
+            f"""
+            <div class="mol-card" tabindex="0" aria-describedby="mol-props-{index}">
+                {svg}
+                <div id="mol-props-{index}" class="mol-tooltip" role="tooltip">
+                    {properties}
+                </div>
+            </div>
+            """
+        )
+
+    return f"""<!DOCTYPE html>
+<html>
+<head>
+<style>
+    body {{
+        margin: 0;
+        padding: 8px;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 12px;
+    }}
+    .mol-grid {{
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: flex-start;
+    }}
+    .mol-card {{
+        position: relative;
+        flex: 0 0 auto;
+        width: {mol_size}px;
+        height: {mol_size}px;
+        outline: none;
+    }}
+    .mol-card svg {{
+        display: block;
+        width: {mol_size}px;
+        height: {mol_size}px;
+    }}
+    .mol-tooltip {{
+        position: fixed;
+        top: 8px;
+        left: -9999px;
+        box-sizing: border-box;
+        width: 240px;
+        max-width: calc(100vw - 16px);
+        max-height: calc(100vh - 16px);
+        overflow: auto;
+        border: 1px solid #777;
+        background: rgba(255, 255, 255, 0.96);
+        color: #111;
+        line-height: 1.35;
+        padding: 10px;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        z-index: 10;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
+        transition: opacity 100ms ease;
+    }}
+    .mol-card:hover .mol-tooltip,
+    .mol-card:focus .mol-tooltip {{
+        opacity: 1;
+        visibility: visible;
+    }}
+</style>
+</head>
+<body>
+    <div class="mol-grid">
+        {"".join(cells)}
+    </div>
+    <script>
+        function placeTooltip(card) {{
+            const tooltip = card.querySelector('.mol-tooltip');
+            if (!tooltip) return;
+
+            const gap = 10;
+            const padding = 8;
+            const rect = card.getBoundingClientRect();
+            const viewWidth = document.documentElement.clientWidth;
+            const viewHeight = document.documentElement.clientHeight;
+            const tooltipWidth = tooltip.offsetWidth;
+            const tooltipHeight = tooltip.offsetHeight;
+            const rightX = rect.right + gap;
+            const leftX = rect.left - tooltipWidth - gap;
+            const belowY = rect.bottom + gap;
+            const aboveY = rect.top - tooltipHeight - gap;
+            let x;
+            let y = rect.top;
+
+            if (rightX + tooltipWidth <= viewWidth - padding) {{
+                x = rightX;
+            }} else if (leftX >= padding) {{
+                x = leftX;
+            }} else {{
+                x = Math.min(
+                    Math.max(padding, rect.left + (rect.width - tooltipWidth) / 2),
+                    viewWidth - tooltipWidth - padding
+                );
+                if (belowY + tooltipHeight <= viewHeight - padding) {{
+                    y = belowY;
+                }} else if (aboveY >= padding) {{
+                    y = aboveY;
+                }}
+            }}
+
+            if (y + tooltipHeight > viewHeight - padding) {{
+                y = viewHeight - tooltipHeight - padding;
+            }}
+            y = Math.max(padding, y);
+
+            tooltip.style.left = `${{Math.max(padding, x)}}px`;
+            tooltip.style.top = `${{y}}px`;
+        }}
+
+        document.querySelectorAll('.mol-card').forEach((card) => {{
+            card.addEventListener('mouseenter', () => placeTooltip(card));
+            card.addEventListener('focus', () => placeTooltip(card));
+        }});
+    </script>
+</body>
+</html>"""
+
+
 def molecule_input(st, label: str, key: str, default_key: str):
     """Render one searchable molecule field."""
     return st.text_input(
@@ -315,7 +499,51 @@ def main():
     h2, h3, [data-testid="stSubheader"] {
         font-size: 1rem !important; font-weight: 700 !important;
         margin-top: 0.75rem !important; margin-bottom: 0.25rem !important; }
+    .morph-appbar {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+    .morph-appbar-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        line-height: 1.2;
+    }
+    .morph-github-link {
+        color: inherit !important;
+        display: inline-flex;
+        align-items: center;
+        line-height: 1;
+        text-decoration: none;
+    }
+    .morph-github-link svg {
+        width: 18px;
+        height: 18px;
+        fill: currentColor;
+    }
 </style>
+""",
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        f"""
+<div class="morph-appbar">
+    <span class="morph-appbar-title">Morph molecules</span>
+    <a class="morph-github-link" href="{GITHUB_REPO_URL}" aria-label="GitHub"
+       title="source code on GitHub" target="_blank" rel="noopener noreferrer">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38
+            0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52
+            -.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2
+            -3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82
+            .64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12
+            .51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48
+            0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/>
+        </svg>
+    </a>
+</div>
 """,
         unsafe_allow_html=True,
     )
@@ -376,14 +604,10 @@ def main():
 
             COLS_PER_ROW = 4
             MOL_SIZE = 180
-            svgs = mols_to_svgs(morph.mol, MOL_SIZE)
-            if svgs:
-                cells = "".join(f'<div style="flex: 0 0 auto;">{s}</div>' for s in svgs)
-                html = f"""<!DOCTYPE html><html><body style="margin:0;padding:8px;">
-                <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;">
-                {cells}</div>
-                </body></html>"""
-                rows = (len(svgs) + COLS_PER_ROW - 1) // COLS_PER_ROW
+            molecule_count = len(morph.mol)
+            if molecule_count:
+                html = molecule_hover_grid_html(morph.mol, MOL_SIZE)
+                rows = (molecule_count + COLS_PER_ROW - 1) // COLS_PER_ROW
                 iframe_height = 24 + rows * (MOL_SIZE + 12)
                 components.html(html, height=iframe_height, scrolling=False)
         except Exception as e:
