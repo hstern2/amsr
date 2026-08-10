@@ -28,6 +28,13 @@ def test_cage() -> None:
     assert amsr.CheckAMSR("CCccCccc6oC..CCCC6C6.6")
 
 
+def test_stringent_blocks_carbon_sulfur_pi_bonds_in_both_orders() -> None:
+    assert amsr.ToSmiles("cs", stringent=True) == "CS"
+    assert amsr.ToSmiles("sc", stringent=True) == "CS"
+    assert amsr.ToSmiles("cs", stringent=False) == "C=S"
+    assert amsr.ToSmiles("sc", stringent=False) == "C=S"
+
+
 def test_no_stereo() -> None:
     assert amsr.CheckAMSR(amsr.FromSmiles(taxol_smi, useStereo=False))
 

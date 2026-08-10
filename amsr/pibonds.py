@@ -47,7 +47,7 @@ class PiBonds:
                     continue
                 if self.isCarbon(i) and self.isSulfur(j):
                     continue
-                if self.isSulfur(j) and self.isCarbon(j):
+                if self.isSulfur(i) and self.isCarbon(j):
                     continue
                 if i in bridgehead_atoms or j in bridgehead_atoms:
                     continue
