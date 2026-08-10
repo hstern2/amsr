@@ -48,13 +48,58 @@ def test_resolve_molecule_input_accepts_catalog_selection():
 
 
 def test_resolve_molecule_input_accepts_display_label():
-    """Visible selectbox labels resolve to their catalog entries."""
+    """Legacy category labels still resolve to their catalog entries."""
     import morph_app
 
     resolved = morph_app.resolve_molecule_input("Epibatidine (Natural product)")
 
     assert resolved.name == "Epibatidine"
     assert resolved.source == "Natural product, PubChem CID 854023"
+
+
+def test_autocomplete_options_are_name_only_and_broad():
+    """Autocomplete is a large name-only list, not category-labeled options."""
+    import morph_app
+
+    options = morph_app.MOLECULE_AUTOCOMPLETE_OPTIONS
+
+    assert len(options) >= 2000
+    assert len({option.casefold() for option in options}) == len(options)
+    assert all(option == option.lower() for option in options)
+    assert all(not option[0].isdigit() for option in options)
+    assert "epibatidine" in options
+    assert "Ibogaine" not in options
+    assert "ibogaine" in options
+    assert "metformin" in options
+    assert "abemaciclib" in options
+    assert "1-octacosanol" not in options
+    assert "Epibatidine (Natural product)" not in options
+
+
+def test_autocomplete_data_file_is_plain_lowercase_text():
+    """Vendored autocomplete data is fixed text, not executable Python."""
+    import morph_app
+
+    lines = morph_app.AUTOCOMPLETE_NAMES_PATH.read_text(encoding="ascii").splitlines()
+    names = [line.strip() for line in lines if line.strip() and not line.startswith("#")]
+
+    assert len(names) >= 2000
+    assert len(set(names)) == len(names)
+    assert all(name == name.lower() for name in names)
+    assert all(not name[0].isdigit() for name in names)
+    assert all("\t" not in name for name in names)
+
+
+def test_autocomplete_matches_prioritizes_prefixes_without_requiring_selection():
+    """Autocomplete suggestions do not replace free-form molecule lookup."""
+    import morph_app
+
+    matches = morph_app.autocomplete_matches("met")
+
+    assert "metformin" in matches
+    assert len(matches) <= 6
+    assert morph_app.autocomplete_matches("metformin") == ()
+    assert morph_app.autocomplete_matches("C1=CC=CC=C1") == ()
 
 
 def test_catalog_has_requested_curated_sets():
@@ -156,6 +201,23 @@ def test_filter_mols_with_lilly_uses_relaxed_and_filters(monkeypatch):
     assert len(result.mols) == 2
     assert result.rejected_count == 1
     assert result.smiles_text.splitlines() == ["CCCCCCCC", "Oc1ccccc1"]
+
+
+def test_pathway_to_smi_text_names_endpoints_and_intermediates():
+    """The downloadable SMI includes endpoint and intermediate record names."""
+    Chem = pytest.importorskip("rdkit.Chem")
+
+    import morph_app
+
+    mols = [Chem.MolFromSmiles(smiles) for smiles in ("CCO", "CCCC", "c1ccccc1O")]
+    molecule_1 = morph_app.MoleculeResolution("Ethanol", "CCO", "Manual input")
+    molecule_2 = morph_app.MoleculeResolution("Phenol", "c1ccccc1O", "PubChem CID 996")
+
+    assert morph_app.pathway_to_smi_text(mols, molecule_1, molecule_2).splitlines() == [
+        "CCO\tendpoint_1: Ethanol (Manual input)",
+        "CCCC\tintermediate_001",
+        "Oc1ccccc1\tendpoint_2: Phenol (PubChem CID 996)",
+    ]
 
 
 def test_filter_morph_output_with_lilly_preserves_input_endpoints(monkeypatch):

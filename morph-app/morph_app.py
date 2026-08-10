@@ -44,6 +44,7 @@ DEFAULT_APPLY_LILLY_FILTER = True
 LILLY_MEDCHEM_RULES = "Lilly_Medchem_Rules.rb"
 LILLY_FILTER_TIMEOUT_SECONDS = 120
 GITHUB_REPO_URL = "https://github.com/hstern2/amsr"
+AUTOCOMPLETE_NAMES_PATH = Path(__file__).with_name("molecule_autocomplete_names.txt")
 
 
 def _molecule_lookup_key(value: str) -> str:
@@ -70,6 +71,67 @@ def format_molecule_option(key: str) -> str:
 CATALOG_OPTION_INDEX = {
     _molecule_lookup_key(format_molecule_option(key)): key for key in KNOWN_MOLECULE_KEYS
 }
+
+
+def read_autocomplete_names(path: Path) -> tuple[str, ...]:
+    """Read vendored autocomplete names from a non-executable text file."""
+    names = []
+    for line in path.read_text(encoding="ascii").splitlines():
+        name = line.strip()
+        if name and not name.startswith("#"):
+            names.append(name)
+    return tuple(names)
+
+
+def molecule_autocomplete_options() -> tuple[str, ...]:
+    """Return name-only autocomplete suggestions for the molecule inputs."""
+    names_by_key = {
+        name.casefold(): name.lower() for name in read_autocomplete_names(AUTOCOMPLETE_NAMES_PATH)
+    }
+    for molecule in KNOWN_MOLECULES.values():
+        names_by_key[molecule.name.casefold()] = molecule.name.lower()
+        for alias in molecule.aliases:
+            names_by_key.setdefault(alias.casefold(), alias.lower())
+
+    return tuple(sorted(names_by_key.values(), key=lambda name: name.casefold()))
+
+
+MOLECULE_AUTOCOMPLETE_OPTIONS = molecule_autocomplete_options()
+
+
+def autocomplete_matches(query: Optional[str], limit: int = 6) -> tuple[str, ...]:
+    """Return compact name suggestions without constraining free-form input."""
+    query = (query or "").strip().lower()
+    if len(query) < 2 or looks_like_smiles(query):
+        return ()
+
+    prefix_matches = [
+        option
+        for option in MOLECULE_AUTOCOMPLETE_OPTIONS
+        if option.startswith(query) and option != query
+    ]
+    if len(prefix_matches) >= limit:
+        return tuple(prefix_matches[:limit])
+
+    prefix_keys = set(prefix_matches)
+    contains_matches = [
+        option
+        for option in MOLECULE_AUTOCOMPLETE_OPTIONS
+        if query in option and option != query and option not in prefix_keys
+    ]
+    return tuple([*prefix_matches, *contains_matches][:limit])
+
+
+def set_molecule_input_value(key: str, value: str):
+    import streamlit as st
+
+    st.session_state[key] = value
+
+
+def request_morph_from_input():
+    import streamlit as st
+
+    st.session_state["morph_requested"] = True
 
 
 def molecule_source_label(molecule) -> str:
@@ -181,6 +243,39 @@ def mols_to_smiles_text(mols) -> str:
     from rdkit import Chem
 
     return "\n".join(Chem.MolToSmiles(mol) for mol in mols)
+
+
+def _clean_smi_title(title: str) -> str:
+    """Keep SMI record titles on one tab-separated line."""
+    return re.sub(r"[\r\n\t]+", " ", title).strip()
+
+
+def endpoint_smi_title(endpoint_number: int, molecule: Optional[MoleculeResolution]) -> str:
+    if molecule is None:
+        return f"endpoint_{endpoint_number}"
+    return _clean_smi_title(f"endpoint_{endpoint_number}: {molecule.name} ({molecule.source})")
+
+
+def pathway_to_smi_text(
+    mols,
+    molecule_1: Optional[MoleculeResolution] = None,
+    molecule_2: Optional[MoleculeResolution] = None,
+) -> str:
+    """Return SMI file content with stable names for endpoints and intermediates."""
+    from rdkit import Chem
+
+    mols = list(mols)
+    rows = []
+    for index, mol in enumerate(mols):
+        if index == 0:
+            name = endpoint_smi_title(1, molecule_1)
+        elif index == len(mols) - 1:
+            name = endpoint_smi_title(2, molecule_2)
+        else:
+            name = f"intermediate_{index:03d}"
+        rows.append(f"{Chem.MolToSmiles(mol)}\t{name}")
+
+    return "\n".join(rows) + ("\n" if rows else "")
 
 
 def _accepted_lilly_ids(stdout: str):
@@ -473,14 +568,33 @@ def molecule_hover_grid_html(mols, mol_size: int = 180) -> str:
 
 
 def molecule_input(st, label: str, key: str, default_key: str):
-    """Render one searchable molecule field."""
-    return st.text_input(
+    """Render one free-form molecule field with local suggestions."""
+    default_name = KNOWN_MOLECULES[default_key].name.lower()
+    if key not in st.session_state:
+        st.session_state[key] = default_name
+
+    value = st.text_input(
         label,
-        value=format_molecule_option(default_key),
         key=key,
-        placeholder="Name, SMILES, or catalog molecule",
+        placeholder="Name or SMILES",
         autocomplete="off",
+        on_change=request_morph_from_input,
     )
+
+    suggestions = autocomplete_matches(value)
+    if suggestions:
+        cols = st.columns(min(len(suggestions), 3))
+        for index, suggestion in enumerate(suggestions):
+            with cols[index % len(cols)]:
+                st.button(
+                    suggestion,
+                    key=f"{key}_suggestion_{index}_{_molecule_lookup_key(suggestion)}",
+                    type="tertiary",
+                    on_click=set_molecule_input_value,
+                    args=(key, suggestion),
+                )
+
+    return value
 
 
 def main():
@@ -548,21 +662,21 @@ def main():
         unsafe_allow_html=True,
     )
 
-    with st.form("morph_form"):
-        col1, col2 = st.columns(2)
-        with col1:
-            molecule_1_value = molecule_input(
-                st, "From (name or SMILES)", "molecule_1", DEFAULT_MOLECULE_1_KEY
-            )
-        with col2:
-            molecule_2_value = molecule_input(
-                st, "To (name or SMILES)", "molecule_2", DEFAULT_MOLECULE_2_KEY
-            )
-        apply_lilly_filter = st.checkbox(
-            "Filter morph output with Lilly Medchem Rules (-relaxed)",
-            value=DEFAULT_APPLY_LILLY_FILTER,
+    col1, col2 = st.columns(2)
+    with col1:
+        molecule_1_value = molecule_input(
+            st, "From (name or SMILES)", "molecule_1", DEFAULT_MOLECULE_1_KEY
         )
-        submitted = st.form_submit_button("morph")
+    with col2:
+        molecule_2_value = molecule_input(
+            st, "To (name or SMILES)", "molecule_2", DEFAULT_MOLECULE_2_KEY
+        )
+    apply_lilly_filter = st.checkbox(
+        "Filter morph output with Lilly Medchem Rules (-relaxed)",
+        value=DEFAULT_APPLY_LILLY_FILTER,
+    )
+    morph_requested = st.session_state.pop("morph_requested", False)
+    submitted = st.button("morph") or morph_requested
 
     if submitted:
         try:
@@ -579,7 +693,7 @@ def main():
 
         try:
             with st.spinner("Computing morph pathway..."):
-                morph, smiles_text = run_morph(
+                morph, _smiles_text = run_morph(
                     molecule_1.smiles,
                     molecule_2.smiles,
                     apply_lilly_filter=apply_lilly_filter,
@@ -598,7 +712,7 @@ def main():
                 f"input endpoints were preserved."
             )
 
-        # Molecules first (SVG in iframe), then SMILES below
+        # Molecules first (SVG in iframe), then downloadable SMI below
         try:
             import streamlit.components.v1 as components
 
@@ -613,13 +727,13 @@ def main():
         except Exception as e:
             st.warning(f"Could not render molecules: {e}")
 
-        # SMILES output: key per content so it updates on each morph (no stale state)
-        st.text_area(
-            "",
-            value=smiles_text,
-            height=200,
-            key=f"morph_smiles_{hash(smiles_text) & 0xFFFFFFFF:X}",
-            label_visibility="collapsed",
+        smi_text = pathway_to_smi_text(morph.mol, molecule_1, molecule_2)
+        st.download_button(
+            "Download .smi file",
+            data=smi_text,
+            file_name="morph_pathway.smi",
+            mime="chemical/x-daylight-smiles",
+            key=f"morph_smi_{hash(smi_text) & 0xFFFFFFFF:X}",
         )
 
 
