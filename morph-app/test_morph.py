@@ -102,6 +102,17 @@ def test_autocomplete_matches_prioritizes_prefixes_without_requiring_selection()
     assert morph_app.autocomplete_matches("C1=CC=CC=C1") == ()
 
 
+def test_morph_input_snapshot_normalizes_committed_text_values():
+    """Committed input changes are compared independent of surrounding whitespace."""
+    import morph_app
+
+    assert morph_app.morph_input_snapshot(" metformin ", " CCO\n", True) == (
+        "metformin",
+        "CCO",
+        True,
+    )
+
+
 def test_catalog_has_requested_curated_sets():
     """Catalog includes traceable natural products and FDA-approved drugs."""
     import morph_app
@@ -302,17 +313,36 @@ def test_run_morph_integration():
     assert len(morph.mol) >= 2
 
 
-def test_mols_to_svgs_renders_rdkit_molecules():
-    """Molecule rendering uses RDKit's width/height MolToSVG signature."""
+def test_mols_to_svgs_renders_kekulized_aromatic_molecules():
+    """Aromatic systems are drawn as alternating bonds, not dashed aromatic bonds."""
     Chem = pytest.importorskip("rdkit.Chem")
 
     import morph_app
 
-    mol = Chem.MolFromSmiles("CCO")
+    mol = Chem.MolFromSmiles("c1ccccc1")
     svgs = morph_app.mols_to_svgs([mol], mol_size=120)
 
     assert len(svgs) == 1
     assert "<svg" in svgs[0]
+    assert "stroke-dasharray" not in svgs[0]
+    assert any(atom.GetIsAromatic() for atom in mol.GetAtoms())
+
+
+def test_mols_to_svgs_omits_molecules_that_cannot_be_kekulized(monkeypatch):
+    """Molecule rendering drops structures RDKit cannot kekulize."""
+    Chem = pytest.importorskip("rdkit.Chem")
+
+    import morph_app
+
+    def fail_kekulize(_mol, clearAromaticFlags):
+        raise ValueError("cannot kekulize")
+
+    monkeypatch.setattr(Chem, "Kekulize", fail_kekulize)
+
+    mol = Chem.MolFromSmiles("c1ccccc1")
+
+    assert morph_app.kekulized_mol_for_drawing(mol) is None
+    assert morph_app.mols_to_svgs([mol], mol_size=120) == []
 
 
 def test_molecule_properties_match_amsr_2d_labels():

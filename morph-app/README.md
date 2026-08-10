@@ -32,7 +32,7 @@ pip install -r requirements.txt
 streamlit run morph_app.py
 ```
 
-1. Use **From** and **To** with names such as `epibatidine`, catalog labels, or raw SMILES.
+1. Enter **From** and **To** molecule names such as `epibatidine`, catalog labels, or raw SMILES.
 2. Leave the Lilly Medchem Rules intermediate filter enabled, or uncheck it to see the raw morph pathway. The selected input endpoints are not filtered.
 3. View the molecule grid and use **Download .smi file** to save endpoint SMILES with displayed name/source labels and numbered intermediate records.
 

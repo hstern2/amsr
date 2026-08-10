@@ -134,6 +134,19 @@ def request_morph_from_input():
     st.session_state["morph_requested"] = True
 
 
+def morph_input_snapshot(
+    molecule_1_value: Optional[str],
+    molecule_2_value: Optional[str],
+    apply_lilly_filter: bool,
+) -> tuple[str, str, bool]:
+    """Return the committed input state that should define one morph request."""
+    return (
+        (molecule_1_value or "").strip(),
+        (molecule_2_value or "").strip(),
+        apply_lilly_filter,
+    )
+
+
 def molecule_source_label(molecule) -> str:
     """Return a concise source label for a curated molecule."""
     if molecule.pubchem_cid:
@@ -379,11 +392,34 @@ def run_morph(smiles_1: str, smiles_2: str, apply_lilly_filter: bool = False):
     return morph, smiles_text
 
 
-def mols_to_svgs(mols, mol_size: int = 180):
-    """Render RDKit molecules to SVG strings."""
+def kekulized_mol_for_drawing(mol):
+    """Return a drawing-only molecule copy with aromatic flags cleared."""
+    from rdkit import Chem
+
+    drawing_mol = Chem.Mol(mol)
+    try:
+        Chem.Kekulize(drawing_mol, clearAromaticFlags=True)
+    except Exception:
+        return None
+    return drawing_mol
+
+
+def mol_svg_pairs(mols, mol_size: int = 180) -> list[tuple[object, str]]:
+    """Render molecules that can be kekulized to SVG strings."""
     from rdkit.Chem.Draw import rdMolDraw2D
 
-    return [rdMolDraw2D.MolToSVG(mol, mol_size, mol_size) for mol in mols]
+    pairs = []
+    for mol in mols:
+        drawing_mol = kekulized_mol_for_drawing(mol)
+        if drawing_mol is None:
+            continue
+        pairs.append((mol, rdMolDraw2D.MolToSVG(drawing_mol, mol_size, mol_size)))
+    return pairs
+
+
+def mols_to_svgs(mols, mol_size: int = 180):
+    """Render molecules that can be kekulized to SVG strings."""
+    return [svg for _mol, svg in mol_svg_pairs(mols, mol_size)]
 
 
 @lru_cache(maxsize=1)
@@ -435,10 +471,8 @@ def molecule_properties(mol) -> list[tuple[str, str]]:
 
 def molecule_hover_grid_html(mols, mol_size: int = 180) -> str:
     """Render molecules as an HTML grid with descriptor tooltips on hover."""
-    mols = list(mols)
-    svgs = mols_to_svgs(mols, mol_size)
     cells = []
-    for index, (mol, svg) in enumerate(zip(mols, svgs)):
+    for index, (mol, svg) in enumerate(mol_svg_pairs(mols, mol_size)):
         properties = "".join(
             f"<div><strong>{escape(label)}:</strong> {value}</div>"
             for label, value in molecule_properties(mol)
@@ -567,12 +601,8 @@ def molecule_hover_grid_html(mols, mol_size: int = 180) -> str:
 </html>"""
 
 
-def molecule_input(st, label: str, key: str, default_key: str):
+def molecule_input(st, label: str, key: str):
     """Render one free-form molecule field with local suggestions."""
-    default_name = KNOWN_MOLECULES[default_key].name.lower()
-    if key not in st.session_state:
-        st.session_state[key] = default_name
-
     value = st.text_input(
         label,
         key=key,
@@ -664,21 +694,25 @@ def main():
 
     col1, col2 = st.columns(2)
     with col1:
-        molecule_1_value = molecule_input(
-            st, "From (name or SMILES)", "molecule_1", DEFAULT_MOLECULE_1_KEY
-        )
+        molecule_1_value = molecule_input(st, "From (name or SMILES)", "molecule_1")
     with col2:
-        molecule_2_value = molecule_input(
-            st, "To (name or SMILES)", "molecule_2", DEFAULT_MOLECULE_2_KEY
-        )
+        molecule_2_value = molecule_input(st, "To (name or SMILES)", "molecule_2")
     apply_lilly_filter = st.checkbox(
         "Filter morph output with Lilly Medchem Rules (-relaxed)",
         value=DEFAULT_APPLY_LILLY_FILTER,
     )
+    current_morph_inputs = morph_input_snapshot(
+        molecule_1_value, molecule_2_value, apply_lilly_filter
+    )
+    previous_morph_inputs = st.session_state.setdefault(
+        "last_morph_input_snapshot", current_morph_inputs
+    )
+    inputs_changed = current_morph_inputs != previous_morph_inputs
     morph_requested = st.session_state.pop("morph_requested", False)
-    submitted = st.button("morph") or morph_requested
+    submitted = st.button("morph") or morph_requested or inputs_changed
 
     if submitted:
+        st.session_state["last_morph_input_snapshot"] = current_morph_inputs
         try:
             molecule_1 = resolve_molecule_input(molecule_1_value)
             molecule_2 = resolve_molecule_input(molecule_2_value)
