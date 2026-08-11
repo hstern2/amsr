@@ -7,6 +7,7 @@ import rdkit.Chem.AllChem
 import rdkit.Chem.Draw
 from flask import Flask, render_template, request
 from rdkit import Chem
+from rdkit.Chem import rdMolAlign
 from rdkit.Chem.Crippen import MolLogP
 from rdkit.Chem.Descriptors import TPSA, MolWt
 from rdkit.Chem.Lipinski import (
@@ -82,6 +83,27 @@ def _align_2d(mol, ref):
         if use_flip:
             x = -x
         conf.SetAtomPosition(i, (cos_r * x - sin_r * y + cpx, sin_r * x + cos_r * y + cpy, 0))
+
+
+def _align_3d_to_2d_plane(mol, ref_2d):
+    """Rigid-align a 3D conformer to the current 2D atom positions in z=0."""
+    if mol.GetNumConformers() == 0 or ref_2d.GetNumConformers() == 0:
+        return
+    n = min(mol.GetNumAtoms(), ref_2d.GetNumAtoms())
+    if n < 2:
+        return
+
+    ref_conf_2d = ref_2d.GetConformer()
+    ref_conf_3d = Chem.Conformer(ref_2d.GetNumAtoms())
+    ref_conf_3d.Set3D(True)
+    for i in range(ref_2d.GetNumAtoms()):
+        pos = ref_conf_2d.GetAtomPosition(i)
+        ref_conf_3d.SetAtomPosition(i, (pos.x, pos.y, 0.0))
+
+    ref = Chem.RWMol(ref_2d)
+    ref.RemoveAllConformers()
+    ref.AddConformer(ref_conf_3d, assignId=True)
+    rdMolAlign.AlignMol(mol, ref, atomMap=[(i, i) for i in range(n)])
 
 
 def flip_mol(m):
@@ -187,6 +209,7 @@ def mol_changed():
     )
     if mol_isOK(mol):
         svg = get_svg(mol, flipMol, rotationValue)
+        ref_2d = Chem.Mol(mol)
         QED = f"QED score: {qed(mol):.3f}"
         tpsa = f"TPSA: {TPSA(mol):.3f} &#8491;<sup>2</sup>"
         sa = f"SA score: {sascorer.calculateScore(mol):.3f}"
@@ -210,6 +233,7 @@ def mol_changed():
 
         if threeD:
             mol, ener = amsr.GetConformerAndEnergy(mol, dihedral=dih)
+            _align_3d_to_2d_plane(mol, ref_2d)
             sdf = Chem.MolToMolBlock(mol)
             ener = f"Energy: {ener:.3f} kcal/mol"
         if smiles_to_amsr:

@@ -283,7 +283,7 @@
             function(response) {
                 var data = JSON.parse(response);
                 element('amsr').value = data.amsr;
-                mol_changed(false, true, false); // amsr to smiles
+                mol_changed(false, true, true); // amsr to smiles, and refresh 3D if enabled
             }
         );
     }
