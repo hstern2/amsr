@@ -441,8 +441,8 @@ def molecule_properties(mol) -> list[tuple[str, str]]:
     from rdkit.Chem.Descriptors import TPSA, MolWt
     from rdkit.Chem.Lipinski import (
         HeavyAtomCount,
-        NumHAcceptors,
-        NumHDonors,
+        NHOHCount,
+        NOCount,
         NumRotatableBonds,
     )
     from rdkit.Chem.QED import qed
@@ -450,8 +450,9 @@ def molecule_properties(mol) -> list[tuple[str, str]]:
     hac = HeavyAtomCount(mol)
     mw = MolWt(mol)
     clogp = MolLogP(mol)
-    hbd = NumHDonors(mol)
-    hba = NumHAcceptors(mol)
+    # Use the original/traditional Lipinski Rule-of-Five HBA/HBD definitions.
+    hbd = NHOHCount(mol)
+    hba = NOCount(mol)
     n_rot_bonds = NumRotatableBonds(mol)
     passes_ro5 = mw <= 500 and clogp <= 5 and hbd <= 5 and hba <= 10
 

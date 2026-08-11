@@ -11,8 +11,8 @@ from rdkit.Chem.Crippen import MolLogP
 from rdkit.Chem.Descriptors import TPSA, MolWt
 from rdkit.Chem.Lipinski import (
     HeavyAtomCount,
-    NumHAcceptors,
-    NumHDonors,
+    NHOHCount,
+    NOCount,
     NumRotatableBonds,
 )
 from rdkit.Chem.QED import qed
@@ -194,8 +194,9 @@ def mol_changed():
         hac_val = HeavyAtomCount(mol)
         mw_val = MolWt(mol)
         clogp_val = MolLogP(mol)
-        hbd_val = NumHDonors(mol)
-        hba_val = NumHAcceptors(mol)
+        # Use the original/traditional Lipinski Rule-of-Five HBA/HBD definitions.
+        hbd_val = NHOHCount(mol)
+        hba_val = NOCount(mol)
         n_rot_bonds_val = NumRotatableBonds(mol)
         passes_ro5_val = mw_val <= 500 and clogp_val <= 5 and hbd_val <= 5 and hba_val <= 10
 

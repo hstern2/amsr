@@ -370,6 +370,24 @@ def test_molecule_properties_match_amsr_2d_labels():
     assert dict(properties)["Passes Rule of 5"] == "Yes"
 
 
+def test_molecule_properties_use_traditional_lipinski_hbond_counts():
+    """HBA/HBD match RDKit's traditional Lipinski definitions, not newer perception."""
+    Chem = pytest.importorskip("rdkit.Chem")
+    import morph_app
+    from rdkit.Chem.Lipinski import NHOHCount, NOCount, NumHAcceptors, NumHDonors
+
+    for smiles in ("CC(=O)N", "CC(=O)Nc1ccc(O)cc1"):
+        mol = Chem.MolFromSmiles(smiles)
+        properties = dict(morph_app.molecule_properties(mol))
+
+        assert properties["H-bond donors"] == str(NHOHCount(mol))
+        assert properties["H-bond acceptors"] == str(NOCount(mol))
+
+    regression_mol = Chem.MolFromSmiles("CC(=O)N")
+    assert NHOHCount(regression_mol) != NumHDonors(regression_mol)
+    assert NOCount(regression_mol) != NumHAcceptors(regression_mol)
+
+
 def test_molecule_hover_grid_html_embeds_property_tooltips():
     """Rendered morph molecules expose descriptor tooltips on hover/focus."""
     Chem = pytest.importorskip("rdkit.Chem")
