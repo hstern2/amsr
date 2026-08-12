@@ -8,6 +8,7 @@ Streamlit app for **molecular morphing**: compute the minimum-edit pathway betwe
 - Local quick lookup catalog with interesting natural products and FDA-approved drugs
 - Autocomplete includes a fixed, lowercase vendored DrugCentral FDA-approved drug name list plus curated app molecules; numeric-leading names are excluded
 - Catalog entries include PubChem CIDs for SMILES traceability; typed names still fall back to PubChem PUG REST
+- Endpoint salts and mixtures are reduced to their largest connected component, excluding counterions
 - **Morph** button runs `amsr.Morph(...)` on the resolved SMILES to get the pathway
 - Optional filtering of generated morph intermediates through `Lilly_Medchem_Rules.rb -relaxed`, enabled by default
 - Output: downloadable pathway `.smi` file and rendered molecule grid

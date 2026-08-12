@@ -154,6 +154,41 @@ def test_resolve_molecule_input_accepts_raw_smiles(monkeypatch):
     assert resolved.source == "Manual input"
 
 
+def test_resolve_molecule_input_removes_counterions_from_raw_smiles(monkeypatch):
+    """Only the largest connected endpoint component is retained."""
+    pytest.importorskip("rdkit.Chem")
+
+    import morph_app
+
+    def fail_lookup(name):
+        raise AssertionError(f"Unexpected lookup for {name}")
+
+    monkeypatch.setattr(morph_app, "lookup_pubchem_molecule", fail_lookup)
+    resolved = morph_app.resolve_molecule_input("[Na+].CC(=O)[O-]")
+
+    assert resolved.smiles == "CC(=O)[O-]"
+    assert "." not in resolved.smiles
+
+
+def test_resolve_molecule_input_removes_counterions_from_name_lookup(monkeypatch):
+    """PubChem-resolved salts are reduced before they become endpoints."""
+    pytest.importorskip("rdkit.Chem")
+
+    import morph_app
+
+    monkeypatch.setattr(
+        morph_app,
+        "lookup_pubchem_molecule",
+        lambda name: morph_app.MoleculeResolution(
+            "Trimethylammonium chloride", "C[NH+](C)C.[Cl-]", "PubChem"
+        ),
+    )
+
+    resolved = morph_app.resolve_molecule_input("trimethylammonium chloride")
+
+    assert resolved.smiles == "C[NH+](C)C"
+
+
 def test_smiles_classifier_leaves_hyphenated_names_for_lookup():
     """Hyphenated molecule names should not be mistaken for raw SMILES."""
     import morph_app

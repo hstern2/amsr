@@ -218,8 +218,36 @@ def lookup_pubchem_molecule(name: str) -> Optional[MoleculeResolution]:
     return MoleculeResolution(first.get("Title") or name, smiles, source)
 
 
+def largest_connected_component_smiles(smiles: str) -> str:
+    """Return the largest connected component of a SMILES endpoint."""
+    from rdkit import Chem
+
+    smiles = smiles.strip()
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is None:
+        raise ValueError("Enter a valid SMILES string.")
+
+    fragments = Chem.GetMolFrags(mol, asMols=True, sanitizeFrags=True)
+    if not fragments:
+        raise ValueError("Enter a valid SMILES string.")
+    if len(fragments) == 1:
+        return smiles
+
+    largest_fragment = max(fragments, key=lambda fragment: fragment.GetNumAtoms())
+    return Chem.MolToSmiles(largest_fragment, isomericSmiles=True)
+
+
+def _without_counterions(molecule: MoleculeResolution) -> MoleculeResolution:
+    """Keep only the largest connected component of a resolved endpoint."""
+    return MoleculeResolution(
+        molecule.name,
+        largest_connected_component_smiles(molecule.smiles),
+        molecule.source,
+    )
+
+
 def resolve_molecule_input(value: Optional[str]) -> MoleculeResolution:
-    """Resolve a catalog selection, typed molecule name, or SMILES string."""
+    """Resolve an endpoint and discard all but its largest connected component."""
     value = (value or "").strip()
     if not value:
         raise ValueError("Choose a molecule or enter a valid SMILES string.")
@@ -228,18 +256,20 @@ def resolve_molecule_input(value: Optional[str]) -> MoleculeResolution:
     selected_key = selected_key or CATALOG_OPTION_INDEX.get(_molecule_lookup_key(value))
     if selected_key:
         molecule = KNOWN_MOLECULES[selected_key]
-        return MoleculeResolution(molecule.name, molecule.smiles, molecule_source_label(molecule))
+        return _without_counterions(
+            MoleculeResolution(molecule.name, molecule.smiles, molecule_source_label(molecule))
+        )
 
     known = lookup_known_molecule(value)
     if known:
-        return known
+        return _without_counterions(known)
 
     if looks_like_smiles(value):
-        return MoleculeResolution("Custom SMILES", value, "Manual input")
+        return _without_counterions(MoleculeResolution("Custom SMILES", value, "Manual input"))
 
     pubchem = lookup_pubchem_molecule(value)
     if pubchem:
-        return pubchem
+        return _without_counterions(pubchem)
 
     raise ValueError(
         f"Could not look up '{value}'. Choose a catalog molecule or enter a valid SMILES string."
