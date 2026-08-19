@@ -1179,6 +1179,8 @@ _W_DIHEDRAL = 0.1
 _W_EZ = 0.3
 _W_LINEAR = 20.0
 
+_NONBONDED_CLASH_CUTOFF = 1.0
+
 DEFAULT_MAX_CONFS = 500
 
 
@@ -1278,6 +1280,21 @@ def _optimize(
     return cost
 
 
+def _build_nonbonded_pairs(mol):
+    """Return atom pairs separated by more than two graph bonds."""
+    graph_distances = Chem.GetDistanceMatrix(mol)
+    return np.argwhere(np.triu(graph_distances > 2, k=1)).astype(np.int32)
+
+
+def _has_serious_nonbonded_clash(coords, nonbonded_pairs):
+    """Return whether any nonbonded atom pair is closer than 1 Å."""
+    if len(nonbonded_pairs) == 0:
+        return False
+    deltas = coords[nonbonded_pairs[:, 0]] - coords[nonbonded_pairs[:, 1]]
+    squared_distances = np.einsum("ij,ij->i", deltas, deltas)
+    return bool(np.any(squared_distances < _NONBONDED_CLASH_CUTOFF**2))
+
+
 # ============================================================
 # Public API
 # ============================================================
@@ -1296,8 +1313,10 @@ def GetConformer(
     2. Fix chirality, pseudo-E/Z, ring puckers, and acyclic dihedrals.
     3. Optimize all atom positions with a cost function enforcing ideal
        bond lengths, angles, planarity, chirality, and AMSR dihedrals.
+    4. Exclude candidates with nonbonded atom pairs closer than 1 Å.
 
-    Stops early if any start reaches a very low internal cost.
+    Stops early if a clash-free start reaches a very low internal cost.
+    Falls back to the lowest-cost candidate if every start clashes.
     """
     n = mol.GetNumAtoms()
     if n == 0:
@@ -1313,6 +1332,8 @@ def GetConformer(
 
     best_cost = float("inf")
     best_coords = None
+    fallback_cost = float("inf")
+    fallback_coords = None
     atom_rings = _build_ring_index(mol)
     subtree_cache = _build_subtree_cache(mol)
     chirality_ops = _build_chirality_ops(mol, subtree_cache)
@@ -1321,6 +1342,7 @@ def GetConformer(
     ring_topo = _build_ring_topology(mol, subtree_cache)
     embed_data = _build_embed_data(mol, bond_dihedral, atom_rings)
     optimizer_data = _build_optimizer_data(mol, bond_dihedral, atom_rings)
+    nonbonded_pairs = _build_nonbonded_pairs(mol)
 
     for attempt in range(max_confs):
         _dg_embed(
@@ -1350,14 +1372,20 @@ def GetConformer(
             gtol=gtol,
             optimizer_data=optimizer_data,
         )
+        if oc < fallback_cost:
+            fallback_cost = oc
+            fallback_coords = coords.copy()
+        if _has_serious_nonbonded_clash(coords, nonbonded_pairs):
+            continue
         if oc < best_cost:
             best_cost = oc
             best_coords = coords.copy()
             if best_cost < 1.0:
                 break
 
-    if best_coords is not None:
-        coords[:] = best_coords
+    selected_coords = best_coords if best_coords is not None else fallback_coords
+    if selected_coords is not None:
+        coords[:] = selected_coords
 
     conf = Chem.Conformer(n)
     conf.Set3D(True)
