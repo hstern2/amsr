@@ -7,9 +7,9 @@ centers, E/Z constraints, and AMSR dihedral restraints.
 """
 
 import ctypes
-import os
-import sys
 from collections import deque
+from importlib.machinery import EXTENSION_SUFFIXES
+from pathlib import Path
 from typing import Optional
 
 import numpy as np
@@ -19,9 +19,18 @@ from rdkit import Chem
 # C shared library (conf_util.c): cost_and_grad + embed
 # ---------------------------------------------------------------------------
 
-_LIB_NAME = "conf_util.dylib" if sys.platform == "darwin" else "conf_util.so"
-_LIB_PATH = os.path.join(os.path.dirname(__file__), "src", _LIB_NAME)
-_lib = ctypes.CDLL(_LIB_PATH)
+_LIB_DIR = Path(__file__).parent / "src"
+_LIB_CANDIDATES = [
+    _LIB_DIR / "conf_util.so",
+    _LIB_DIR / "conf_util.dylib",
+    *(_LIB_DIR / f"conf_util{suffix}" for suffix in EXTENSION_SUFFIXES),
+]
+_LIB_PATH = next((path for path in _LIB_CANDIDATES if path.is_file()), None)
+if _LIB_PATH is None:
+    raise ImportError(
+        "AMSR conformer library is missing; reinstall AMSR from a source or platform wheel"
+    )
+_lib = ctypes.CDLL(str(_LIB_PATH))
 
 _c_lbfgs = _lib.lbfgs_optimize
 _c_lbfgs.restype = ctypes.c_double
