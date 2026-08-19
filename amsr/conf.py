@@ -1179,7 +1179,8 @@ _W_DIHEDRAL = 0.1
 _W_EZ = 0.3
 _W_LINEAR = 20.0
 
-_NONBONDED_CLASH_CUTOFF = 1.0
+_ONE_FOUR_VDW_SCALE = 0.65
+_NONBONDED_VDW_SCALE = 0.75
 
 DEFAULT_MAX_CONFS = 500
 
@@ -1280,19 +1281,37 @@ def _optimize(
     return cost
 
 
-def _build_nonbonded_pairs(mol):
-    """Return atom pairs separated by more than two graph bonds."""
+def _build_nonbonded_clash_data(mol):
+    """Precompute nonbonded pairs and squared VdW clash thresholds."""
     graph_distances = Chem.GetDistanceMatrix(mol)
-    return np.argwhere(np.triu(graph_distances > 2, k=1)).astype(np.int32)
+    pairs = np.argwhere(np.triu(graph_distances > 2, k=1)).astype(np.int32)
+    if len(pairs) == 0:
+        return pairs, np.empty(0, dtype=np.float64)
+
+    periodic_table = Chem.GetPeriodicTable()
+    radii = np.fromiter(
+        (periodic_table.GetRvdw(atom.GetAtomicNum()) for atom in mol.GetAtoms()),
+        dtype=np.float64,
+        count=mol.GetNumAtoms(),
+    )
+    pair_graph_distances = graph_distances[pairs[:, 0], pairs[:, 1]]
+    scales = np.where(
+        pair_graph_distances == 3,
+        _ONE_FOUR_VDW_SCALE,
+        _NONBONDED_VDW_SCALE,
+    )
+    thresholds = scales * (radii[pairs[:, 0]] + radii[pairs[:, 1]])
+    return pairs, thresholds**2
 
 
-def _has_serious_nonbonded_clash(coords, nonbonded_pairs):
-    """Return whether any nonbonded atom pair is closer than 1 Å."""
+def _has_serious_nonbonded_clash(coords, clash_data):
+    """Return whether any nonbonded pair has a serious VdW overlap."""
+    nonbonded_pairs, squared_thresholds = clash_data
     if len(nonbonded_pairs) == 0:
         return False
     deltas = coords[nonbonded_pairs[:, 0]] - coords[nonbonded_pairs[:, 1]]
     squared_distances = np.einsum("ij,ij->i", deltas, deltas)
-    return bool(np.any(squared_distances < _NONBONDED_CLASH_CUTOFF**2))
+    return bool(np.any(squared_distances < squared_thresholds))
 
 
 # ============================================================
@@ -1313,10 +1332,10 @@ def GetConformer(
     2. Fix chirality, pseudo-E/Z, ring puckers, and acyclic dihedrals.
     3. Optimize all atom positions with a cost function enforcing ideal
        bond lengths, angles, planarity, chirality, and AMSR dihedrals.
-    4. Exclude candidates with nonbonded atom pairs closer than 1 Å.
+    4. Exclude candidates with serious van-der-Waals overlaps.
 
     Stops early if a clash-free start reaches a very low internal cost.
-    Falls back to the lowest-cost candidate if every start clashes.
+    Raises ``ValueError`` if every generated candidate has a serious clash.
     """
     n = mol.GetNumAtoms()
     if n == 0:
@@ -1332,8 +1351,6 @@ def GetConformer(
 
     best_cost = float("inf")
     best_coords = None
-    fallback_cost = float("inf")
-    fallback_coords = None
     atom_rings = _build_ring_index(mol)
     subtree_cache = _build_subtree_cache(mol)
     chirality_ops = _build_chirality_ops(mol, subtree_cache)
@@ -1342,7 +1359,7 @@ def GetConformer(
     ring_topo = _build_ring_topology(mol, subtree_cache)
     embed_data = _build_embed_data(mol, bond_dihedral, atom_rings)
     optimizer_data = _build_optimizer_data(mol, bond_dihedral, atom_rings)
-    nonbonded_pairs = _build_nonbonded_pairs(mol)
+    clash_data = _build_nonbonded_clash_data(mol)
 
     for attempt in range(max_confs):
         _dg_embed(
@@ -1372,10 +1389,7 @@ def GetConformer(
             gtol=gtol,
             optimizer_data=optimizer_data,
         )
-        if oc < fallback_cost:
-            fallback_cost = oc
-            fallback_coords = coords.copy()
-        if _has_serious_nonbonded_clash(coords, nonbonded_pairs):
+        if _has_serious_nonbonded_clash(coords, clash_data):
             continue
         if oc < best_cost:
             best_cost = oc
@@ -1383,9 +1397,12 @@ def GetConformer(
             if best_cost < 1.0:
                 break
 
-    selected_coords = best_coords if best_coords is not None else fallback_coords
-    if selected_coords is not None:
-        coords[:] = selected_coords
+    if best_coords is None:
+        raise ValueError(
+            f"failed to generate a conformer without serious steric overlaps "
+            f"in {max_confs} attempts"
+        )
+    coords[:] = best_coords
 
     conf = Chem.Conformer(n)
     conf.Set3D(True)
