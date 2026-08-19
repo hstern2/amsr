@@ -51,17 +51,17 @@ inspired by</p>
 <h2>Usage<a class="headerlink" href="#usage" title="Link to this heading">¶</a></h2>
 <div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">amsr</span>
 
-<span class="n">amsr</span><span class="o">.</span><span class="n">ToMol</span><span class="p">(</span><span class="s2">&quot;CNcncc5cNcN6C.oC.o&quot;</span><span class="p">)</span> <span class="c1"># caffeine</span>
+<span class="n">amsr</span><span class="o">.</span><span class="n">ToMol</span><span class="p">(</span><span class="s2">"CNcncc5cNcN6C.oC.o"</span><span class="p">)</span> <span class="c1"># caffeine</span>
 </pre></div>
 </div>
 <p><img alt="caffeine" src="https://user-images.githubusercontent.com/19351218/151638119-b1439d47-5e5a-417e-9254-c34568e2f3d1.png" /></p>
-<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">taxol_smi</span> <span class="o">=</span> <span class="s2">&quot;CC1=C2[C@@]([C@]([C@H]([C@@H]3[C@]4([C@H](OC4)C[C@@H]([C@]3(C(=O)[C@@H]2OC(=O)C)C)O)OC(=O)C)OC(=O)c5ccccc5)(C[C@@H]1OC(=O)[C@H](O)[C@@H](NC(=O)c6ccccc6)c7ccccc7)O)(C)C&quot;</span>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">taxol_smi</span> <span class="o">=</span> <span class="s2">"CC1=C2[C@@]([C@]([C@H]([C@@H]3[C@]4([C@H](OC4)C[C@@H]([C@]3(C(=O)[C@@H]2OC(=O)C)C)O)OC(=O)C)OC(=O)c5ccccc5)(C[C@@H]1OC(=O)[C@H](O)[C@@H](NC(=O)c6ccccc6)c7ccccc7)O)(C)C"</span>
 
 <span class="n">amsr</span><span class="o">.</span><span class="n">FromSmiles</span><span class="p">(</span><span class="n">taxol_smi</span><span class="p">)</span>
-<span class="c1"># CccCC`C`C`C&#39;C`OC4.CC&#39;C&#39;6coC`8[OAc].C.O....[OAc].O[Bz].CC`6OcoC`O.C&#39;N[Bz].[Ph]....O.C.C</span>
+<span class="c1"># CccCC`C`C`C'C`OC4.CC'C'6coC`8[OAc].C.O....[OAc].O[Bz].CC`6OcoC`O.C'N[Bz].[Ph]....O.C.C</span>
 
 <span class="n">amsr</span><span class="o">.</span><span class="n">FromSmiles</span><span class="p">(</span><span class="n">taxol_smi</span><span class="p">,</span> <span class="n">useGroups</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="c1"># CccCC`C`C`C&#39;C`OC4.CC&#39;C&#39;6coC`8OcoC..C.O....OcoC..Ococccccc6......CC`6OcoC`O.C&#39;Ncocccccc6......cccccc6.........O.C.C</span>
+<span class="c1"># CccCC`C`C`C'C`OC4.CC'C'6coC`8OcoC..C.O....OcoC..Ococccccc6......CC`6OcoC`O.C'Ncocccccc6......cccccc6.........O.C.C</span>
 </pre></div>
 </div>
 </section>
@@ -2840,7 +2840,7 @@ L 139.1 21.8
 </section>
 <section id="developing">
 <h2>Developing<a class="headerlink" href="#developing" title="Link to this heading">¶</a></h2>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;.[dev]&quot;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">".[dev]"</span>
 pre-commit<span class="w"> </span>install
 </pre></div>
 </div>
