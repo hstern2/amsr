@@ -57,6 +57,46 @@ def test_conformer_falls_back_to_soft_overlap(monkeypatch):
     assert decoded.GetNumConformers() == 1
 
 
+def test_conformer_prefers_lower_cost_over_soft_overlap(monkeypatch):
+    costs = iter((2.0, 5.0))
+    clashes = iter(((False, 0.1), (False, 0.0)))
+
+    def embed(*args, seed, coords, **kwargs):
+        coords.fill(seed - 42)
+
+    monkeypatch.setattr(conformers, "_dg_embed", embed)
+    monkeypatch.setattr(conformers, "_optimize", lambda *args, **kwargs: next(costs))
+    monkeypatch.setattr(
+        conformers,
+        "_nonbonded_clash_metrics",
+        lambda coordinates, clash_data: next(clashes),
+    )
+
+    decoded = GetConformer(Chem.MolFromSmiles("C"), max_confs=2)
+
+    assert decoded.GetConformer().GetAtomPosition(0).x == 0.0
+
+
+def test_conformer_prefers_competitive_vdw_clear_candidate(monkeypatch):
+    costs = iter((10.0, 15.0))
+    clashes = iter(((False, 0.1), (False, 0.0)))
+
+    def embed(*args, seed, coords, **kwargs):
+        coords.fill(seed - 42)
+
+    monkeypatch.setattr(conformers, "_dg_embed", embed)
+    monkeypatch.setattr(conformers, "_optimize", lambda *args, **kwargs: next(costs))
+    monkeypatch.setattr(
+        conformers,
+        "_nonbonded_clash_metrics",
+        lambda coordinates, clash_data: next(clashes),
+    )
+
+    decoded = GetConformer(Chem.MolFromSmiles("C"), max_confs=2)
+
+    assert decoded.GetConformer().GetAtomPosition(0).x == 1.0
+
+
 def test_conformer_rejects_only_hard_clashes(monkeypatch):
     monkeypatch.setattr(
         conformers,

@@ -1182,6 +1182,7 @@ _W_LINEAR = 20.0
 _ONE_FOUR_VDW_SCALE = 0.65
 _NONBONDED_VDW_SCALE = 0.75
 _HARD_NONBONDED_CLASH_CUTOFF = 1.0
+_MAX_VDW_CLEAR_COST_RATIO = 2.0
 
 DEFAULT_MAX_CONFS = 500
 
@@ -1348,9 +1349,10 @@ def GetConformer(
        bond lengths, angles, planarity, chirality, and AMSR dihedrals.
     4. Prefer candidates without serious van-der-Waals overlaps.
 
-    Stops early if a VdW-clear start reaches a very low internal cost. If none
-    clears the soft VdW thresholds, returns the lowest-cost non-catastrophic
-    candidate. Nonbonded contacts below 1 A are always rejected.
+    Prefers a VdW-clear candidate when its internal cost is no more than twice
+    the lowest non-catastrophic cost. Otherwise returns the lowest-cost
+    non-catastrophic candidate, using soft overlap to break cost ties.
+    Nonbonded contacts below 1 A are always rejected.
     """
     n = mol.GetNumAtoms()
     if n == 0:
@@ -1364,10 +1366,10 @@ def GetConformer(
             bond_dihedral[(i, j)] = (mi, mj, angle)
             bond_dihedral[(j, i)] = (mj, mi, angle)
 
-    best_cost = float("inf")
+    best_score = (float("inf"), float("inf"))
     best_coords = None
-    fallback_score = (float("inf"), float("inf"))
-    fallback_coords = None
+    clear_cost = float("inf")
+    clear_coords = None
     atom_rings = _build_ring_index(mol)
     subtree_cache = _build_subtree_cache(mol)
     chirality_ops = _build_chirality_ops(mol, subtree_cache)
@@ -1409,25 +1411,25 @@ def GetConformer(
         hard_clash, overlap = _nonbonded_clash_metrics(coords, clash_data)
         if hard_clash:
             continue
-        if overlap > 0.0:
-            candidate_score = (oc, overlap)
-            if candidate_score < fallback_score:
-                fallback_score = candidate_score
-                fallback_coords = coords.copy()
-            continue
-        if oc < best_cost:
-            best_cost = oc
+        candidate_score = (oc, overlap)
+        if candidate_score < best_score:
+            best_score = candidate_score
             best_coords = coords.copy()
-            if best_cost < 1.0:
+        if overlap == 0.0 and oc < clear_cost:
+            clear_cost = oc
+            clear_coords = coords.copy()
+            if clear_cost < 1.0 and clear_cost <= _MAX_VDW_CLEAR_COST_RATIO * best_score[0]:
                 break
 
-    selected_coords = best_coords if best_coords is not None else fallback_coords
-    if selected_coords is None:
+    if best_coords is None:
         raise ValueError(
             f"failed to generate a conformer without a sub-1 A nonbonded contact "
             f"in {max_confs} attempts"
         )
-    coords[:] = selected_coords
+    if clear_coords is not None and clear_cost <= _MAX_VDW_CLEAR_COST_RATIO * best_score[0]:
+        coords[:] = clear_coords
+    else:
+        coords[:] = best_coords
 
     conf = Chem.Conformer(n)
     conf.Set3D(True)
