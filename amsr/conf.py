@@ -1181,6 +1181,7 @@ _W_LINEAR = 20.0
 
 _ONE_FOUR_VDW_SCALE = 0.65
 _NONBONDED_VDW_SCALE = 0.75
+_HARD_NONBONDED_CLASH_CUTOFF = 1.0
 
 DEFAULT_MAX_CONFS = 500
 
@@ -1306,12 +1307,25 @@ def _build_nonbonded_clash_data(mol):
 
 def _has_serious_nonbonded_clash(coords, clash_data):
     """Return whether any nonbonded pair has a serious VdW overlap."""
+    hard_clash, overlap = _nonbonded_clash_metrics(coords, clash_data)
+    return hard_clash or overlap > 0.0
+
+
+def _nonbonded_clash_metrics(coords, clash_data):
+    """Return ``(hard_clash, relative_overlap)`` for nonbonded pairs.
+
+    ``relative_overlap`` is zero when all pairs clear their scaled VdW
+    thresholds. Otherwise it is the largest fractional threshold violation.
+    """
     nonbonded_pairs, squared_thresholds = clash_data
     if len(nonbonded_pairs) == 0:
-        return False
+        return False, 0.0
     deltas = coords[nonbonded_pairs[:, 0]] - coords[nonbonded_pairs[:, 1]]
     squared_distances = np.einsum("ij,ij->i", deltas, deltas)
-    return bool(np.any(squared_distances < squared_thresholds))
+    hard_clash = bool(np.any(squared_distances < _HARD_NONBONDED_CLASH_CUTOFF**2))
+    safe_distances = np.maximum(squared_distances, np.finfo(np.float64).tiny)
+    largest_ratio = float(np.sqrt(np.max(squared_thresholds / safe_distances)))
+    return hard_clash, max(0.0, largest_ratio - 1.0)
 
 
 # ============================================================
@@ -1332,10 +1346,11 @@ def GetConformer(
     2. Fix chirality, pseudo-E/Z, ring puckers, and acyclic dihedrals.
     3. Optimize all atom positions with a cost function enforcing ideal
        bond lengths, angles, planarity, chirality, and AMSR dihedrals.
-    4. Exclude candidates with serious van-der-Waals overlaps.
+    4. Prefer candidates without serious van-der-Waals overlaps.
 
-    Stops early if a clash-free start reaches a very low internal cost.
-    Raises ``ValueError`` if every generated candidate has a serious clash.
+    Stops early if a VdW-clear start reaches a very low internal cost. If none
+    clears the soft VdW thresholds, returns the lowest-cost non-catastrophic
+    candidate. Nonbonded contacts below 1 A are always rejected.
     """
     n = mol.GetNumAtoms()
     if n == 0:
@@ -1351,6 +1366,8 @@ def GetConformer(
 
     best_cost = float("inf")
     best_coords = None
+    fallback_score = (float("inf"), float("inf"))
+    fallback_coords = None
     atom_rings = _build_ring_index(mol)
     subtree_cache = _build_subtree_cache(mol)
     chirality_ops = _build_chirality_ops(mol, subtree_cache)
@@ -1389,7 +1406,14 @@ def GetConformer(
             gtol=gtol,
             optimizer_data=optimizer_data,
         )
-        if _has_serious_nonbonded_clash(coords, clash_data):
+        hard_clash, overlap = _nonbonded_clash_metrics(coords, clash_data)
+        if hard_clash:
+            continue
+        if overlap > 0.0:
+            candidate_score = (oc, overlap)
+            if candidate_score < fallback_score:
+                fallback_score = candidate_score
+                fallback_coords = coords.copy()
             continue
         if oc < best_cost:
             best_cost = oc
@@ -1397,12 +1421,13 @@ def GetConformer(
             if best_cost < 1.0:
                 break
 
-    if best_coords is None:
+    selected_coords = best_coords if best_coords is not None else fallback_coords
+    if selected_coords is None:
         raise ValueError(
-            f"failed to generate a conformer without serious steric overlaps "
+            f"failed to generate a conformer without a sub-1 A nonbonded contact "
             f"in {max_confs} attempts"
         )
-    coords[:] = best_coords
+    coords[:] = selected_coords
 
     conf = Chem.Conformer(n)
     conf.Set3D(True)

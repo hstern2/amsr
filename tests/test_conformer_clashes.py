@@ -1,10 +1,13 @@
 import numpy as np
+import pytest
 from rdkit import Chem
 
+import amsr.conf as conformers
 from amsr.conf import (
     GetConformer,
     _build_nonbonded_clash_data,
     _has_serious_nonbonded_clash,
+    _nonbonded_clash_metrics,
 )
 from amsr.decode import ToMol
 
@@ -32,6 +35,36 @@ def test_vdw_overlap_check_uses_precomputed_threshold():
     assert _has_serious_nonbonded_clash(coordinates, clash_data)
     coordinates[3, 0] = 2.22
     assert not _has_serious_nonbonded_clash(coordinates, clash_data)
+
+
+def test_sub_1_angstrom_contact_is_a_hard_clash():
+    mol = Chem.MolFromSmiles("CCCC")
+    clash_data = _build_nonbonded_clash_data(mol)
+    coordinates = np.zeros((4, 3), dtype=np.float64)
+    coordinates[3, 0] = 0.99
+    hard_clash, overlap = _nonbonded_clash_metrics(coordinates, clash_data)
+    assert hard_clash
+    assert overlap > 0.0
+
+
+def test_conformer_falls_back_to_soft_overlap(monkeypatch):
+    monkeypatch.setattr(
+        conformers,
+        "_nonbonded_clash_metrics",
+        lambda coordinates, clash_data: (False, 0.1),
+    )
+    decoded = GetConformer(Chem.MolFromSmiles("C"), max_confs=1)
+    assert decoded.GetNumConformers() == 1
+
+
+def test_conformer_rejects_only_hard_clashes(monkeypatch):
+    monkeypatch.setattr(
+        conformers,
+        "_nonbonded_clash_metrics",
+        lambda coordinates, clash_data: (True, 0.1),
+    )
+    with pytest.raises(ValueError, match="sub-1 A"):
+        GetConformer(Chem.MolFromSmiles("C"), max_confs=1)
 
 
 def test_conformer_selection_rejects_clashing_chembl3d_candidate():
