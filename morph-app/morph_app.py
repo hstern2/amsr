@@ -321,6 +321,202 @@ def pathway_to_smi_text(
     return "\n".join(rows) + ("\n" if rows else "")
 
 
+def _pathway_molecule_label(
+    index: int,
+    molecule_count: int,
+    molecule_1: Optional[MoleculeResolution],
+    molecule_2: Optional[MoleculeResolution],
+) -> str:
+    """Return a short human-readable caption for a pathway structure."""
+    if index == 0:
+        name = molecule_1.name if molecule_1 else "Endpoint 1"
+        return _clean_smi_title(f"{index + 1}. From: {name}")
+    if index == molecule_count - 1:
+        name = molecule_2.name if molecule_2 else "Endpoint 2"
+        return _clean_smi_title(f"{index + 1}. To: {name}")
+    return f"{index + 1}. Intermediate {index:03d}"
+
+
+def _format_cdxml_number(value: float) -> str:
+    """Format a CDXML drawing coordinate compactly and consistently."""
+    return f"{value:.2f}".rstrip("0").rstrip(".") or "0"
+
+
+def _cdxml_fragment_bounds(fragment) -> tuple[float, float, float, float]:
+    """Return the atom-coordinate bounds for an ElementTree CDXML fragment."""
+    positions = []
+    for node in fragment.iter("n"):
+        position = node.get("p")
+        if position:
+            x, y = (float(value) for value in position.split())
+            positions.append((x, y))
+
+    if not positions:
+        raise ValueError("RDKit produced a CDXML fragment without atom coordinates.")
+
+    xs, ys = zip(*positions)
+    return min(xs), min(ys), max(xs), max(ys)
+
+
+def _translate_cdxml_fragment(fragment, dx: float, dy: float) -> None:
+    """Translate all atom positions in a CDXML fragment in place."""
+    for node in fragment.iter("n"):
+        position = node.get("p")
+        if not position:
+            continue
+        x, y = (float(value) for value in position.split())
+        node.set("p", f"{_format_cdxml_number(x + dx)} {_format_cdxml_number(y + dy)}")
+
+
+def _renumber_cdxml_fragment(fragment, next_id: int) -> int:
+    """Give a copied RDKit fragment document-unique object IDs."""
+    id_map = {}
+    for element in fragment.iter():
+        old_id = element.get("id")
+        if old_id is not None:
+            id_map[old_id] = str(next_id)
+            element.set("id", str(next_id))
+            next_id += 1
+
+    # These are the object-ID references emitted by RDKit's molecule writer.
+    for element in fragment.iter():
+        for attribute in ("B", "E", "BondOrdering"):
+            references = element.get(attribute)
+            if references:
+                element.set(
+                    attribute,
+                    " ".join(id_map.get(reference, reference) for reference in references.split()),
+                )
+
+    return next_id
+
+
+def pathway_to_cdxml(
+    mols,
+    molecule_1: Optional[MoleculeResolution] = None,
+    molecule_2: Optional[MoleculeResolution] = None,
+    columns: int = 4,
+) -> str:
+    """Return the pathway as a labeled, editable ChemDraw CDXML document."""
+    from xml.etree import ElementTree
+
+    from rdkit import Chem
+    from rdkit.Chem import rdDepictor
+
+    mols = list(mols)
+    if not mols:
+        raise ValueError("Cannot make a CDXML document from an empty pathway.")
+    if columns < 1:
+        raise ValueError("CDXML layout columns must be at least one.")
+    if not hasattr(Chem, "MolToCDXMLBlock") or not Chem.HasChemDrawCDXSupport():
+        raise RuntimeError(
+            "This RDKit installation does not include ChemDraw CDXML writing support."
+        )
+
+    fragments = []
+    bounds = []
+    for mol in mols:
+        drawing_mol = Chem.Mol(mol)
+        rdDepictor.Compute2DCoords(drawing_mol, canonOrient=True, clearConfs=True)
+        molecule_document = ElementTree.fromstring(Chem.MolToCDXMLBlock(drawing_mol))
+        fragment = molecule_document.find("./page/fragment")
+        if fragment is None:
+            raise ValueError("RDKit did not produce a molecule fragment in its CDXML output.")
+        fragments.append(fragment)
+        bounds.append(_cdxml_fragment_bounds(fragment))
+
+    structure_width = max(max_x - min_x for min_x, _min_y, max_x, _max_y in bounds)
+    structure_height = max(max_y - min_y for _min_x, min_y, _max_x, max_y in bounds)
+    cell_width = max(180.0, structure_width + 72.0)
+    cell_height = max(160.0, structure_height + 96.0)
+    page_padding = 36.0
+    used_columns = min(columns, len(fragments))
+    row_count = (len(fragments) + columns - 1) // columns
+    page_width = 2 * page_padding + used_columns * cell_width
+    page_height = 2 * page_padding + row_count * cell_height
+
+    root = ElementTree.Element(
+        "CDXML",
+        {
+            "id": "1",
+            "CreationProgram": "AMSR Morph",
+            "Name": "morph_pathway.cdxml",
+            "BondLength": "28.8",
+            "LabelFont": "3",
+            "LabelSize": "10",
+            "LabelFace": "96",
+            "CaptionFont": "3",
+            "CaptionSize": "10",
+            "CaptionFace": "0",
+        },
+    )
+    font_table = ElementTree.SubElement(root, "fonttable")
+    ElementTree.SubElement(
+        font_table,
+        "font",
+        {"id": "3", "charset": "iso-8859-1", "name": "Arial"},
+    )
+    page = ElementTree.SubElement(
+        root,
+        "page",
+        {
+            "id": "2",
+            "BoundingBox": (
+                f"0 0 {_format_cdxml_number(page_width)} " f"{_format_cdxml_number(page_height)}"
+            ),
+        },
+    )
+
+    next_id = 10
+    for index, (fragment, (min_x, min_y, max_x, max_y)) in enumerate(zip(fragments, bounds)):
+        row, column = divmod(index, columns)
+        cell_left = page_padding + column * cell_width
+        cell_top = page_padding + row * cell_height
+        target_x = cell_left + cell_width / 2
+        target_y = cell_top + structure_height / 2
+        _translate_cdxml_fragment(
+            fragment,
+            target_x - (min_x + max_x) / 2,
+            target_y - (min_y + max_y) / 2,
+        )
+        next_id = _renumber_cdxml_fragment(fragment, next_id)
+        page.append(fragment)
+
+        label_y = cell_top + structure_height + 28.0
+        label = ElementTree.SubElement(
+            page,
+            "t",
+            {
+                "id": str(next_id),
+                "p": f"{_format_cdxml_number(target_x)} {_format_cdxml_number(label_y)}",
+                "BoundingBox": (
+                    f"{_format_cdxml_number(cell_left + 8)} "
+                    f"{_format_cdxml_number(label_y - 12)} "
+                    f"{_format_cdxml_number(cell_left + cell_width - 8)} "
+                    f"{_format_cdxml_number(label_y + 4)}"
+                ),
+                "LabelJustification": "Center",
+                "Justification": "Center",
+                "InterpretChemically": "no",
+            },
+        )
+        next_id += 1
+        style = ElementTree.SubElement(
+            label,
+            "s",
+            {"font": "3", "size": "10", "face": "0"},
+        )
+        style.text = _pathway_molecule_label(index, len(fragments), molecule_1, molecule_2)
+
+    ElementTree.indent(root, space="  ")
+    body = ElementTree.tostring(root, encoding="unicode", short_empty_elements=True)
+    return (
+        '<?xml version="1.0" encoding="UTF-8" ?>\n'
+        '<!DOCTYPE CDXML SYSTEM "https://static.chemistry.revvitycloud.com/cdxml/CDXML.dtd" >\n'
+        f"{body}\n"
+    )
+
+
 def _accepted_lilly_ids(stdout: str):
     accepted_ids = set()
     for line in stdout.splitlines():
@@ -793,13 +989,29 @@ def main():
             st.warning(f"Could not render molecules: {e}")
 
         smi_text = pathway_to_smi_text(morph.mol, molecule_1, molecule_2)
-        st.download_button(
-            "Download .smi file",
-            data=smi_text,
-            file_name="morph_pathway.smi",
-            mime="chemical/x-daylight-smiles",
-            key=f"morph_smi_{hash(smi_text) & 0xFFFFFFFF:X}",
-        )
+        download_columns = st.columns(2)
+        with download_columns[0]:
+            st.download_button(
+                "Download .smi file",
+                data=smi_text,
+                file_name="morph_pathway.smi",
+                mime="chemical/x-daylight-smiles",
+                key=f"morph_smi_{hash(smi_text) & 0xFFFFFFFF:X}",
+            )
+
+        try:
+            cdxml_text = pathway_to_cdxml(morph.mol, molecule_1, molecule_2)
+        except (RuntimeError, ValueError) as e:
+            st.warning(f"Could not create ChemDraw file: {e}")
+        else:
+            with download_columns[1]:
+                st.download_button(
+                    "Download CDXML for ChemDraw",
+                    data=cdxml_text,
+                    file_name="morph_pathway.cdxml",
+                    mime="chemical/x-cdxml",
+                    key=f"morph_cdxml_{hash(cdxml_text) & 0xFFFFFFFF:X}",
+                )
 
 
 if __name__ == "__main__":

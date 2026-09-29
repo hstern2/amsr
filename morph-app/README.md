@@ -11,7 +11,8 @@ Streamlit app for **molecular morphing**: compute the minimum-edit pathway betwe
 - Endpoint salts and mixtures are reduced to their largest connected component, excluding counterions
 - **Morph** button runs `amsr.Morph(...)` on the resolved SMILES to get the pathway
 - Optional filtering of generated morph intermediates through `Lilly_Medchem_Rules.rb -relaxed`, enabled by default
-- Output: downloadable pathway `.smi` file and rendered molecule grid
+- Output: rendered molecule grid plus downloadable pathway `.smi` and labeled, editable
+  ChemDraw `.cdxml` files
 
 ## Requirements
 
@@ -35,7 +36,9 @@ streamlit run morph_app.py
 
 1. Enter **From** and **To** molecule names such as `epibatidine`, catalog labels, or raw SMILES.
 2. Leave the Lilly Medchem Rules intermediate filter enabled, or uncheck it to see the raw morph pathway. The selected input endpoints are not filtered.
-3. View the molecule grid and use **Download .smi file** to save endpoint SMILES with displayed name/source labels and numbered intermediate records.
+3. View the molecule grid. Use **Download .smi file** for a text representation, or
+   **Download CDXML for ChemDraw** for an editable, labeled pathway laid out four structures
+   per row.
 
 ## Test
 

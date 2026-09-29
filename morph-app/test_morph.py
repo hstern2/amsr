@@ -6,6 +6,7 @@ import subprocess
 import sys
 from pathlib import Path
 from unittest import mock
+from xml.etree import ElementTree
 
 import pytest
 
@@ -263,6 +264,107 @@ def test_pathway_to_smi_text_names_endpoints_and_intermediates():
         "CCO\tendpoint_1: Ethanol (Manual input)",
         "CCCC\tintermediate_001",
         "Oc1ccccc1\tendpoint_2: Phenol (PubChem CID 996)",
+    ]
+
+
+def test_pathway_to_cdxml_is_labeled_editable_and_round_trips():
+    """The ChemDraw download contains separately editable, labeled molecules."""
+    Chem = pytest.importorskip("rdkit.Chem")
+    if not hasattr(Chem, "MolToCDXMLBlock") or not Chem.HasChemDrawCDXSupport():
+        pytest.skip("RDKit was built without ChemDraw CDXML support")
+
+    import morph_app
+
+    smiles = ["CCO", "CCCC", "c1ccccc1O"]
+    mols = [Chem.MolFromSmiles(value) for value in smiles]
+    molecule_1 = morph_app.MoleculeResolution("Ethanol", smiles[0], "Manual input")
+    molecule_2 = morph_app.MoleculeResolution("Phenol", smiles[-1], "PubChem CID 996")
+
+    cdxml = morph_app.pathway_to_cdxml(mols, molecule_1, molecule_2, columns=2)
+    root = ElementTree.fromstring(cdxml)
+
+    assert root.tag == "CDXML"
+    assert root.get("CreationProgram") == "AMSR Morph"
+    assert len(root.findall("./page/fragment")) == 3
+    assert [text.find("s").text for text in root.findall("./page/t")] == [
+        "1. From: Ethanol",
+        "2. Intermediate 001",
+        "3. To: Phenol",
+    ]
+    ids = [element.get("id") for element in root.iter() if element.get("id")]
+    assert len(ids) == len(set(ids))
+
+    round_tripped = Chem.MolsFromCDXML(cdxml)
+    assert len(round_tripped) == len(mols)
+    assert [Chem.MolToSmiles(mol) for mol in round_tripped] == [
+        Chem.MolToSmiles(mol) for mol in mols
+    ]
+
+
+def test_pathway_to_cdxml_places_structures_in_requested_grid():
+    """The ChemDraw pathway is laid out in rows instead of overlapping structures."""
+    Chem = pytest.importorskip("rdkit.Chem")
+    if not hasattr(Chem, "MolToCDXMLBlock") or not Chem.HasChemDrawCDXSupport():
+        pytest.skip("RDKit was built without ChemDraw CDXML support")
+
+    import morph_app
+
+    mols = [Chem.MolFromSmiles(value) for value in ("CC", "CCC", "CCCC")]
+    root = ElementTree.fromstring(morph_app.pathway_to_cdxml(mols, columns=2))
+    fragment_centers = []
+    for fragment in root.findall("./page/fragment"):
+        min_x, min_y, max_x, max_y = morph_app._cdxml_fragment_bounds(fragment)
+        fragment_centers.append(((min_x + max_x) / 2, (min_y + max_y) / 2))
+
+    assert fragment_centers[0][1] == pytest.approx(fragment_centers[1][1])
+    assert fragment_centers[0][0] < fragment_centers[1][0]
+    assert fragment_centers[2][1] > fragment_centers[0][1]
+
+
+def test_pathway_to_cdxml_preserves_detailed_chemical_information():
+    """CDXML export retains stereochemistry, charges, isotopes, and radicals."""
+    Chem = pytest.importorskip("rdkit.Chem")
+    if not hasattr(Chem, "MolToCDXMLBlock") or not Chem.HasChemDrawCDXSupport():
+        pytest.skip("RDKit was built without ChemDraw CDXML support")
+
+    import morph_app
+
+    smiles = [
+        "F[C@](Cl)(Br)I",
+        "C/C=C\\C",
+        "[13CH3][NH3+]",
+        "[O-][N+](=O)c1ccccc1",
+        "[2H]O[2H]",
+        "[CH3]",
+    ]
+    mols = [Chem.MolFromSmiles(value) for value in smiles]
+    round_tripped = Chem.MolsFromCDXML(morph_app.pathway_to_cdxml(mols))
+
+    assert [Chem.MolToSmiles(mol, isomericSmiles=True) for mol in round_tripped] == [
+        Chem.MolToSmiles(mol, isomericSmiles=True) for mol in mols
+    ]
+
+
+def test_streamlit_app_offers_cdxml_download():
+    """A completed morph exposes both pathway download formats in the UI."""
+    pytest.importorskip("rdkit.Chem")
+    pytest.importorskip("amsr")
+    pytest.importorskip("streamlit.testing.v1")
+    from streamlit.testing.v1 import AppTest
+
+    app_path = Path(__file__).with_name("morph_app.py")
+    app = AppTest.from_file(str(app_path), default_timeout=20)
+    app.run()
+    app.text_input(key="molecule_1").set_value("CCO")
+    app.text_input(key="molecule_2").set_value("CCN")
+    app.checkbox[0].uncheck()
+    app.button[0].click()
+    app.run()
+
+    assert not app.exception
+    assert [button.label for button in app.get("download_button")] == [
+        "Download .smi file",
+        "Download CDXML for ChemDraw",
     ]
 
 

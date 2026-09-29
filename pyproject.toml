@@ -17,7 +17,7 @@ classifiers = [
   "Topic :: Scientific/Engineering :: Chemistry",
 ]
 dependencies = [
-  "rdkit",
+  "rdkit>=2026.3.3",  # Includes native ChemDraw CDXML writing support
   "networkx",
   "anytree",
   "Levenshtein",
