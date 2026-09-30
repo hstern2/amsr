@@ -2,6 +2,7 @@
 """Morph: Streamlit app for molecular morph (two SMILES -> pathway). Based on morph.ipynb."""
 
 import json
+import math
 import re
 import shutil
 import subprocess
@@ -30,10 +31,13 @@ class MoleculeResolution:
 
 
 @dataclass(frozen=True)
-class LillyFilterResult:
+class FilterResult:
     mols: list
     smiles_text: str
     rejected_count: int
+
+
+LillyFilterResult = FilterResult
 
 
 DEFAULT_MOLECULE_1_KEY = "ibogaine"
@@ -41,6 +45,12 @@ DEFAULT_MOLECULE_2_KEY = "epibatidine"
 DEFAULT_SMILES_1 = KNOWN_MOLECULES[DEFAULT_MOLECULE_1_KEY].smiles
 DEFAULT_SMILES_2 = KNOWN_MOLECULES[DEFAULT_MOLECULE_2_KEY].smiles
 DEFAULT_APPLY_LILLY_FILTER = True
+DEFAULT_APPLY_CLOGP_FILTER = True
+DEFAULT_APPLY_HETEROATOM_FILTER = True
+DEFAULT_MORPH_COUNT = 10
+MIN_CLOGP = -2.0
+MAX_CLOGP = 5.0
+MIN_HETEROATOMS = 2
 LILLY_MEDCHEM_RULES = "Lilly_Medchem_Rules.rb"
 LILLY_FILTER_TIMEOUT_SECONDS = 120
 GITHUB_REPO_URL = "https://github.com/hstern2/amsr"
@@ -138,12 +148,24 @@ def morph_input_snapshot(
     molecule_1_value: Optional[str],
     molecule_2_value: Optional[str],
     apply_lilly_filter: bool,
-) -> tuple[str, str, bool]:
+    apply_clogp_filter: bool = DEFAULT_APPLY_CLOGP_FILTER,
+    apply_heteroatom_filter: bool = DEFAULT_APPLY_HETEROATOM_FILTER,
+    morph_count: int = DEFAULT_MORPH_COUNT,
+    min_clogp: float = MIN_CLOGP,
+    max_clogp: float = MAX_CLOGP,
+    min_heteroatoms: int = MIN_HETEROATOMS,
+) -> tuple[str, str, bool, bool, bool, int, float, float, int]:
     """Return the committed input state that should define one morph request."""
     return (
         (molecule_1_value or "").strip(),
         (molecule_2_value or "").strip(),
         apply_lilly_filter,
+        apply_clogp_filter,
+        apply_heteroatom_filter,
+        morph_count,
+        min_clogp,
+        max_clogp,
+        min_heteroatoms,
     )
 
 
@@ -462,7 +484,7 @@ def pathway_to_cdxml(
         {
             "id": "2",
             "BoundingBox": (
-                f"0 0 {_format_cdxml_number(page_width)} " f"{_format_cdxml_number(page_height)}"
+                f"0 0 {_format_cdxml_number(page_width)} {_format_cdxml_number(page_height)}"
             ),
         },
     )
@@ -592,12 +614,60 @@ def filter_morph_output_with_lilly(mols) -> LillyFilterResult:
     )
 
 
-def run_morph(smiles_1: str, smiles_2: str, apply_lilly_filter: bool = False):
+def filter_morph_output_by_clogp(
+    mols, min_clogp: float = MIN_CLOGP, max_clogp: float = MAX_CLOGP
+) -> FilterResult:
+    """Keep intermediates in mtrl's Muegge cLogP range, preserving endpoints."""
+    from rdkit import Chem
+    from rdkit.Chem import Crippen
+
+    mols = list(mols)
+    if len(mols) <= 2:
+        return FilterResult(mols, mols_to_smiles_text(mols), 0)
+
+    kept = [mols[0]]
+    for mol in mols[1:-1]:
+        clogp = Crippen.MolLogP(Chem.RemoveHs(mol))
+        if math.isfinite(clogp) and min_clogp <= clogp <= max_clogp:
+            kept.append(mol)
+    kept.append(mols[-1])
+    return FilterResult(kept, mols_to_smiles_text(kept), len(mols) - len(kept))
+
+
+def filter_morph_output_by_heteroatoms(
+    mols, min_heteroatoms: int = MIN_HETEROATOMS
+) -> FilterResult:
+    """Keep intermediates with at least two heteroatoms, preserving endpoints."""
+    from rdkit import Chem
+    from rdkit.Chem import rdMolDescriptors
+
+    mols = list(mols)
+    if len(mols) <= 2:
+        return FilterResult(mols, mols_to_smiles_text(mols), 0)
+
+    kept = [mols[0]]
+    for mol in mols[1:-1]:
+        if rdMolDescriptors.CalcNumHeteroatoms(Chem.RemoveHs(mol)) >= min_heteroatoms:
+            kept.append(mol)
+    kept.append(mols[-1])
+    return FilterResult(kept, mols_to_smiles_text(kept), len(mols) - len(kept))
+
+
+def run_morph(
+    smiles_1: str,
+    smiles_2: str,
+    apply_lilly_filter: bool = False,
+    apply_clogp_filter: bool = False,
+    apply_heteroatom_filter: bool = False,
+    min_clogp: float = MIN_CLOGP,
+    max_clogp: float = MAX_CLOGP,
+    min_heteroatoms: int = MIN_HETEROATOMS,
+):
     """Run morph between two SMILES. Returns (morph, smiles_text).
 
     morph.mol is the list of RDKit Mol objects for the pathway (use for SVG).
     Uses randomize=True so each run can produce a different pathway.
-    Lilly_Medchem_Rules.rb filtering is optional and applies only after morphing.
+    Optional filters apply only to generated intermediates after morphing.
     Raises ImportError if amsr is not installed.
     """
     import amsr
@@ -610,12 +680,67 @@ def run_morph(smiles_1: str, smiles_2: str, apply_lilly_filter: bool = False):
         filter_result = filter_morph_output_with_lilly(morph.mol)
         morph.mol = filter_result.mols
         setattr(morph, "lilly_rejected_count", filter_result.rejected_count)
-        smiles_text = filter_result.smiles_text
     else:
         setattr(morph, "lilly_rejected_count", 0)
-        smiles_text = mols_to_smiles_text(morph.mol)
+
+    if apply_clogp_filter:
+        filter_result = filter_morph_output_by_clogp(morph.mol, min_clogp, max_clogp)
+        morph.mol = filter_result.mols
+        setattr(morph, "clogp_rejected_count", filter_result.rejected_count)
+    else:
+        setattr(morph, "clogp_rejected_count", 0)
+
+    if apply_heteroatom_filter:
+        filter_result = filter_morph_output_by_heteroatoms(morph.mol, min_heteroatoms)
+        morph.mol = filter_result.mols
+        setattr(morph, "heteroatom_rejected_count", filter_result.rejected_count)
+    else:
+        setattr(morph, "heteroatom_rejected_count", 0)
+
+    smiles_text = mols_to_smiles_text(morph.mol)
 
     return morph, smiles_text
+
+
+def run_best_morph(
+    smiles_1: str,
+    smiles_2: str,
+    morph_count: int = DEFAULT_MORPH_COUNT,
+    apply_lilly_filter: bool = DEFAULT_APPLY_LILLY_FILTER,
+    apply_clogp_filter: bool = DEFAULT_APPLY_CLOGP_FILTER,
+    apply_heteroatom_filter: bool = DEFAULT_APPLY_HETEROATOM_FILTER,
+    min_clogp: float = MIN_CLOGP,
+    max_clogp: float = MAX_CLOGP,
+    min_heteroatoms: int = MIN_HETEROATOMS,
+):
+    """Run independent randomized morphs and return the most retained pathway."""
+    if morph_count < 1:
+        raise ValueError("Number of morphs must be at least one.")
+    if apply_clogp_filter and min_clogp > max_clogp:
+        raise ValueError("Minimum cLogP must be no greater than maximum cLogP.")
+    if apply_heteroatom_filter and min_heteroatoms < 0:
+        raise ValueError("Minimum heteroatom count cannot be negative.")
+
+    best = None
+    best_index = 0
+    for index in range(1, morph_count + 1):
+        candidate = run_morph(
+            smiles_1,
+            smiles_2,
+            apply_lilly_filter=apply_lilly_filter,
+            apply_clogp_filter=apply_clogp_filter,
+            apply_heteroatom_filter=apply_heteroatom_filter,
+            min_clogp=min_clogp,
+            max_clogp=max_clogp,
+            min_heteroatoms=min_heteroatoms,
+        )
+        if best is None or len(candidate[0].mol) > len(best[0].mol):
+            best = candidate
+            best_index = index
+
+    assert best is not None
+    morph, smiles_text = best
+    return morph, smiles_text, best_index
 
 
 def kekulized_mol_for_drawing(mol):
@@ -928,8 +1053,44 @@ def main():
         "Filter morph output with Lilly Medchem Rules (-relaxed)",
         value=DEFAULT_APPLY_LILLY_FILTER,
     )
+    apply_clogp_filter = st.checkbox(
+        "Filter intermediates by cLogP",
+        value=DEFAULT_APPLY_CLOGP_FILTER,
+    )
+    clogp_columns = st.columns(2)
+    with clogp_columns[0]:
+        min_clogp = st.number_input("Minimum cLogP", value=MIN_CLOGP, step=0.5, key="min_clogp")
+    with clogp_columns[1]:
+        max_clogp = st.number_input("Maximum cLogP", value=MAX_CLOGP, step=0.5, key="max_clogp")
+    apply_heteroatom_filter = st.checkbox(
+        "Filter intermediates by minimum heteroatoms",
+        value=DEFAULT_APPLY_HETEROATOM_FILTER,
+    )
+    min_heteroatoms = st.number_input(
+        "Minimum heteroatoms",
+        min_value=0,
+        value=MIN_HETEROATOMS,
+        step=1,
+        key="min_heteroatoms",
+    )
+    morph_count = st.number_input(
+        "Number of morphs to try",
+        min_value=1,
+        max_value=100,
+        value=DEFAULT_MORPH_COUNT,
+        step=1,
+        key="morph_count",
+    )
     current_morph_inputs = morph_input_snapshot(
-        molecule_1_value, molecule_2_value, apply_lilly_filter
+        molecule_1_value,
+        molecule_2_value,
+        apply_lilly_filter,
+        apply_clogp_filter,
+        apply_heteroatom_filter,
+        morph_count,
+        min_clogp,
+        max_clogp,
+        min_heteroatoms,
     )
     previous_morph_inputs = st.session_state.setdefault(
         "last_morph_input_snapshot", current_morph_inputs
@@ -953,11 +1114,17 @@ def main():
         )
 
         try:
-            with st.spinner("Computing morph pathway..."):
-                morph, _smiles_text = run_morph(
+            with st.spinner(f"Computing {morph_count} morph pathway(s)..."):
+                morph, _smiles_text, selected_index = run_best_morph(
                     molecule_1.smiles,
                     molecule_2.smiles,
+                    morph_count=morph_count,
                     apply_lilly_filter=apply_lilly_filter,
+                    apply_clogp_filter=apply_clogp_filter,
+                    apply_heteroatom_filter=apply_heteroatom_filter,
+                    min_clogp=min_clogp,
+                    max_clogp=max_clogp,
+                    min_heteroatoms=min_heteroatoms,
                 )
         except Exception as e:
             st.error(f"Morph failed: {e}")
@@ -966,10 +1133,26 @@ def main():
             st.code(traceback.format_exc())
             st.stop()
 
+        st.caption(
+            f"Showing morph {selected_index} of {morph_count}: "
+            f"{len(morph.mol)} molecules retained after filtering."
+        )
         if apply_lilly_filter:
             st.caption(
                 f"Lilly Medchem Rules rejected "
                 f"{getattr(morph, 'lilly_rejected_count', 0)} generated intermediates; "
+                f"input endpoints were preserved."
+            )
+        if apply_clogp_filter:
+            st.caption(
+                f"cLogP outside {min_clogp:g} to {max_clogp:g} rejected "
+                f"{getattr(morph, 'clogp_rejected_count', 0)} generated intermediates; "
+                f"input endpoints were preserved."
+            )
+        if apply_heteroatom_filter:
+            st.caption(
+                f"Fewer than {min_heteroatoms} heteroatoms rejected "
+                f"{getattr(morph, 'heteroatom_rejected_count', 0)} generated intermediates; "
                 f"input endpoints were preserved."
             )
 

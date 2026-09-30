@@ -107,10 +107,18 @@ def test_morph_input_snapshot_normalizes_committed_text_values():
     """Committed input changes are compared independent of surrounding whitespace."""
     import morph_app
 
-    assert morph_app.morph_input_snapshot(" metformin ", " CCO\n", True) == (
+    assert morph_app.morph_input_snapshot(
+        " metformin ", " CCO\n", True, False, True, 3, -1.5, 4.5, 3
+    ) == (
         "metformin",
         "CCO",
         True,
+        False,
+        True,
+        3,
+        -1.5,
+        4.5,
+        3,
     )
 
 
@@ -204,6 +212,139 @@ def test_lilly_filter_default_is_enabled():
     import morph_app
 
     assert morph_app.DEFAULT_APPLY_LILLY_FILTER is True
+    assert morph_app.DEFAULT_APPLY_CLOGP_FILTER is True
+    assert morph_app.DEFAULT_APPLY_HETEROATOM_FILTER is True
+    assert morph_app.DEFAULT_MORPH_COUNT == 10
+
+
+def test_clogp_filter_keeps_endpoints_and_rejects_both_extremes(monkeypatch):
+    """Use mtrl's inclusive -2 to 5 range only for intermediates."""
+    Chem = pytest.importorskip("rdkit.Chem")
+    import morph_app
+    from rdkit.Chem import Crippen
+
+    mols = [Chem.MolFromSmiles(value) for value in ("CC", "CCO", "CCC", "CCCC", "CCN", "CO")]
+    values = iter(
+        (
+            morph_app.MIN_CLOGP,
+            morph_app.MIN_CLOGP - 0.01,
+            morph_app.MAX_CLOGP,
+            morph_app.MAX_CLOGP + 0.01,
+        )
+    )
+    monkeypatch.setattr(Crippen, "MolLogP", lambda mol: next(values))
+    result = morph_app.filter_morph_output_by_clogp(mols)
+
+    assert result.mols == [mols[0], mols[1], mols[3], mols[-1]]
+    assert result.rejected_count == 2
+
+
+def test_heteroatom_filter_keeps_endpoints_and_requires_two():
+    Chem = pytest.importorskip("rdkit.Chem")
+    import morph_app
+
+    mols = [Chem.MolFromSmiles(value) for value in ("CC", "CCO", "CC(=O)O", "CCN", "CCC")]
+    result = morph_app.filter_morph_output_by_heteroatoms(mols)
+
+    assert result.mols == [mols[0], mols[2], mols[-1]]
+    assert result.rejected_count == 2
+
+
+def test_run_morph_applies_all_filters_to_intermediates(monkeypatch):
+    Chem = pytest.importorskip("rdkit.Chem")
+    import morph_app
+
+    import amsr
+
+    mols = [
+        Chem.MolFromSmiles(value)
+        for value in ("CC", "CCC", "CCO", "CC(=O)O", "CCCCCCCCCCCCC", "CCN", "CCC")
+    ]
+
+    class FakeMorph:
+        def __init__(self, _start, _end):
+            self.mol = mols[:]
+
+    def fake_lilly(pathway):
+        kept = [pathway[0], *pathway[2:]]
+        return morph_app.FilterResult(kept, morph_app.mols_to_smiles_text(kept), 1)
+
+    monkeypatch.setattr(amsr, "FromSmilesToTokens", lambda value, randomize: [value])
+    monkeypatch.setattr(amsr, "Morph", FakeMorph)
+    monkeypatch.setattr(morph_app, "filter_morph_output_with_lilly", fake_lilly)
+
+    morph, smiles_text = morph_app.run_morph(
+        "CC",
+        "CCC",
+        apply_lilly_filter=True,
+        apply_clogp_filter=True,
+        apply_heteroatom_filter=True,
+    )
+
+    assert morph.mol == [mols[0], mols[3], mols[-1]]
+    assert smiles_text.splitlines() == ["CC", "CC(=O)O", "CCC"]
+    assert morph.lilly_rejected_count == 1
+    assert morph.clogp_rejected_count == 1
+    assert morph.heteroatom_rejected_count == 2
+
+
+def test_best_morph_uses_retained_count_after_all_filters(monkeypatch):
+    """Choose the longest surviving pathway, with a stable first-run tie break."""
+    import morph_app
+
+    class FakeMorph:
+        def __init__(self, retained):
+            self.mol = list(range(retained))
+
+    lengths = iter((3, 5, 5, 4))
+    calls = []
+
+    def fake_run(
+        smiles_1,
+        smiles_2,
+        apply_lilly_filter,
+        apply_clogp_filter,
+        apply_heteroatom_filter,
+        min_clogp,
+        max_clogp,
+        min_heteroatoms,
+    ):
+        calls.append(
+            (
+                smiles_1,
+                smiles_2,
+                apply_lilly_filter,
+                apply_clogp_filter,
+                apply_heteroatom_filter,
+                min_clogp,
+                max_clogp,
+                min_heteroatoms,
+            )
+        )
+        morph = FakeMorph(next(lengths))
+        return morph, str(len(morph.mol))
+
+    monkeypatch.setattr(morph_app, "run_morph", fake_run)
+    morph, smiles_text, selected_index = morph_app.run_best_morph(
+        "C",
+        "CC",
+        morph_count=4,
+        min_clogp=-1.5,
+        max_clogp=4.5,
+        min_heteroatoms=3,
+    )
+
+    assert len(morph.mol) == 5
+    assert smiles_text == "5"
+    assert selected_index == 2
+    assert calls == [("C", "CC", True, True, True, -1.5, 4.5, 3)] * 4
+
+
+def test_best_morph_rejects_inverted_clogp_range():
+    import morph_app
+
+    with pytest.raises(ValueError, match="Minimum cLogP"):
+        morph_app.run_best_morph("C", "CC", min_clogp=6, max_clogp=5)
 
 
 def test_filter_mols_with_lilly_uses_relaxed_and_filters(monkeypatch):
@@ -347,7 +488,7 @@ def test_pathway_to_cdxml_preserves_detailed_chemical_information():
 
 def test_streamlit_app_offers_cdxml_download():
     """A completed morph exposes both pathway download formats in the UI."""
-    pytest.importorskip("rdkit.Chem")
+    Chem = pytest.importorskip("rdkit.Chem")
     pytest.importorskip("amsr")
     pytest.importorskip("streamlit.testing.v1")
     from streamlit.testing.v1 import AppTest
@@ -355,17 +496,23 @@ def test_streamlit_app_offers_cdxml_download():
     app_path = Path(__file__).with_name("morph_app.py")
     app = AppTest.from_file(str(app_path), default_timeout=20)
     app.run()
+    assert [checkbox.value for checkbox in app.checkbox] == [True, True, True]
+    assert app.number_input(key="min_clogp").value == -2.0
+    assert app.number_input(key="max_clogp").value == 5.0
+    assert app.number_input(key="min_heteroatoms").value == 2
+    assert app.number_input(key="morph_count").value == 10
     app.text_input(key="molecule_1").set_value("CCO")
     app.text_input(key="molecule_2").set_value("CCN")
     app.checkbox[0].uncheck()
+    app.number_input(key="morph_count").set_value(1)
     app.button[0].click()
     app.run()
 
     assert not app.exception
-    assert [button.label for button in app.get("download_button")] == [
-        "Download .smi file",
-        "Download CDXML for ChemDraw",
-    ]
+    expected = ["Download .smi file"]
+    if hasattr(Chem, "MolToCDXMLBlock") and Chem.HasChemDrawCDXSupport():
+        expected.append("Download CDXML for ChemDraw")
+    assert [button.label for button in app.get("download_button")] == expected
 
 
 def test_filter_morph_output_with_lilly_preserves_input_endpoints(monkeypatch):

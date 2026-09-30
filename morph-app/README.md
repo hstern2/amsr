@@ -9,8 +9,9 @@ Streamlit app for **molecular morphing**: compute the minimum-edit pathway betwe
 - Autocomplete includes a fixed, lowercase vendored DrugCentral FDA-approved drug name list plus curated app molecules; numeric-leading names are excluded
 - Catalog entries include PubChem CIDs for SMILES traceability; typed names still fall back to PubChem PUG REST
 - Endpoint salts and mixtures are reduced to their largest connected component, excluding counterions
-- **Morph** button runs `amsr.Morph(...)` on the resolved SMILES to get the pathway
+- **Morph** button tries 10 randomized pathways by default (configurable from 1 to 100) and displays the one with the most molecules remaining after filtering
 - Optional filtering of generated morph intermediates through `Lilly_Medchem_Rules.rb -relaxed`, enabled by default
+- Optional filtering of generated intermediates by RDKit cLogP and heteroatom count, matching the respective Muegge criteria in `~/mtrl`; both enabled by default with editable limits of -2 to 5 and at least two heteroatoms
 - Output: rendered molecule grid plus downloadable pathway `.smi` and labeled, editable
   ChemDraw `.cdxml` files
 
@@ -35,7 +36,7 @@ streamlit run morph_app.py
 ```
 
 1. Enter **From** and **To** molecule names such as `epibatidine`, catalog labels, or raw SMILES.
-2. Leave the Lilly Medchem Rules intermediate filter enabled, or uncheck it to see the raw morph pathway. The selected input endpoints are not filtered.
+2. Set the number of morphs to try and choose the Lilly, cLogP, and heteroatom filters. All three are enabled by default. The selected input endpoints are always preserved.
 3. View the molecule grid. Use **Download .smi file** for a text representation, or
    **Download CDXML for ChemDraw** for an editable, labeled pathway laid out four structures
    per row.
