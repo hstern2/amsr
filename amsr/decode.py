@@ -84,6 +84,39 @@ def _saturate(atom):
             return
 
 
+def _repair_123_triazines(mol):
+    """Replace the central N in an aromatic 1,2,3-triazine with carbon."""
+    centers = set()
+    for ring in mol.GetRingInfo().AtomRings():
+        if len(ring) != 6:
+            continue
+        ring_atoms = [mol.GetAtomWithIdx(i) for i in ring]
+        if not all(a.GetIsAromatic() and a.GetAtomicNum() in (6, 7) for a in ring_atoms):
+            continue
+        nitrogens = [a for a in ring_atoms if a.GetAtomicNum() == 7]
+        if len(nitrogens) != 3:
+            continue
+        ring_indices = set(ring)
+        for nitrogen in nitrogens:
+            if nitrogen.GetFormalCharge() != 0 or nitrogen.GetDegree() != 2:
+                continue
+            ring_neighbors = [
+                neighbor
+                for neighbor in nitrogen.GetNeighbors()
+                if neighbor.GetIdx() in ring_indices
+            ]
+            if len(ring_neighbors) == 2 and all(a.GetAtomicNum() == 7 for a in ring_neighbors):
+                centers.add(nitrogen.GetIdx())
+
+    for index in centers:
+        atom = mol.GetAtomWithIdx(index)
+        atom.SetAtomicNum(6)
+        atom.SetFormalCharge(0)
+        atom.SetNumExplicitHs(0)
+        atom.SetNoImplicit(False)
+    return bool(centers)
+
+
 def _ring(mol, atom, ringStr, bond, stringent, dihedral_for_bond):
     m = match(f"{escape(L_BRACKET)}?([0-9]+){escape(R_BRACKET)}?({escape(SKIP)}*)", ringStr)
     n = int(m.group(1))
@@ -211,6 +244,10 @@ def ToMol(
     Chem.SanitizeMol(
         mol, Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_CLEANUPCHIRALITY
     )
+    if stringent and _repair_123_triazines(mol):
+        Chem.SanitizeMol(
+            mol, Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_CLEANUPCHIRALITY
+        )
     Chem.AssignStereochemistry(mol)
     for a in reversed(mol.GetAtoms()):
         if atom[a.GetIdx()].canBond():

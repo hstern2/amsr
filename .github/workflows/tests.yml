@@ -27,21 +27,17 @@ jobs:
           enable-cache: true
           python-version: ${{ matrix.python-version }}
 
-      # Install your package + dev tools (pytest, ruff, mypy via extras)
       - name: Install project (dev extras)
-        run: uv pip install --system -e ".[dev]"
+        run: uv sync --extra dev
 
-      # Run exactly the same hooks as locally
       - name: Pre-commit (lint + format check + mypy)
-        run: |
-          uv run pre-commit install
-          uv run pre-commit run --all-files
+        run: uv run --no-sync pre-commit run --all-files
 
       - name: Build C extension
         run: make
 
       - name: Run tests
         run: |
-          uv run pytest tests --doctest-modules \
+          uv run --no-sync pytest tests --doctest-modules \
             --junitxml=junit/test-results.xml \
             --cov=amsr --cov-report=xml --cov-report=term-missing

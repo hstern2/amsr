@@ -35,6 +35,21 @@ def test_stringent_blocks_carbon_sulfur_pi_bonds_in_both_orders() -> None:
     assert amsr.ToSmiles("sc", stringent=False) == "C=S"
 
 
+def test_stringent_repairs_123_triazine_to_13_diazine() -> None:
+    encoded = amsr.FromSmiles("c1cnnnc1", stringent=False)
+
+    assert amsr.ToSmiles(encoded, stringent=False) == "c1cnnnc1"
+    assert amsr.ToSmiles(encoded, stringent=True) == "c1cncnc1"
+
+
+def test_stringent_preserves_other_aromatic_nitrogen_heterocycles() -> None:
+    for smiles in ("c1nn[nH]c1", "c1nnn[nH]1", "c1nnccn1"):
+        encoded = amsr.FromSmiles(smiles, stringent=False)
+        expected = Chem.MolToSmiles(Chem.MolFromSmiles(smiles))
+
+        assert amsr.ToSmiles(encoded, stringent=True) == expected
+
+
 def test_no_stereo() -> None:
     assert amsr.CheckAMSR(amsr.FromSmiles(taxol_smi, useStereo=False))
 

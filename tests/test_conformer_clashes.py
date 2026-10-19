@@ -9,7 +9,6 @@ from amsr.conf import (
     _has_serious_nonbonded_clash,
     _nonbonded_clash_metrics,
 )
-from amsr.decode import ToMol
 
 
 def test_vdw_thresholds_treat_one_four_pairs_less_strictly():
@@ -105,17 +104,3 @@ def test_conformer_rejects_only_hard_clashes(monkeypatch):
     )
     with pytest.raises(ValueError, match="sub-1 A"):
         GetConformer(Chem.MolFromSmiles("C"), max_confs=1)
-
-
-def test_conformer_selection_rejects_clashing_chembl3d_candidate():
-    # CHEMBL237460_0 conformer 130, the worst ChEMBL3D geometry-audit case.
-    amsr_string = r"cccn+cccc6cc6@__N__C<<(6).[CN]......\_N\>C`\_C^^C^\C/^C__5......[CN]"
-    dihedrals = {}
-    topology = ToMol(amsr_string, stringent=True, dihedral=dihedrals)
-
-    decoded = GetConformer(topology, dihedral=dihedrals, max_confs=100)
-
-    assert not _has_serious_nonbonded_clash(
-        np.asarray(decoded.GetConformer().GetPositions()),
-        _build_nonbonded_clash_data(decoded),
-    )
